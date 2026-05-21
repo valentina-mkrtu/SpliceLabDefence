@@ -14,7 +14,8 @@ public final class MainMenuScreen extends BaseScreen {
     @Override
     protected void buildUi() {
         view = new MainMenuView(context);
-        view.setPlayListener(() -> game.setScreen(new LabGameScreen(game, context, context.saves.get().currentLevel)));
+        // Prototype safety: always start at Level 1 from main menu.
+        view.setPlayListener(() -> game.setScreen(new LabGameScreen(game, context, 1)));
         stage.addActor(view.getRoot());
     }
 }
