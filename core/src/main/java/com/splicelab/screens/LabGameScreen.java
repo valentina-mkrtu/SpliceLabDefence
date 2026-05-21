@@ -30,6 +30,28 @@ public final class LabGameScreen extends BaseScreen {
         combatController = new CombatController(context);
         combatController.setFeedback(new CombatController.CombatFeedback() {
             @Override
+            public int getConveyorPathLength() {
+                return view.getConveyorPathLength();
+            }
+
+            @Override
+            public int mapSlotToPathIndex(boolean leftSide, int slotIndex) {
+                // Simple deterministic mapping: use slotIndex, but offset right side.
+                int base = Math.max(0, Math.min(slotIndex, view.getConveyorPathLength() - 1));
+                return leftSide ? base : (base + 2) % view.getConveyorPathLength();
+            }
+
+            @Override
+            public void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex) {
+                var anchor = view.getConveyorSlotAnchor(leftSide, slotIndex);
+                var dest = view.getConveyorAnchor(pathIndex);
+                if (anchor != null && dest != null) {
+                    com.badlogic.gdx.math.Vector2 p = dest.localToStageCoordinates(new com.badlogic.gdx.math.Vector2(dest.getWidth() / 2f, dest.getHeight() / 2f));
+                    anchor.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo(p.x - anchor.getWidth() / 2f, p.y - anchor.getHeight() / 2f, com.splicelab.combat.CombatTuning.CONVEYOR_MOVE_DURATION_SECONDS));
+                }
+            }
+
+            @Override
             public void onFusionAttack(boolean leftSide, int slotIndex, int damage, boolean special) {
                 var from = view.getConveyorSlotAnchor(leftSide, slotIndex);
                 var to = view.getEnemyAnchor();

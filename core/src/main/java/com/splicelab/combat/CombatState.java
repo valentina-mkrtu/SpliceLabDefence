@@ -19,6 +19,11 @@ public final class CombatState {
     public final FusionInstance[] conveyorLeft;
     public final FusionInstance[] conveyorRight;
 
+    public final int[] conveyorPathIndexLeft;
+    public final int[] conveyorPathIndexRight;
+
+    public float conveyorStepCooldownRemaining;
+
     public EnemyInstance activeEnemy;
 
     public float enemySpawnCooldownRemaining;
@@ -32,6 +37,12 @@ public final class CombatState {
         conveyorRight = new FusionInstance[slotsPerSide];
         fusionAttackCooldownLeft = new float[slotsPerSide];
         fusionAttackCooldownRight = new float[slotsPerSide];
+
+        conveyorPathIndexLeft = new int[slotsPerSide];
+        conveyorPathIndexRight = new int[slotsPerSide];
+        for (int i = 0; i < slotsPerSide; i++) {
+            conveyorPathIndexLeft[i] = -1;
+            conveyorPathIndexRight[i] = -1;
+        }
     }
 }
-

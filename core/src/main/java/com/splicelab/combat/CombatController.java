@@ -22,6 +22,12 @@ public final class CombatController {
     private final java.util.Random rng = new java.util.Random();
 
     public interface CombatFeedback {
+        int getConveyorPathLength();
+
+        int mapSlotToPathIndex(boolean leftSide, int slotIndex);
+
+        void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex);
+
         void onFusionAttack(boolean leftSide, int slotIndex, int damage, boolean special);
 
         void onEnemyDamaged(int damage, boolean special);
@@ -69,8 +75,11 @@ public final class CombatController {
         state.activeEnemy = null;
         state.enemySpawnCooldownRemaining = 0f;
         state.enemyAttackCooldownRemaining = 0f;
+        state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
         for (int i = 0; i < state.fusionAttackCooldownLeft.length; i++) state.fusionAttackCooldownLeft[i] = 0f;
         for (int i = 0; i < state.fusionAttackCooldownRight.length; i++) state.fusionAttackCooldownRight[i] = 0f;
+        for (int i = 0; i < state.conveyorPathIndexLeft.length; i++) state.conveyorPathIndexLeft[i] = -1;
+        for (int i = 0; i < state.conveyorPathIndexRight.length; i++) state.conveyorPathIndexRight[i] = -1;
 
         state.result = CombatResult.RUNNING;
 
@@ -117,8 +126,52 @@ public final class CombatController {
             ensureEnemySpawned();
         }
 
+        updateConveyorMovement(delta);
+
         updateFusionAutoAttack(delta);
         updateEnemyAttack(delta);
+    }
+
+    private void updateConveyorMovement(float delta) {
+        state.conveyorStepCooldownRemaining = Math.max(0f, state.conveyorStepCooldownRemaining - delta);
+        if (state.conveyorStepCooldownRemaining > 0f) return;
+        state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
+
+        int pathLen = feedback == null ? 0 : feedback.getConveyorPathLength();
+        if (pathLen <= 1) return;
+
+        stepConveyorSide(true, state.conveyorLeft, state.conveyorPathIndexLeft, pathLen);
+        stepConveyorSide(false, state.conveyorRight, state.conveyorPathIndexRight, pathLen);
+    }
+
+    private void stepConveyorSide(boolean leftSide, FusionInstance[] fusions, int[] indices, int pathLen) {
+        boolean[] occupied = new boolean[pathLen];
+        for (int i = 0; i < fusions.length; i++) {
+            if (fusions[i] == null) continue;
+            int idx = indices[i];
+            if (idx >= 0 && idx < pathLen) occupied[idx] = true;
+        }
+
+        int[] nextIdx = new int[indices.length];
+        for (int i = 0; i < indices.length; i++) nextIdx[i] = indices[i];
+
+        for (int i = 0; i < fusions.length; i++) {
+            if (fusions[i] == null) continue;
+            int cur = indices[i];
+            if (cur < 0) continue;
+            int next = (cur + 1) % pathLen;
+            if (occupied[next]) continue;
+            occupied[cur] = false;
+            occupied[next] = true;
+            nextIdx[i] = next;
+        }
+
+        for (int i = 0; i < indices.length; i++) {
+            if (nextIdx[i] != indices[i]) {
+                indices[i] = nextIdx[i];
+                if (feedback != null) feedback.onFusionMoved(leftSide, i, indices[i]);
+            }
+        }
     }
 
     public CommandResult requestTubeSpawn() {
@@ -247,8 +300,32 @@ public final class CombatController {
 
         arr[slotIndex] = fusion;
         state.grid[fromCol][fromRow] = null;
+
+        if (feedback != null) {
+            int pathLen = feedback.getConveyorPathLength();
+            int startIndex = feedback.mapSlotToPathIndex(leftSide, slotIndex);
+            if (isPathIndexOccupied(startIndex, pathLen)) {
+                arr[slotIndex] = null;
+                state.grid[fromCol][fromRow] = fusion;
+                return CommandResult.fail(CommandResult.Code.SLOT_OCCUPIED, "Path occupied");
+            }
+            if (leftSide) state.conveyorPathIndexLeft[slotIndex] = startIndex;
+            else state.conveyorPathIndexRight[slotIndex] = startIndex;
+            feedback.onFusionMoved(leftSide, slotIndex, startIndex);
+        }
         CombatLog.d("fusion deployed side=" + (leftSide ? "L" : "R") + " slot=" + slotIndex);
         return CommandResult.ok();
+    }
+
+    private boolean isPathIndexOccupied(int idx, int pathLen) {
+        if (idx < 0 || idx >= pathLen) return false;
+        for (int i = 0; i < state.conveyorLeft.length; i++) {
+            if (state.conveyorLeft[i] != null && state.conveyorPathIndexLeft[i] == idx) return true;
+        }
+        for (int i = 0; i < state.conveyorRight.length; i++) {
+            if (state.conveyorRight[i] != null && state.conveyorPathIndexRight[i] == idx) return true;
+        }
+        return false;
     }
 
     public void debugForceWin() {
@@ -355,6 +432,12 @@ public final class CombatController {
     private void attackEnemyFromFusion(boolean leftSide, int slotIndex, FusionInstance fusion) {
         if (state.activeEnemy == null) return;
 
+        if (feedback != null) {
+            int pathIndex = leftSide ? state.conveyorPathIndexLeft[slotIndex] : state.conveyorPathIndexRight[slotIndex];
+            if (pathIndex != CombatTuning.ATTACK_ZONE_INDEX) return;
+            CombatLog.d("fusion at attack zone side=" + (leftSide ? "L" : "R") + " slot=" + slotIndex);
+        }
+
         int base = Math.max(0, fusion.stats.atk());
         float variance = Math.max(0f, fusion.stats.variance());
         float roll = (rng.nextFloat() * 2f - 1f) * variance;
@@ -438,6 +521,7 @@ public final class CombatController {
             if (state.conveyorLeft[i] == instance) {
                 state.conveyorLeft[i] = null;
                 state.fusionAttackCooldownLeft[i] = 0f;
+                state.conveyorPathIndexLeft[i] = -1;
                 return;
             }
         }
@@ -445,6 +529,7 @@ public final class CombatController {
             if (state.conveyorRight[i] == instance) {
                 state.conveyorRight[i] = null;
                 state.fusionAttackCooldownRight[i] = 0f;
+                state.conveyorPathIndexRight[i] = -1;
                 return;
             }
         }
@@ -461,6 +546,8 @@ public final class CombatController {
     private void clearConveyor() {
         for (int i = 0; i < state.conveyorLeft.length; i++) state.conveyorLeft[i] = null;
         for (int i = 0; i < state.conveyorRight.length; i++) state.conveyorRight[i] = null;
+        for (int i = 0; i < state.conveyorPathIndexLeft.length; i++) state.conveyorPathIndexLeft[i] = -1;
+        for (int i = 0; i < state.conveyorPathIndexRight.length; i++) state.conveyorPathIndexRight[i] = -1;
     }
 
     private String nextInstanceId() {
@@ -468,4 +555,3 @@ public final class CombatController {
         return "i" + instanceCounter + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
 }
-

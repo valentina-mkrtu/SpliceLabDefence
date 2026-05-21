@@ -48,6 +48,9 @@ public final class LabGameView {
     private final HpBarWidget enemyHpBar;
     private final Table enemyVisual;
 
+    private final Actor[] conveyorAnchors;
+    private final Table attackZoneMarker;
+
     private Runnable onTubeTapped;
 
     private final DragAndDrop dragAndDrop = new DragAndDrop();
@@ -137,6 +140,28 @@ public final class LabGameView {
         root.add(top).growX().height(60).pad(UiConstants.PAD).row();
         root.add(conveyor).growX().height(360).pad(UiConstants.PAD).row();
         root.add(gridPanel).grow().pad(UiConstants.PAD);
+
+        conveyorAnchors = new Actor[]{
+                leftSlots[0],
+                enemyVisual,
+                rightSlots[0],
+                rightSlots[Math.min(1, rightSlots.length - 1)],
+                enemyHpBar,
+                leftSlots[Math.min(1, leftSlots.length - 1)]
+        };
+
+        attackZoneMarker = new Table();
+        attackZoneMarker.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.55f)));
+        attackZoneMarker.setSize(22, 22);
+        root.addActor(attackZoneMarker);
+        positionAttackZoneMarker();
+    }
+
+    private void positionAttackZoneMarker() {
+        Actor anchor = getConveyorAnchor(CombatTuning.ATTACK_ZONE_INDEX);
+        if (anchor == null) return;
+        Vector2 p = anchor.localToStageCoordinates(new Vector2(anchor.getWidth() / 2f, anchor.getHeight() / 2f));
+        attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
     }
 
     public Actor getRoot() {
@@ -167,6 +192,7 @@ public final class LabGameView {
 
     public void syncFromState(CombatState state) {
         if (state == null) return;
+        positionAttackZoneMarker();
         timer.setSeconds(state.remainingTimeSeconds);
         tubeStatus.setText("Tube HP " + state.tubeHp + " | CD " + String.format("%.1f", state.tubeCooldownRemaining) + " | Charges " + state.tubeCharges);
 
@@ -273,6 +299,15 @@ public final class LabGameView {
         return rightSlots[index];
     }
 
+    public int getConveyorPathLength() {
+        return conveyorAnchors.length;
+    }
+
+    public Actor getConveyorAnchor(int pathIndex) {
+        if (pathIndex < 0 || pathIndex >= conveyorAnchors.length) return null;
+        return conveyorAnchors[pathIndex];
+    }
+
     private static String labelFor(IngredientInstance inst) {
         if (inst == null) return "";
         if (inst instanceof FusionInstance f) {
@@ -349,4 +384,3 @@ public final class LabGameView {
         }
     }
 }
-
