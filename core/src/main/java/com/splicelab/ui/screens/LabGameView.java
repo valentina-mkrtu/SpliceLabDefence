@@ -61,16 +61,36 @@ public final class LabGameView {
     private final Table beltLoop;
     private final Table[] pathAnchors;
 
+    private final Table background;
+
+    private static final float FUSION_FRAME_W = 339f;
+    private static final float FUSION_FRAME_H = 344f;
+
+    private final Table gridPanel;
+
     public LabGameView(GameContext context) {
         this.context = context;
         this.skin = PlaceholderSkinFactory.create();
         this.ui = new UiFactory(skin);
 
+        PlaceholderSkinFactory.addTextureIfPresent(skin, "lab_game_bg", "art/backgrounds/lab_game_bg.png");
+        PlaceholderSkinFactory.addTextureIfPresent(skin, "fusion_station_bg", "art/backgrounds/fusion_station.png");
+
         root = new Table();
         root.setFillParent(true);
-        root.setBackground(skin.newDrawable("white", UiConstants.PANEL_BG));
+        // Background layer should sit behind all gameplay/UI.
+        background = new Table();
+        background.setFillParent(true);
+        var bg = PlaceholderSkinFactory.getStretchedDrawableIfPresent(skin, "lab_game_bg");
+        if (bg != null) {
+            background.setBackground(bg);
+        } else {
+            background.setBackground(skin.newDrawable("white", UiConstants.PANEL_BG));
+        }
+        root.addActor(background);
 
-        Table top = ui.panel();
+        // Upper HUD should not paint a panel background; let the gameplay background show through.
+        Table top = new Table();
         top.add(ui.label("Combat Area (prototype)")).pad(8).left();
         tubeStatus = ui.label("Tube");
         top.add(tubeStatus).pad(8).left();
@@ -81,7 +101,8 @@ public final class LabGameView {
         tubeHpBar.setSize(180, 10);
         top.add(tubeHpBar).pad(8).left();
 
-        Table conveyor = ui.panel();
+        // Middle section should not paint a panel background; let the gameplay background show through.
+        Table conveyor = new Table();
         conveyor.add(ui.label("Conveyor / Vent"))
                 .pad(8)
                 .row();
@@ -95,14 +116,23 @@ public final class LabGameView {
         enemyPanel.add(enemyHpBar).pad(4);
 
         enemyVisual = new Table();
-        enemyVisual.setBackground(skin.newDrawable("white", new Color(0.25f, 0.25f, 0.3f, 1f)));
+        // Don't block the gameplay background behind the enemy panel.
+        enemyVisual.setBackground(skin.newDrawable("white", new Color(0.25f, 0.25f, 0.3f, 0.0f)));
         enemyVisual.setSize(140, 90);
         enemyPanel.row();
         enemyPanel.add(enemyVisual).size(140, 90).pad(6);
 
         conveyor.add(enemyPanel).pad(6);
 
-        Table gridPanel = ui.panel();
+        // Lower section: fusion station background behind the grid.
+        // Keep the background at its native size (339x344) so it doesn't stretch.
+        gridPanel = new Table();
+        var gridBg = PlaceholderSkinFactory.getDrawableIfPresent(skin, "fusion_station_bg");
+        if (gridBg != null) {
+            gridPanel.setBackground(gridBg);
+            // Keep the frame at the PNG's native size (no stretching).
+            gridPanel.setSize(FUSION_FRAME_W, FUSION_FRAME_H);
+        }
         gridPanel.add(ui.label("Lab Grid"))
                 .colspan(AppConstants.GRID_COLS)
                 .pad(6)
@@ -112,7 +142,7 @@ public final class LabGameView {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 GridCellWidget cell = new GridCellWidget(skin, ui, c, r);
                 cells[c][r] = cell;
-                grid.add(cell).size(110, 110).pad(4);
+                grid.add(cell).size(72, 72).pad(4);
             }
             grid.row();
         }
@@ -126,11 +156,13 @@ public final class LabGameView {
             }
         });
 
-        gridPanel.add(grid).pad(6);
+        // Center the grid inside the fixed frame.
+        gridPanel.add(grid).pad(40);
 
-        root.add(top).growX().height(60).pad(UiConstants.PAD).row();
-        root.add(conveyor).growX().height(360).pad(UiConstants.PAD).row();
-        root.add(gridPanel).grow().pad(UiConstants.PAD);
+        root.add(top).growX().height(60).pad(UiConstants.PAD + 2).row();
+        root.add(conveyor).growX().height(360).pad(UiConstants.PAD + 2).row();
+        // Don't stretch the fusion station frame; center it at native size.
+        root.add(gridPanel).pad(UiConstants.PAD + 2).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
 
         // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();

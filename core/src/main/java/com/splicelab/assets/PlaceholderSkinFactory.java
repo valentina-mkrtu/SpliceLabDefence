@@ -40,6 +40,30 @@ public final class PlaceholderSkinFactory {
         return skin;
     }
 
+    public static void addTextureIfPresent(Skin skin, String skinKey, String assetPath) {
+        if (skin == null || skinKey == null || assetPath == null) return;
+        if (skin.has(skinKey, Texture.class)) return;
+
+        if (!Gdx.files.internal(assetPath).exists()) {
+            Gdx.app.log("SpliceLab", "Missing asset: " + assetPath);
+            return;
+        }
+
+        Texture texture = new Texture(Gdx.files.internal(assetPath));
+        skin.add(skinKey, texture);
+    }
+
+    public static TextureRegionDrawable getDrawableIfPresent(Skin skin, String skinKey) {
+        if (skin == null || skinKey == null) return null;
+        if (!skin.has(skinKey, Texture.class)) return null;
+        return new TextureRegionDrawable(new TextureRegion(skin.get(skinKey, Texture.class)));
+    }
+
+    public static TextureRegionDrawable getStretchedDrawableIfPresent(Skin skin, String skinKey) {
+        // TextureRegionDrawable backgrounds stretch to the widget bounds.
+        return getDrawableIfPresent(skin, skinKey);
+    }
+
     private static Texture makeTexture(Color color) {
         Pixmap pixmap = new Pixmap(2, 2, Pixmap.Format.RGBA8888);
         pixmap.setColor(color);

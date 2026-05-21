@@ -15,7 +15,8 @@ public final class TubeWidget extends Group {
 
     public TubeWidget(Skin skin, UiFactory ui) {
         bg = new Table();
-        bg.setBackground(skin.newDrawable("white", new Color(0.2f, 0.25f, 0.3f, 1f)));
+        // Let the gameplay background show through.
+        bg.setBackground(skin.newDrawable("white", new Color(0.2f, 0.25f, 0.3f, 0.0f)));
         bg.setFillParent(true);
 
         label = ui.label("TUBE");

@@ -17,7 +17,8 @@ public final class GridCellWidget extends Group {
         this.col = col;
         this.row = row;
         bg = new Table();
-        bg.setBackground(skin.newDrawable("white", new Color(0.18f, 0.18f, 0.22f, 1f)));
+        // Keep the grid readable while still letting the gameplay background show through.
+        bg.setBackground(skin.newDrawable("white", new Color(0.18f, 0.18f, 0.22f, 0.35f)));
         bg.setFillParent(true);
 
         text = ui.label("");
