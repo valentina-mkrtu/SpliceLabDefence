@@ -1,0 +1,11 @@
+production-line.png
+size:326,305
+filter:Linear,Linear
+pma:true
+belt
+bounds:2,2,301,310
+offsets:8,0,317,313
+rotate:90
+belt_line
+bounds:314,250,10,53
+offsets:15,0,40,53

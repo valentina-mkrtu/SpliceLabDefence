@@ -144,4 +144,10 @@ public final class LabGameScreen extends BaseScreen {
             }
         }
     }
+
+    @Override
+    public void dispose() {
+        if (view != null) view.dispose();
+        super.dispose();
+    }
 }
