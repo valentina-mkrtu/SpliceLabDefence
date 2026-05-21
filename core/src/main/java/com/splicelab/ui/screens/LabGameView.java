@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -66,6 +67,8 @@ public final class LabGameView {
     private final Table enemyVisual;
 
     private final Table attackZoneMarker;
+
+    private float beltPhase;
 
     private Runnable onTubeTapped;
 
@@ -224,6 +227,11 @@ public final class LabGameView {
         positionAttackZoneMarker();
     }
 
+    public void update(float delta) {
+        beltPhase += delta / Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
+        if (beltPhase >= 1f) beltPhase -= (float) Math.floor(beltPhase);
+    }
+
     private Table makePathAnchor() {
         Table t = new Table();
         t.setSize(10, 10);
@@ -272,18 +280,55 @@ public final class LabGameView {
         float trackTop = loopY + loopSize - loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
         float trackCornerRadius = Math.min(trackRight - trackLeft, trackTop - trackBottom) * BELT_TRACK_CORNER_RADIUS_RATIO;
         float perimeter = roundedTrackPerimeter(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
-        // Start half-way through the top-left corner arc so the first slot sits on the diagonal guide.
-        float startOffset = (float) (trackCornerRadius * Math.PI / 4f);
+        // Sync slot anchors to the animated belt marker phase.
+        float slotPhaseOffset = beltLoopLineActor.getSlotCenterOffset(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
         for (int i = 0; i < pathAnchors.length; i++) {
-            float d = (startOffset + perimeter * (i / (float) SOCKET_COUNT)) % perimeter;
+            float d = (slotPhaseOffset + perimeter * (i / (float) SOCKET_COUNT)) % perimeter;
             PathSample sample = sampleRoundedTrack(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius, d);
             pathAnchors[i].setPosition(sample.x(), sample.y());
             pathDirectionDegrees[i] = sample.directionDeg();
         }
 
-        // Place sockets at their current path indices.
-        for (int i = 0; i < conveyorSockets.length; i++) {
-            setSocketToPathIndex(i, socketPathIndex[i], false);
+        // Initial socket placement is handled in syncFromState via continuous sampling.
+    }
+
+    private void layoutConveyorPathForPhase(float beltPhase) {
+        float margin = 70f;
+        float combatTopY = root.getHeight() - 150f;
+        float combatBottomY = root.getHeight() - 430f;
+        float leftX = margin;
+        float rightX = root.getWidth() - margin;
+
+        float topY = combatTopY;
+        float bottomY = combatBottomY;
+
+        float loopPad = 50f;
+        float rawLoopWidth = (rightX - leftX) + loopPad * 2f;
+        float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
+        float rawLoopX = leftX - loopPad;
+        float rawLoopY = bottomY - loopPad;
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
+        float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
+
+        float trackLeft = loopX + loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackRight = loopX + loopSize - loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackOffsetY = loopSize * BELT_TRACK_VERTICAL_OFFSET_RATIO;
+        float trackBottom = loopY + loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackTop = loopY + loopSize - loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackCornerRadius = Math.min(trackRight - trackLeft, trackTop - trackBottom) * BELT_TRACK_CORNER_RADIUS_RATIO;
+        float perimeter = roundedTrackPerimeter(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
+        float startOffset = (float) (trackCornerRadius * Math.PI / 4f);
+        float base = (startOffset + ((beltPhase + (0.5f / SOCKET_COUNT)) % 1f) * perimeter) % perimeter;
+
+        for (int socketId = 0; socketId < conveyorSockets.length; socketId++) {
+            conveyorSockets[socketId].clearActions();
+            int pathIndex = socketPathIndex[socketId];
+            float d = (base + perimeter * (pathIndex / (float) SOCKET_COUNT)) % perimeter;
+            PathSample sample = sampleRoundedTrack(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius, d);
+            float x = sample.x() - conveyorSockets[socketId].getWidth() / 2f;
+            float y = sample.y() - conveyorSockets[socketId].getHeight() / 2f;
+            conveyorSockets[socketId].setPosition(x, y);
         }
     }
 
@@ -296,14 +341,39 @@ public final class LabGameView {
             conveyorSockets[socketIndex].setPosition(x, y);
         } else {
             conveyorSockets[socketIndex].clearActions();
-            conveyorSockets[socketIndex].addAction(Actions.moveTo(x, y, CombatTuning.CONVEYOR_MOVE_DURATION_SECONDS));
+            conveyorSockets[socketIndex].addAction(Actions.moveTo(x, y, CombatTuning.CONVEYOR_MOVE_DURATION_SECONDS, Interpolation.smooth));
         }
     }
 
     private void positionAttackZoneMarker() {
-        Actor anchor = getConveyorAnchor(4);
-        if (anchor == null) return;
-        Vector2 p = anchor.localToStageCoordinates(new Vector2(anchor.getWidth() / 2f, anchor.getHeight() / 2f));
+        // Marker stays fixed on the right side of the belt (no phase sync).
+        float margin = 70f;
+        float combatTopY = root.getHeight() - 150f;
+        float combatBottomY = root.getHeight() - 430f;
+        float leftX = margin;
+        float rightX = root.getWidth() - margin;
+
+        float topY = combatTopY;
+        float bottomY = combatBottomY;
+
+        float loopPad = 50f;
+        float rawLoopWidth = (rightX - leftX) + loopPad * 2f;
+        float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
+        float rawLoopX = leftX - loopPad;
+        float rawLoopY = bottomY - loopPad;
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
+        float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
+
+        float trackLeft = loopX + loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackRight = loopX + loopSize - loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackOffsetY = loopSize * BELT_TRACK_VERTICAL_OFFSET_RATIO;
+        float trackBottom = loopY + loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackTop = loopY + loopSize - loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+
+        float x = trackRight;
+        float y = (trackBottom + trackTop) * 0.5f;
+        Vector2 p = beltLayer.localToStageCoordinates(new Vector2(x, y));
         attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
     }
 
@@ -372,9 +442,8 @@ public final class LabGameView {
         for (int i = 0; i < conveyorSockets.length; i++) socketPathIndex[i] = state.conveyorSocketPathIndex[i];
 
         // Apply socket positions from the state path indices.
-        for (int i = 0; i < conveyorSockets.length; i++) {
-            setSocketToPathIndex(i, socketPathIndex[i], true);
-        }
+        // Positions are sampled continuously along the belt path.
+        layoutConveyorPathForPhase(beltPhase);
 
         for (int i = 0; i < conveyorSockets.length; i++) {
             conveyorSockets[i].clearChildren();
@@ -495,8 +564,11 @@ public final class LabGameView {
 
     private static final class MovingBeltLineActor extends Actor {
         private static final int PIECE_COUNT = SOCKET_COUNT;
-        private static final float LOOP_SECONDS = 5.6f;
+        // Increased by 20% to slow the belt down.
+        private static final float LOOP_SECONDS = 5.6f * 1.2f;
         private static final float PIECE_SCALE = 0.464f;
+
+        private static final float SLOT_CENTER_OFFSET_FRACTION = 0.5f / PIECE_COUNT;
 
         private final TextureRegion lineRegion;
         private float progress;
@@ -513,6 +585,18 @@ public final class LabGameView {
             if (progress >= 1f) progress -= (float) Math.floor(progress);
         }
 
+        private float getSlotCenterPhase() {
+            float p = progress + SLOT_CENTER_OFFSET_FRACTION;
+            if (p >= 1f) p -= (float) Math.floor(p);
+            return p;
+        }
+
+        float getSlotCenterOffset(float left, float right, float bottom, float top, float cornerRadius) {
+            float perimeter = roundedTrackPerimeter(left, right, bottom, top, cornerRadius);
+            float startOffset = (float) (cornerRadius * Math.PI / 4f);
+            return (startOffset + getSlotCenterPhase() * perimeter) % perimeter;
+        }
+    
         @Override
         public void draw(Batch batch, float parentAlpha) {
             if (!isVisible() || getWidth() <= 0f || getHeight() <= 0f) return;

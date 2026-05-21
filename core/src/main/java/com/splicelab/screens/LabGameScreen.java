@@ -118,6 +118,7 @@ public final class LabGameScreen extends BaseScreen {
     @Override
     protected void update(float delta) {
         combatController.update(delta);
+        view.update(delta);
         view.syncFromState(combatController.getState());
 
         switch (combatController.getState().result) {

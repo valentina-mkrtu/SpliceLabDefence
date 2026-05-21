@@ -21,6 +21,8 @@ public final class CombatState {
     public final int[] conveyorSocketPathIndex;
 
     public float conveyorStepCooldownRemaining;
+    // 0..1 phase representing belt movement progress.
+    public float conveyorBeltPhase;
 
     public EnemyInstance activeEnemy;
 

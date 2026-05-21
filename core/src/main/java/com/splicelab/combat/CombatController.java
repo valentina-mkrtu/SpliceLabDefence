@@ -141,10 +141,18 @@ public final class CombatController {
             ensureEnemySpawned();
         }
 
+        updateConveyorPhase(delta);
+
         updateConveyorMovement(delta);
 
         updateFusionAutoAttack(delta);
         updateEnemyAttack(delta);
+    }
+
+    private void updateConveyorPhase(float delta) {
+        float loopSeconds = Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
+        state.conveyorBeltPhase += delta / loopSeconds;
+        if (state.conveyorBeltPhase >= 1f) state.conveyorBeltPhase -= (float) Math.floor(state.conveyorBeltPhase);
     }
 
     private void updateConveyorMovement(float delta) {

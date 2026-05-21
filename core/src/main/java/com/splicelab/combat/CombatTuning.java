@@ -12,6 +12,7 @@ public final class CombatTuning {
 
     public static final float CONVEYOR_STEP_INTERVAL_SECONDS = 0.90f;
     public static final float CONVEYOR_MOVE_DURATION_SECONDS = 0.18f;
-    // Left-side checkpoint (west of vent) on the belt loop.
-    public static final int ATTACK_ZONE_INDEX = 4;
+    public static final float CONVEYOR_LOOP_SECONDS = 6.72f;
+    // Right-side checkpoint on the belt loop.
+    public static final int ATTACK_ZONE_INDEX = 1;
 }
