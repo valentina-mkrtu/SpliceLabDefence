@@ -292,6 +292,9 @@ public final class LabGameView {
         if (state.tubeCooldownRemaining > 0f) tubeTxt += " | CD " + String.format("%.1f", state.tubeCooldownRemaining);
         tubeStatus.setText(tubeTxt + " | HP " + state.tubeHp);
 
+        float tubeCdTotal = state.level == null ? 0f : state.level.tubeCooldownSeconds;
+        tube.setCooldown(state.tubeCooldownRemaining, tubeCdTotal);
+
         float tubePct = state.level == null ? 1f : (state.tubeHp / (float) Math.max(1, state.level.tubeHp));
         tubeHpBar.setPercent(tubePct);
 

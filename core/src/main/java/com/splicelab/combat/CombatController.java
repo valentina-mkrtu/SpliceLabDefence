@@ -186,7 +186,7 @@ public final class CombatController {
         }
         if (state.tubeCharges <= 0) {
             // Start cooldown when empty.
-            state.tubeCooldownRemaining = getTubeCooldownSeconds();
+            if (state.tubeCooldownRemaining <= 0f) state.tubeCooldownRemaining = getTubeCooldownSeconds();
             return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "No tube charges");
         }
 
