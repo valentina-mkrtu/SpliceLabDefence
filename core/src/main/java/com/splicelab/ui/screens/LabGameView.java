@@ -189,8 +189,9 @@ public final class LabGameView {
         // Fixed 12-point loop in beltLayer coordinates.
         // Keep it stable: do not depend on child actor layout/initialization.
         float margin = 70f;
-        float combatTopY = root.getHeight() - 70f;
-        float combatBottomY = root.getHeight() - 330f;
+        // Lower the whole loop a bit for readability.
+        float combatTopY = root.getHeight() - 150f;
+        float combatBottomY = root.getHeight() - 430f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -253,7 +254,7 @@ public final class LabGameView {
     }
 
     private void positionAttackZoneMarker() {
-        Actor anchor = getConveyorAnchor(CombatTuning.ATTACK_ZONE_INDEX);
+        Actor anchor = getConveyorAnchor(4);
         if (anchor == null) return;
         Vector2 p = anchor.localToStageCoordinates(new Vector2(anchor.getWidth() / 2f, anchor.getHeight() / 2f));
         attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
@@ -287,7 +288,9 @@ public final class LabGameView {
         layoutConveyorPath();
         positionAttackZoneMarker();
         timer.setSeconds(state.remainingTimeSeconds);
-        tubeStatus.setText("Tube HP " + state.tubeHp + " | CD " + String.format("%.1f", state.tubeCooldownRemaining) + " | Charges " + state.tubeCharges);
+        String tubeTxt = "Tube " + state.tubeCharges + "/" + Math.max(1, state.tubeMaxCharges);
+        if (state.tubeCooldownRemaining > 0f) tubeTxt += " | CD " + String.format("%.1f", state.tubeCooldownRemaining);
+        tubeStatus.setText(tubeTxt + " | HP " + state.tubeHp);
 
         float tubePct = state.level == null ? 1f : (state.tubeHp / (float) Math.max(1, state.level.tubeHp));
         tubeHpBar.setPercent(tubePct);
@@ -305,18 +308,12 @@ public final class LabGameView {
         }
 
         // Socket visuals show deployed fusions.
-        for (int i = 0; i < socketFusion.length; i++) socketFusion[i] = null;
-        for (int i = 0; i < state.conveyorLeft.length; i++) {
-            FusionInstance f = state.conveyorLeft[i];
-            if (f == null) continue;
-            int idx = state.conveyorPathIndexLeft[i];
-            if (idx >= 0 && idx < SOCKET_COUNT) socketFusion[idx] = f;
-        }
-        for (int i = 0; i < state.conveyorRight.length; i++) {
-            FusionInstance f = state.conveyorRight[i];
-            if (f == null) continue;
-            int idx = state.conveyorPathIndexRight[i];
-            if (idx >= 0 && idx < SOCKET_COUNT) socketFusion[idx] = f;
+        for (int i = 0; i < socketFusion.length; i++) socketFusion[i] = state.conveyorSockets[i];
+        for (int i = 0; i < conveyorSockets.length; i++) socketPathIndex[i] = state.conveyorSocketPathIndex[i];
+
+        // Apply socket positions from the state path indices.
+        for (int i = 0; i < conveyorSockets.length; i++) {
+            setSocketToPathIndex(i, socketPathIndex[i], true);
         }
 
         for (int i = 0; i < conveyorSockets.length; i++) {
@@ -386,6 +383,11 @@ public final class LabGameView {
 
     public Actor getEnemyAnchor() {
         return enemyVisual;
+    }
+
+    public Actor getSocketActor(int socketId) {
+        if (socketId < 0 || socketId >= conveyorSockets.length) return null;
+        return conveyorSockets[socketId];
     }
 
     public Actor getTubeAnchor() {
@@ -476,11 +478,7 @@ public final class LabGameView {
         @Override
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
-            // Map socket index to controller slot (left side uses 0..2, right side uses 0..2).
-            // To keep prototype playable, use all 12 sockets as valid indices by spreading across slots.
-            boolean leftSide = socketIndex < 6;
-            int slot = Math.min(2, socketIndex % 3);
-            controller.requestDeployFusionFromGrid(from.col, from.row, leftSide, slot);
+            controller.requestDeployFusionToSocket(from.col, from.row, socketIndex);
         }
     }
 }

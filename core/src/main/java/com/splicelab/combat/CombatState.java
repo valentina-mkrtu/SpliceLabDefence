@@ -12,15 +12,13 @@ public final class CombatState {
     public int tubeHp;
     public float tubeCooldownRemaining;
     public int tubeCharges;
+    public int tubeMaxCharges;
     public CombatResult result = CombatResult.PAUSED;
 
     public final IngredientInstance[][] grid = new IngredientInstance[AppConstants.GRID_COLS][AppConstants.GRID_ROWS];
 
-    public final FusionInstance[] conveyorLeft;
-    public final FusionInstance[] conveyorRight;
-
-    public final int[] conveyorPathIndexLeft;
-    public final int[] conveyorPathIndexRight;
+    public final FusionInstance[] conveyorSockets;
+    public final int[] conveyorSocketPathIndex;
 
     public float conveyorStepCooldownRemaining;
 
@@ -29,20 +27,17 @@ public final class CombatState {
     public float enemySpawnCooldownRemaining;
     public float enemyAttackCooldownRemaining;
 
-    public final float[] fusionAttackCooldownLeft;
-    public final float[] fusionAttackCooldownRight;
+    public final float[] fusionAttackCooldownSockets;
 
     public CombatState(int slotsPerSide) {
-        conveyorLeft = new FusionInstance[slotsPerSide];
-        conveyorRight = new FusionInstance[slotsPerSide];
-        fusionAttackCooldownLeft = new float[slotsPerSide];
-        fusionAttackCooldownRight = new float[slotsPerSide];
-
-        conveyorPathIndexLeft = new int[slotsPerSide];
-        conveyorPathIndexRight = new int[slotsPerSide];
-        for (int i = 0; i < slotsPerSide; i++) {
-            conveyorPathIndexLeft[i] = -1;
-            conveyorPathIndexRight[i] = -1;
+        // Real 12-socket conveyor.
+        int sockets = 12;
+        conveyorSockets = new FusionInstance[sockets];
+        conveyorSocketPathIndex = new int[sockets];
+        fusionAttackCooldownSockets = new float[sockets];
+        for (int i = 0; i < sockets; i++) {
+            conveyorSocketPathIndex[i] = i;
+            fusionAttackCooldownSockets[i] = 0f;
         }
     }
 }

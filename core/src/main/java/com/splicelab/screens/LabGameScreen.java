@@ -48,8 +48,8 @@ public final class LabGameScreen extends BaseScreen {
 
             @Override
             public void onFusionAttack(boolean leftSide, int slotIndex, int damage, boolean special) {
-                // Projectiles originate from the attack-zone socket anchor.
-                var from = view.getConveyorAnchor(com.splicelab.combat.CombatTuning.ATTACK_ZONE_INDEX);
+                // Projectiles originate from the attacking socket's current position.
+                var from = view.getSocketActor(slotIndex);
                 var to = view.getEnemyAnchor();
                 if (from != null && to != null) view.spawnProjectile(from, to, special ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.CYAN, null);
                 if (special && from != null) view.floatTextNear(from, "SPECIAL!", com.badlogic.gdx.graphics.Color.GOLD);
@@ -73,7 +73,7 @@ public final class LabGameScreen extends BaseScreen {
 
             @Override
             public void onFusionDamaged(boolean leftSide, int slotIndex, int damage) {
-                var anchor = view.getConveyorSlotAnchor(leftSide, slotIndex);
+                var anchor = view.getSocketActor(slotIndex);
                 if (anchor != null) {
                     view.floatTextNear(anchor, "-" + damage, com.badlogic.gdx.graphics.Color.SCARLET);
                     view.spawnProjectile(view.getEnemyAnchor(), anchor, com.badlogic.gdx.graphics.Color.GRAY, null);
@@ -82,7 +82,7 @@ public final class LabGameScreen extends BaseScreen {
 
             @Override
             public void onFusionDestroyed(boolean leftSide, int slotIndex) {
-                var anchor = view.getConveyorSlotAnchor(leftSide, slotIndex);
+                var anchor = view.getSocketActor(slotIndex);
                 if (anchor != null) {
                     view.floatTextNear(anchor, "KO", com.badlogic.gdx.graphics.Color.SCARLET);
                 }
