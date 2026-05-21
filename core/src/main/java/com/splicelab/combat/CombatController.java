@@ -142,8 +142,7 @@ public final class CombatController {
         }
 
         updateConveyorPhase(delta);
-
-        updateConveyorMovement(delta);
+        // Conveyor sockets are visual belt pockets; they don't advance occupancy.
 
         updateFusionAutoAttack(delta);
         updateEnemyAttack(delta);
@@ -156,33 +155,7 @@ public final class CombatController {
     }
 
     private void updateConveyorMovement(float delta) {
-        state.conveyorStepCooldownRemaining = Math.max(0f, state.conveyorStepCooldownRemaining - delta);
-        if (state.conveyorStepCooldownRemaining > 0f) return;
-        state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
-
-        int pathLen = feedback == null ? 0 : feedback.getConveyorPathLength();
-        if (pathLen <= 1) return;
-
-        stepConveyorSockets(pathLen);
-    }
-
-    private void stepConveyorSockets(int pathLen) {
-        boolean[] occupied = new boolean[pathLen];
-        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-            if (state.conveyorSockets[socketId] == null) continue;
-            int idx = state.conveyorSocketPathIndex[socketId];
-            if (idx >= 0 && idx < pathLen) occupied[idx] = true;
-        }
-
-        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-            if (state.conveyorSockets[socketId] == null) continue;
-            int cur = state.conveyorSocketPathIndex[socketId];
-            int next = (cur + 1) % pathLen;
-            if (occupied[next]) continue;
-            occupied[cur] = false;
-            occupied[next] = true;
-            state.conveyorSocketPathIndex[socketId] = next;
-        }
+        // Intentionally left blank: sockets stay in their assigned pocket.
     }
 
     public CommandResult requestTubeSpawn() {
@@ -445,11 +418,22 @@ public final class CombatController {
         }
     }
 
+    private boolean isSocketAtAttackCheckpoint(int socketId) {
+        int pathLen = feedback == null ? 0 : feedback.getConveyorPathLength();
+        if (pathLen <= 0) return false;
+
+        float phase = state.conveyorBeltPhase;
+        float idxF = (phase * pathLen) % pathLen;
+        int beltIndex = ((int) Math.floor(idxF)) % pathLen;
+        int socketIndex = ((socketId % pathLen) + pathLen) % pathLen;
+        int checkpointIndex = ((CombatTuning.ATTACK_ZONE_INDEX % pathLen) + pathLen) % pathLen;
+        return ((socketIndex + beltIndex) % pathLen) == checkpointIndex;
+    }
+
     private void attackEnemyFromFusionSocket(int socketId, FusionInstance fusion) {
         if (state.activeEnemy == null) return;
 
-        int pathIndex = state.conveyorSocketPathIndex[socketId];
-        if (pathIndex != ATTACK_ZONE_INDEX) return;
+        if (!isSocketAtAttackCheckpoint(socketId)) return;
         CombatLog.d("fusion at attack zone socket=" + socketId);
 
         int base = Math.max(0, fusion.stats.atk());

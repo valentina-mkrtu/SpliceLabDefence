@@ -186,7 +186,7 @@ public final class LabGameView {
         // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();
         beltLayer.setFillParent(true);
-        beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.childrenOnly);
         root.addActor(beltLayer);
 
         // Conveyor loop background image from design export.
@@ -229,6 +229,10 @@ public final class LabGameView {
     public void update(float delta) {
         beltPhase += delta / Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
         if (beltPhase >= 1f) beltPhase -= (float) Math.floor(beltPhase);
+
+        // Keep sockets moving even before the first state sync.
+        layoutConveyorPath();
+        layoutConveyorPathForPhase(beltPhase);
     }
 
     private Table makePathAnchor() {
@@ -240,8 +244,10 @@ public final class LabGameView {
 
     private Table makeSocket(int index) {
         Table t = new Table();
-        t.setSize(44, 44);
+        // Make the drop target larger so it's easy to hit.
+        t.setSize(46, 46);
         t.setBackground((Drawable) null);
+        t.setVisible(false);
         return t;
     }
 
@@ -447,17 +453,10 @@ public final class LabGameView {
         for (int i = 0; i < conveyorSockets.length; i++) {
             conveyorSockets[i].clearChildren();
             if (socketFusion[i] == null) {
-                conveyorSockets[i].setBackground((Drawable) null);
-                SlotGuideActor guide = new SlotGuideActor(new TextureRegion(beltLoopLineTexture));
-                guide.setSize(12.8f, 3.2f);
-                guide.setPosition(
-                        (conveyorSockets[i].getWidth() - guide.getWidth()) / 2f,
-                        (conveyorSockets[i].getHeight() - guide.getHeight()) / 2f
-                );
-                guide.setRotation(getPathDirectionDegrees(socketPathIndex[i]));
-                guide.setColor(0.25f, 0.9f, 1f, 0.92f);
-                conveyorSockets[i].addActor(guide);
+                conveyorSockets[i].setVisible(true);
+                conveyorSockets[i].setBackground(skin.newDrawable("white", new Color(0.05f, 0.06f, 0.08f, 0.12f)));
             } else {
+                conveyorSockets[i].setVisible(true);
                 conveyorSockets[i].setBackground(skin.newDrawable("white", new Color(0.05f, 0.06f, 0.08f, 0.55f)));
                 Label lbl = ui.label("F\n" + socketFusion[i].displayName);
                 lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
