@@ -1,6 +1,9 @@
 package com.splicelab.ui.screens;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -11,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
 import com.splicelab.assets.PlaceholderSkinFactory;
@@ -30,6 +34,15 @@ import com.splicelab.ui.widgets.LevelTimerWidget;
 import com.splicelab.ui.widgets.TubeWidget;
 
 public final class LabGameView {
+    private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
+    private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
+    // Centerline of the dark belt lane (kept away from yellow frame).
+    private static final float BELT_TRACK_INSET_X_RATIO = 0.12f;
+    private static final float BELT_TRACK_INSET_Y_RATIO = 0.078f;
+    private static final float BELT_TRACK_CORNER_RADIUS_RATIO = 0.1f;
+    // Positive value shifts the whole belt-line segment upward.
+    private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.012f;
+
     private final GameContext context;
     private final Skin skin;
     private final UiFactory ui;
@@ -41,6 +54,7 @@ public final class LabGameView {
     private static final int SOCKET_COUNT = 12;
     private final Table[] conveyorSockets;
     private final int[] socketPathIndex;
+    private final float[] pathDirectionDegrees;
     private final FusionInstance[] socketFusion;
     private final LevelTimerWidget timer;
 
@@ -59,6 +73,9 @@ public final class LabGameView {
 
     private final Table beltLayer;
     private final Table beltLoop;
+    private final Texture beltLoopBaseTexture;
+    private final Texture beltLoopLineTexture;
+    private final MovingBeltLineActor beltLoopLineActor;
     private final Table[] pathAnchors;
 
     public LabGameView(GameContext context) {
@@ -138,10 +155,16 @@ public final class LabGameView {
         beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
         root.addActor(beltLayer);
 
-        // Visible placeholder conveyor loop.
+        // Conveyor loop background image from design export.
         beltLoop = new Table();
         beltLoop.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        beltLoopBaseTexture = new Texture(CONVEYOR_LOOP_BASE_TEXTURE_PATH);
+        beltLoopLineTexture = new Texture(CONVEYOR_LOOP_LINE_TEXTURE_PATH);
+        beltLoop.setBackground(new TextureRegionDrawable(new TextureRegion(beltLoopBaseTexture)));
         beltLayer.addActor(beltLoop);
+        beltLoopLineActor = new MovingBeltLineActor(new TextureRegion(beltLoopLineTexture));
+        beltLoopLineActor.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        beltLayer.addActor(beltLoopLineActor);
 
         pathAnchors = new Table[SOCKET_COUNT];
         for (int i = 0; i < pathAnchors.length; i++) {
@@ -151,6 +174,7 @@ public final class LabGameView {
 
         conveyorSockets = new Table[SOCKET_COUNT];
         socketPathIndex = new int[SOCKET_COUNT];
+        pathDirectionDegrees = new float[SOCKET_COUNT];
         socketFusion = new FusionInstance[SOCKET_COUNT];
         for (int i = 0; i < SOCKET_COUNT; i++) {
             conveyorSockets[i] = makeSocket(i);
@@ -178,10 +202,7 @@ public final class LabGameView {
     private Table makeSocket(int index) {
         Table t = new Table();
         t.setSize(44, 44);
-        t.setBackground(skin.newDrawable("white", new Color(0.16f, 0.17f, 0.2f, 0.95f)));
-        Label lbl = ui.label(String.valueOf(index));
-        lbl.setColor(new Color(1f, 1f, 1f, 0.65f));
-        t.add(lbl);
+        t.setBackground((Drawable) null);
         return t;
     }
 
@@ -197,36 +218,35 @@ public final class LabGameView {
 
         float topY = combatTopY;
         float bottomY = combatBottomY;
-        float midY = (topY + bottomY) / 2f;
-        float midX = (leftX + rightX) / 2f;
-
-        Vector2[] pts = new Vector2[]{
-                // top row (L -> C -> R)
-                new Vector2(leftX, topY),
-                new Vector2(midX, topY),
-                new Vector2(rightX, topY),
-                // right side (T -> M -> B)
-                new Vector2(rightX, (topY + midY) / 2f),
-                new Vector2(rightX, midY),
-                new Vector2(rightX, (midY + bottomY) / 2f),
-                // bottom row (R -> C -> L)
-                new Vector2(rightX, bottomY),
-                new Vector2(midX, bottomY),
-                new Vector2(leftX, bottomY),
-                // left side (B -> M -> T)
-                new Vector2(leftX, (midY + bottomY) / 2f),
-                new Vector2(leftX, midY),
-                new Vector2(leftX, (topY + midY) / 2f)
-        };
 
         // Visible belt loop background around the points.
         float loopPad = 50f;
-        beltLoop.setSize((rightX - leftX) + loopPad * 2f, (topY - bottomY) + loopPad * 2f);
-        beltLoop.setPosition(leftX - loopPad, bottomY - loopPad);
-        beltLoop.setBackground(makeLoopDrawable());
+        float rawLoopWidth = (rightX - leftX) + loopPad * 2f;
+        float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
+        float rawLoopX = leftX - loopPad;
+        float rawLoopY = bottomY - loopPad;
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
+        float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
+        beltLoop.setSize(loopSize, loopSize);
+        beltLoop.setPosition(loopX, loopY);
+        beltLoopLineActor.setBounds(loopX, loopY, loopSize, loopSize);
 
-        for (int i = 0; i < pts.length; i++) {
-            pathAnchors[i].setPosition(pts[i].x, pts[i].y);
+        // Keep sockets on the visual belt track centerline.
+        float trackLeft = loopX + loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackRight = loopX + loopSize - loopSize * BELT_TRACK_INSET_X_RATIO;
+        float trackOffsetY = loopSize * BELT_TRACK_VERTICAL_OFFSET_RATIO;
+        float trackBottom = loopY + loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackTop = loopY + loopSize - loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackCornerRadius = Math.min(trackRight - trackLeft, trackTop - trackBottom) * BELT_TRACK_CORNER_RADIUS_RATIO;
+        float perimeter = roundedTrackPerimeter(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
+        // Start half-way through the top-left corner arc so the first slot sits on the diagonal guide.
+        float startOffset = (float) (trackCornerRadius * Math.PI / 4f);
+        for (int i = 0; i < pathAnchors.length; i++) {
+            float d = (startOffset + perimeter * (i / (float) SOCKET_COUNT)) % perimeter;
+            PathSample sample = sampleRoundedTrack(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius, d);
+            pathAnchors[i].setPosition(sample.x(), sample.y());
+            pathDirectionDegrees[i] = sample.directionDeg();
         }
 
         // Place sockets at their current path indices.
@@ -248,11 +268,6 @@ public final class LabGameView {
         }
     }
 
-    private Drawable makeLoopDrawable() {
-        // Dark belt with slightly lighter inner to suggest a track.
-        return skin.newDrawable("white", new Color(0.08f, 0.09f, 0.11f, 0.85f));
-    }
-
     private void positionAttackZoneMarker() {
         Actor anchor = getConveyorAnchor(4);
         if (anchor == null) return;
@@ -260,8 +275,18 @@ public final class LabGameView {
         attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
     }
 
+    private float getPathDirectionDegrees(int pathIndex) {
+        if (pathIndex < 0 || pathIndex >= pathDirectionDegrees.length) return 0f;
+        return pathDirectionDegrees[pathIndex];
+    }
+
     public Actor getRoot() {
         return root;
+    }
+
+    public void dispose() {
+        beltLoopLineTexture.dispose();
+        beltLoopBaseTexture.dispose();
     }
 
     public void setOnTubeTapped(Runnable onTubeTapped) {
@@ -321,11 +346,24 @@ public final class LabGameView {
 
         for (int i = 0; i < conveyorSockets.length; i++) {
             conveyorSockets[i].clearChildren();
-            String label = socketFusion[i] == null ? String.valueOf(i) : ("F\n" + socketFusion[i].displayName);
-            Label lbl = ui.label(label);
-            lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
-            lbl.setColor(new Color(1f, 1f, 1f, socketFusion[i] == null ? 0.65f : 1f));
-            conveyorSockets[i].add(lbl).grow();
+            if (socketFusion[i] == null) {
+                conveyorSockets[i].setBackground((Drawable) null);
+                SlotGuideActor guide = new SlotGuideActor(new TextureRegion(beltLoopLineTexture));
+                guide.setSize(12.8f, 3.2f);
+                guide.setPosition(
+                        (conveyorSockets[i].getWidth() - guide.getWidth()) / 2f,
+                        (conveyorSockets[i].getHeight() - guide.getHeight()) / 2f
+                );
+                guide.setRotation(getPathDirectionDegrees(socketPathIndex[i]));
+                guide.setColor(0.25f, 0.9f, 1f, 0.92f);
+                conveyorSockets[i].addActor(guide);
+            } else {
+                conveyorSockets[i].setBackground(skin.newDrawable("white", new Color(0.05f, 0.06f, 0.08f, 0.55f)));
+                Label lbl = ui.label("F\n" + socketFusion[i].displayName);
+                lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
+                lbl.setColor(Color.WHITE);
+                conveyorSockets[i].add(lbl).grow();
+            }
         }
 
         if (state.activeEnemy == null) {
@@ -423,6 +461,212 @@ public final class LabGameView {
         return inst.kind().name();
     }
 
+    private static final class MovingBeltLineActor extends Actor {
+        private static final int PIECE_COUNT = SOCKET_COUNT;
+        private static final float LOOP_SECONDS = 5.6f;
+        private static final float PIECE_SCALE = 0.464f;
+
+        private final TextureRegion lineRegion;
+        private float progress;
+
+        private MovingBeltLineActor(TextureRegion lineRegion) {
+            this.lineRegion = lineRegion;
+        }
+
+        @Override
+        public void act(float delta) {
+            super.act(delta);
+            if (LOOP_SECONDS <= 0f) return;
+            progress += delta / LOOP_SECONDS;
+            if (progress >= 1f) progress -= (float) Math.floor(progress);
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            if (!isVisible() || getWidth() <= 0f || getHeight() <= 0f) return;
+
+            float oldR = batch.getColor().r;
+            float oldG = batch.getColor().g;
+            float oldB = batch.getColor().b;
+            float oldA = batch.getColor().a;
+            Color c = getColor();
+            batch.setColor(c.r, c.g, c.b, c.a * parentAlpha);
+
+            float x = getX();
+            float y = getY();
+            float width = getWidth();
+            float height = getHeight();
+
+            float insetX = width * BELT_TRACK_INSET_X_RATIO;
+            float insetY = height * BELT_TRACK_INSET_Y_RATIO;
+            float offsetY = height * BELT_TRACK_VERTICAL_OFFSET_RATIO;
+            float left = x + insetX;
+            float right = x + width - insetX;
+            float bottom = y + insetY + offsetY;
+            float top = y + height - insetY + offsetY;
+
+            float scaleX = width / 317f;
+            float scaleY = height / 313f;
+            float uniformScale = Math.min(scaleX, scaleY) * PIECE_SCALE;
+            float markerW = lineRegion.getRegionWidth() * uniformScale;
+            float markerH = lineRegion.getRegionHeight() * uniformScale;
+
+            // Keep piece centerline and corner turns inside the yellow border.
+            float sideMargin = markerH * 0.55f;
+            left += sideMargin;
+            right -= sideMargin;
+            bottom += sideMargin;
+            top -= sideMargin;
+            float cornerRadius = Math.min(right - left, top - bottom) * BELT_TRACK_CORNER_RADIUS_RATIO;
+            float perimeter = roundedTrackPerimeter(left, right, bottom, top, cornerRadius);
+            float startOffset = (float) (cornerRadius * Math.PI / 4f);
+
+            for (int i = 0; i < PIECE_COUNT; i++) {
+                float d = (startOffset + ((progress + (i / (float) PIECE_COUNT)) % 1f) * perimeter) % perimeter;
+                PathSample sample = sampleRoundedTrack(left, right, bottom, top, cornerRadius, d);
+                float drawX = sample.x() - markerW * 0.5f;
+                float drawY = sample.y() - markerH * 0.5f;
+                batch.draw(
+                        lineRegion,
+                        drawX,
+                        drawY,
+                        markerW * 0.5f,
+                        markerH * 0.5f,
+                        markerW,
+                        markerH,
+                        1f,
+                        1f,
+                        sample.directionDeg()
+                );
+            }
+
+            batch.setColor(oldR, oldG, oldB, oldA);
+        }
+    }
+
+    private static float roundedTrackPerimeter(float left, float right, float bottom, float top, float radius) {
+        float w = Math.max(1f, right - left);
+        float h = Math.max(1f, top - bottom);
+        float r = Math.max(1f, Math.min(radius, Math.min(w, h) * 0.49f));
+        float horizontal = Math.max(1f, w - 2f * r);
+        float vertical = Math.max(1f, h - 2f * r);
+        return horizontal * 2f + vertical * 2f + (float) (Math.PI * 2f * r);
+    }
+
+    private static PathSample sampleRoundedTrack(float left, float right, float bottom, float top, float radius, float distance) {
+        float w = Math.max(1f, right - left);
+        float h = Math.max(1f, top - bottom);
+        float r = Math.max(1f, Math.min(radius, Math.min(w, h) * 0.49f));
+        float horizontal = Math.max(1f, w - 2f * r);
+        float vertical = Math.max(1f, h - 2f * r);
+        float arc = (float) (Math.PI * 0.5f * r);
+        float perimeter = horizontal * 2f + vertical * 2f + arc * 4f;
+        float d = ((distance % perimeter) + perimeter) % perimeter;
+
+        float cx;
+        float cy;
+        float dir;
+
+        if (d < horizontal) {
+            cx = left + r + d;
+            cy = top;
+            dir = 0f;
+            return new PathSample(cx, cy, dir);
+        }
+        d -= horizontal;
+
+        if (d < arc) {
+            float a = (float) (Math.PI * 0.5f) - (d / r);
+            cx = (right - r) + (float) Math.cos(a) * r;
+            cy = (top - r) + (float) Math.sin(a) * r;
+            dir = (float) Math.toDegrees(a - Math.PI * 0.5f);
+            return new PathSample(cx, cy, dir);
+        }
+        d -= arc;
+
+        if (d < vertical) {
+            cx = right;
+            cy = top - r - d;
+            dir = -90f;
+            return new PathSample(cx, cy, dir);
+        }
+        d -= vertical;
+
+        if (d < arc) {
+            float a = -(d / r);
+            cx = (right - r) + (float) Math.cos(a) * r;
+            cy = (bottom + r) + (float) Math.sin(a) * r;
+            dir = (float) Math.toDegrees(a - Math.PI * 0.5f);
+            return new PathSample(cx, cy, dir);
+        }
+        d -= arc;
+
+        if (d < horizontal) {
+            cx = right - r - d;
+            cy = bottom;
+            dir = 180f;
+            return new PathSample(cx, cy, dir);
+        }
+        d -= horizontal;
+
+        if (d < arc) {
+            float a = (float) (-Math.PI * 0.5f - (d / r));
+            cx = (left + r) + (float) Math.cos(a) * r;
+            cy = (bottom + r) + (float) Math.sin(a) * r;
+            dir = (float) Math.toDegrees(a - Math.PI * 0.5f);
+            return new PathSample(cx, cy, dir);
+        }
+        d -= arc;
+
+        if (d < vertical) {
+            cx = left;
+            cy = bottom + r + d;
+            dir = 90f;
+            return new PathSample(cx, cy, dir);
+        }
+        d -= vertical;
+
+        float a = (float) (Math.PI - (d / r));
+        cx = (left + r) + (float) Math.cos(a) * r;
+        cy = (top - r) + (float) Math.sin(a) * r;
+        dir = (float) Math.toDegrees(a - Math.PI * 0.5f);
+        return new PathSample(cx, cy, dir);
+    }
+
+    private record PathSample(float x, float y, float directionDeg) {
+    }
+
+    private static final class SlotGuideActor extends Actor {
+        private final TextureRegion lineRegion;
+
+        private SlotGuideActor(TextureRegion lineRegion) {
+            this.lineRegion = lineRegion;
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            Color c = getColor();
+            float oldR = batch.getColor().r;
+            float oldG = batch.getColor().g;
+            float oldB = batch.getColor().b;
+            float oldA = batch.getColor().a;
+            batch.setColor(c.r, c.g, c.b, c.a * parentAlpha);
+            batch.draw(
+                    lineRegion,
+                    getX(),
+                    getY(),
+                    getWidth() / 2f,
+                    getHeight() / 2f,
+                    getWidth(),
+                    getHeight(),
+                    1f,
+                    1f,
+                    getRotation()
+            );
+            batch.setColor(oldR, oldG, oldB, oldA);
+        }
+    }
+
     private final class GridCellSource extends DragAndDrop.Source {
         private final GridCellWidget cell;
 
@@ -484,4 +728,5 @@ public final class LabGameView {
             controller.requestDeployFusionToSocket(from.col, from.row, socketIndex);
         }
     }
+
 }
