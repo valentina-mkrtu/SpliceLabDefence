@@ -38,11 +38,11 @@ public final class LabGameView {
     private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
     private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
     // Centerline of the dark belt lane (kept away from yellow frame).
-    private static final float BELT_TRACK_INSET_X_RATIO = 0.12f;
+    private static final float BELT_TRACK_INSET_X_RATIO = 0.1f;
     private static final float BELT_TRACK_INSET_Y_RATIO = 0.078f;
-    private static final float BELT_TRACK_CORNER_RADIUS_RATIO = 0.1f;
+    private static final float BELT_TRACK_CORNER_RADIUS_RATIO = 0.17f;
     // Positive value shifts the whole belt-line segment upward.
-    private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.012f;
+    private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.01f;
 
     private final GameContext context;
     private final Skin skin;
@@ -83,8 +83,11 @@ public final class LabGameView {
 
     private final Table background;
 
-    private static final float FUSION_FRAME_W = 339f;
-    private static final float FUSION_FRAME_H = 344f;
+    private static final float FUSION_FRAME_NATIVE_W = 339f;
+    private static final float FUSION_FRAME_NATIVE_H = 344f;
+    private static final float FUSION_FRAME_SCALE = 1.3167f;
+    private static final float FUSION_FRAME_W = FUSION_FRAME_NATIVE_W * FUSION_FRAME_SCALE;
+    private static final float FUSION_FRAME_H = FUSION_FRAME_NATIVE_H * FUSION_FRAME_SCALE;
 
     private final Table gridPanel;
 
@@ -145,18 +148,14 @@ public final class LabGameView {
         conveyor.add(enemyPanel).pad(6);
 
         // Lower section: fusion station background behind the grid.
-        // Keep the background at its native size (339x344) so it doesn't stretch.
+        // Scale the frame up uniformly to better align with top section composition.
         gridPanel = new Table();
         var gridBg = PlaceholderSkinFactory.getDrawableIfPresent(skin, "fusion_station_bg");
         if (gridBg != null) {
             gridPanel.setBackground(gridBg);
-            // Keep the frame at the PNG's native size (no stretching).
+            // Keep aspect ratio while scaling.
             gridPanel.setSize(FUSION_FRAME_W, FUSION_FRAME_H);
         }
-        gridPanel.add(ui.label("Lab Grid"))
-                .colspan(AppConstants.GRID_COLS)
-                .pad(6)
-                .row();
         Table grid = new Table();
         for (int r = AppConstants.GRID_ROWS - 1; r >= 0; r--) {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
@@ -179,8 +178,8 @@ public final class LabGameView {
         // Center the grid inside the fixed frame.
         gridPanel.add(grid).pad(40);
 
-        root.add(top).growX().height(60).pad(UiConstants.PAD + 2).row();
-        root.add(conveyor).growX().height(360).pad(UiConstants.PAD + 2).row();
+        root.add(top).growX().height(60).row();
+        root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).row();
         // Don't stretch the fusion station frame; center it at native size.
         root.add(gridPanel).pad(UiConstants.PAD + 2).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
 
@@ -249,10 +248,10 @@ public final class LabGameView {
     private void layoutConveyorPath() {
         // Fixed 12-point loop in beltLayer coordinates.
         // Keep it stable: do not depend on child actor layout/initialization.
-        float margin = 70f;
-        // Lower the whole loop a bit for readability.
-        float combatTopY = root.getHeight() - 150f;
-        float combatBottomY = root.getHeight() - 430f;
+        float margin = 52f;
+        // Make the conveyor segment a bit larger.
+        float combatTopY = root.getHeight() - 89f;
+        float combatBottomY = root.getHeight() - 439f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
