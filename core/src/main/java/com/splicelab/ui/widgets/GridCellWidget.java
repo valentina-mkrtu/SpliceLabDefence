@@ -29,5 +29,8 @@ public final class GridCellWidget extends Group {
     public void setLabel(String label) {
         text.setText(label == null ? "" : label);
     }
-}
 
+    public String getLabelText() {
+        return text.getText().toString();
+    }
+}

@@ -14,7 +14,7 @@ public final class GameConfigXmlParser {
         int maxRight = getInt(root, "conveyor/maxRightSlots@value", fallback.maxConveyorSlotsPerSide, report);
         int maxSide = Math.max(maxLeft, maxRight);
         report.info("game_config.xml", "Loaded config: maxLeftSlots=" + maxLeft + ", maxRightSlots=" + maxRight);
-        return new GameConfig(fallback.saveSchemaVersion, maxSide);
+        return new GameConfig(fallback.saveSchemaVersion, maxSide, fallback.tubeCooldownSeconds, fallback.maxTubeCharges);
     }
 
     private static int getInt(XmlReader.Element root, String path, int fallback, DataValidationReport report) {

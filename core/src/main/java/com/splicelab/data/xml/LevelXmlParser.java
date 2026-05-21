@@ -30,6 +30,8 @@ public final class LevelXmlParser {
             }
 
             float duration = parseFloat(levelEl, "durationSeconds", 180f, report, "levels.xml", "level " + number);
+            float tubeCooldownSeconds = parseFloat(levelEl, "tubeCooldownSeconds", -1f, report, "levels.xml", "level " + number);
+            int maxTubeCharges = parseInt(levelEl, "maxTubeCharges", -1, report, "levels.xml", "level " + number);
             float hpMult = parseFloat(levelEl, "enemyHpMultiplier", 1f, report, "levels.xml", "level " + number);
             float atkMult = parseFloat(levelEl, "enemyAtkMultiplier", 1f, report, "levels.xml", "level " + number);
             float spawnInterval = parseFloat(levelEl, "enemySpawnIntervalSeconds", 2.2f, report, "levels.xml", "level " + number);
@@ -43,17 +45,21 @@ public final class LevelXmlParser {
 
             List<EntityType> entities = parseAllowedEntities(levelEl, report, number);
             List<ItemType> items = parseAllowedItems(levelEl, report, number);
-            List<EnemyType> enemyPool = parseEnemyPool(levelEl, report, number);
+            List<LevelDefinition.EnemySpawnEntry> enemyPool = parseEnemyPool(levelEl, report, number);
 
             XmlReader.Element rewardsEl = levelEl.getChildByName("rewards");
             int winCoins = rewardsEl == null ? parseInt(levelEl, "baseCoins", 0, report, "levels.xml", "level " + number) : parseInt(rewardsEl, "winCoins", 0, report, "levels.xml", "level " + number);
             int winDna = rewardsEl == null ? parseInt(levelEl, "baseDna", 0, report, "levels.xml", "level " + number) : parseInt(rewardsEl, "winDna", 0, report, "levels.xml", "level " + number);
-            LevelRewardDefinition rewards = new LevelRewardDefinition(winCoins, winDna);
+            int firstBonusCoins = rewardsEl == null ? 0 : parseInt(rewardsEl, "firstWinBonusCoins", 0, report, "levels.xml", "level " + number);
+            int firstBonusDna = rewardsEl == null ? 0 : parseInt(rewardsEl, "firstWinBonusDna", 0, report, "levels.xml", "level " + number);
+            LevelRewardDefinition rewards = new LevelRewardDefinition(winCoins, winDna, firstBonusCoins, firstBonusDna);
 
             LevelDefinition def = new LevelDefinition(
                     number,
                     duration,
                     tubeHp,
+                    tubeCooldownSeconds,
+                    maxTubeCharges,
                     unlockedLeft,
                     unlockedRight,
                     entities,
@@ -107,8 +113,8 @@ public final class LevelXmlParser {
         return list;
     }
 
-    private static List<EnemyType> parseEnemyPool(XmlReader.Element levelEl, DataValidationReport report, int number) {
-        List<EnemyType> list = new ArrayList<>();
+    private static List<LevelDefinition.EnemySpawnEntry> parseEnemyPool(XmlReader.Element levelEl, DataValidationReport report, int number) {
+        List<LevelDefinition.EnemySpawnEntry> list = new ArrayList<>();
         XmlReader.Element pool = levelEl.getChildByName("enemyPool");
         if (pool == null) return list;
         for (int i = 0; i < pool.getChildCount(); i++) {
@@ -118,7 +124,17 @@ public final class LevelXmlParser {
             if (type == null) {
                 report.warn("levels.xml", "Level " + number + " has invalid enemy id");
             } else {
-                list.add(type);
+                float weight = 1f;
+                String wRaw = e.getAttribute("weight", "");
+                if (wRaw != null && !wRaw.isBlank()) {
+                    try {
+                        weight = Float.parseFloat(wRaw.trim());
+                    } catch (Exception ex) {
+                        report.warn("levels.xml", "Level " + number + " has invalid enemy weight: " + wRaw);
+                        weight = 1f;
+                    }
+                }
+                list.add(new LevelDefinition.EnemySpawnEntry(type, weight));
             }
         }
         return list;
