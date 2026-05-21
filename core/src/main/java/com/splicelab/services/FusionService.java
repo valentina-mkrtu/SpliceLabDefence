@@ -11,6 +11,7 @@ import com.splicelab.model.ingredient.FusionDefinition;
 import com.splicelab.model.ingredient.FusionInstance;
 import com.splicelab.model.ingredient.ItemDefinition;
 import com.splicelab.model.stats.CombatStats;
+import com.splicelab.combat.CombatTuning;
 
 import java.util.Optional;
 
@@ -47,7 +48,8 @@ public final class FusionService {
         float specialChance = clamp01(base.specialChance() + item.specialChanceBonus);
         float variance = clamp(base.variance() + item.varianceModifier, 0f, 2f);
 
-        CombatStats finalStats = new CombatStats(maxHp, atk, base.attackIntervalSeconds(), specialChance, variance);
+        float interval = Math.max(CombatTuning.MIN_ATTACK_INTERVAL_SECONDS, base.attackIntervalSeconds());
+        CombatStats finalStats = new CombatStats(maxHp, atk, interval, specialChance, variance);
         AttackElement element = item.attackElement == null ? e.get().defaultAttackElement : item.attackElement;
 
         return Optional.of(new FusionInstance(
@@ -68,4 +70,3 @@ public final class FusionService {
         return Math.max(min, Math.min(max, v));
     }
 }
-

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <levels version="1">
-    <level number="1" day="1" durationSeconds="165"
+    <level number="1" day="1" durationSeconds="165" maxTubeCharges="8" tubeCooldownSeconds="15.0"
            enemyHpMultiplier="1.00" enemyAtkMultiplier="1.00" enemySpawnIntervalSeconds="7.50"
            baseCoins="40" baseDna="2"
            storyKey="LEVEL_1_STORY" objectiveKey="LEVEL_1_OBJECTIVE">

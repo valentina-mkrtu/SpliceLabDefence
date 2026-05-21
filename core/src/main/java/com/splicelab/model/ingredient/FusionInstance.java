@@ -14,6 +14,9 @@ public final class FusionInstance implements IngredientInstance {
     public final AttackElement attackElement;
     public final String displayName;
 
+    public final int maxHp;
+    public int hp;
+
     public FusionInstance(
             String instanceId,
             EntityType entityType,
@@ -28,6 +31,9 @@ public final class FusionInstance implements IngredientInstance {
         this.stats = stats;
         this.attackElement = attackElement;
         this.displayName = displayName == null ? "" : displayName;
+
+        this.maxHp = stats == null ? 1 : Math.max(1, stats.maxHp());
+        this.hp = this.maxHp;
     }
 
     @Override
@@ -40,4 +46,3 @@ public final class FusionInstance implements IngredientInstance {
         return IngredientKind.FUSION;
     }
 }
-
