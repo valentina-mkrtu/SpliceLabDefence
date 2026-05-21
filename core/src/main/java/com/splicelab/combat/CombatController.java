@@ -1,10 +1,12 @@
 package com.splicelab.combat;
 
-import com.badlogic.gdx.Gdx;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
 import com.splicelab.model.EntityType;
 import com.splicelab.model.ItemType;
+import com.splicelab.model.enemy.EnemyDefinition;
+import com.splicelab.model.enemy.EnemyInstance;
+import com.splicelab.model.enemy.EnemyType;
 import com.splicelab.model.ingredient.FusionInstance;
 import com.splicelab.model.ingredient.IngredientInstance;
 import com.splicelab.model.ingredient.SimpleIngredientInstance;
@@ -17,15 +19,49 @@ public final class CombatController {
     private final CombatState state;
     private int instanceCounter;
 
+    private final java.util.Random rng = new java.util.Random();
+
+    private static final int DEFAULT_TUBE_BAG_SIZE = 8;
+
+    private static final int ATTACK_ZONE_INDEX = 4;
+
+    private final java.util.ArrayDeque<com.splicelab.services.TubeSpawnService.SpawnChoice> tubeBag = new java.util.ArrayDeque<>();
+
+    public interface CombatFeedback {
+        int getConveyorPathLength();
+
+        int mapSlotToPathIndex(boolean leftSide, int slotIndex);
+
+        void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex);
+
+        void onFusionAttack(boolean leftSide, int slotIndex, int damage, boolean special);
+
+        void onEnemyDamaged(int damage, boolean special);
+
+        void onEnemyDefeated();
+
+        void onFusionDamaged(boolean leftSide, int slotIndex, int damage);
+
+        void onFusionDestroyed(boolean leftSide, int slotIndex);
+
+        void onTubeDamaged(int damage);
+    }
+
+    private CombatFeedback feedback;
+
     public CombatController(GameContext context) {
         this.context = context;
         this.state = new CombatState(context.config.maxConveyorSlotsPerSide);
     }
 
+    public void setFeedback(CombatFeedback feedback) {
+        this.feedback = feedback;
+    }
+
     public CombatState startLevel(int levelNumber) {
         LevelDefinition level = context.levels.getLevel(levelNumber).orElse(null);
         if (level == null) {
-            Gdx.app.error(AppConstants.LOG_TAG, "Missing level " + levelNumber);
+            CombatLog.d("Missing level " + levelNumber);
             state.result = CombatResult.LOSE;
             return state;
         }
@@ -35,10 +71,38 @@ public final class CombatController {
 
         state.level = level;
         state.remainingTimeSeconds = level.durationSeconds;
-        state.tubeHp = level.tubeHp;
+        state.tubeHp = level.tubeHp > 0 ? level.tubeHp : context.config.tubeMaxHp;
+
+        float cd = level.tubeCooldownSeconds <= 0f ? context.config.tubeCooldownSeconds : level.tubeCooldownSeconds;
+        int charges = level.maxTubeCharges <= 0 ? context.config.maxTubeCharges : level.maxTubeCharges;
+        charges = Math.max(1, charges);
+        cd = Math.max(0.25f, cd);
+
         state.tubeCooldownRemaining = 0f;
+        state.tubeMaxCharges = charges;
+        state.tubeCharges = charges;
+        refillTubeBagIfNeeded();
         state.activeEnemy = null;
+        state.enemySpawnCooldownRemaining = 0f;
+        state.enemyAttackCooldownRemaining = 0f;
+        state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
+        for (int i = 0; i < state.fusionAttackCooldownSockets.length; i++) state.fusionAttackCooldownSockets[i] = 0f;
+
         state.result = CombatResult.RUNNING;
+
+        context.saves.get().unlockedConveyorSlotsLeft = Math.max(context.saves.get().unlockedConveyorSlotsLeft, level.unlockedConveyorSlotsLeft);
+        context.saves.get().unlockedConveyorSlotsRight = Math.max(context.saves.get().unlockedConveyorSlotsRight, level.unlockedConveyorSlotsRight);
+        context.saves.save();
+
+        CombatLog.d("LEVEL_START level=" + level.levelNumber);
+        CombatLog.d("allowedEntities=" + level.availableEntities);
+        CombatLog.d("allowedItems=" + level.availableItems);
+        CombatLog.d("enemyPool=" + level.enemyPool);
+        CombatLog.d("tubeHp=" + level.tubeHp + " durationSeconds=" + level.durationSeconds);
+        CombatLog.d("rewards coins=" + level.rewards.coins() + " dna=" + level.rewards.dna());
+        CombatLog.d("tubeCooldownSeconds=" + cd + " maxTubeCharges=" + charges);
+
+        ensureEnemySpawned();
         return state;
     }
 
@@ -60,6 +124,57 @@ public final class CombatController {
         if (state.tubeCooldownRemaining > 0f) {
             state.tubeCooldownRemaining = Math.max(0f, state.tubeCooldownRemaining - delta);
         }
+
+        // Tube cooldown refill: cooldown only happens when empty.
+        if (state.level != null && state.tubeCharges <= 0) {
+            if (state.tubeCooldownRemaining <= 0f) {
+                state.tubeCharges = state.tubeMaxCharges;
+                refillTubeBagIfNeeded();
+            }
+        }
+
+        if (state.enemySpawnCooldownRemaining > 0f) {
+            state.enemySpawnCooldownRemaining = Math.max(0f, state.enemySpawnCooldownRemaining - delta);
+        }
+
+        if (state.activeEnemy == null) {
+            ensureEnemySpawned();
+        }
+
+        updateConveyorMovement(delta);
+
+        updateFusionAutoAttack(delta);
+        updateEnemyAttack(delta);
+    }
+
+    private void updateConveyorMovement(float delta) {
+        state.conveyorStepCooldownRemaining = Math.max(0f, state.conveyorStepCooldownRemaining - delta);
+        if (state.conveyorStepCooldownRemaining > 0f) return;
+        state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
+
+        int pathLen = feedback == null ? 0 : feedback.getConveyorPathLength();
+        if (pathLen <= 1) return;
+
+        stepConveyorSockets(pathLen);
+    }
+
+    private void stepConveyorSockets(int pathLen) {
+        boolean[] occupied = new boolean[pathLen];
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            if (state.conveyorSockets[socketId] == null) continue;
+            int idx = state.conveyorSocketPathIndex[socketId];
+            if (idx >= 0 && idx < pathLen) occupied[idx] = true;
+        }
+
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            if (state.conveyorSockets[socketId] == null) continue;
+            int cur = state.conveyorSocketPathIndex[socketId];
+            int next = (cur + 1) % pathLen;
+            if (occupied[next]) continue;
+            occupied[cur] = false;
+            occupied[next] = true;
+            state.conveyorSocketPathIndex[socketId] = next;
+        }
     }
 
     public CommandResult requestTubeSpawn() {
@@ -69,14 +184,18 @@ public final class CombatController {
         if (!com.splicelab.debug.DebugFlags.FREE_TUBE_SPAWN && state.tubeCooldownRemaining > 0f) {
             return CommandResult.fail(CommandResult.Code.TUBE_ON_COOLDOWN, "Tube on cooldown");
         }
-
-        int[] empty = findFirstEmptyNonTubeCell();
-        if (empty == null) {
-            return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
+        if (state.tubeCharges <= 0) {
+            // Start cooldown when empty.
+            if (state.tubeCooldownRemaining <= 0f) state.tubeCooldownRemaining = getTubeCooldownSeconds();
+            return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "No tube charges");
         }
 
-        var choice = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
-        if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
+        int[] empty = findRandomEmptyNonTubeCell();
+        if (empty == null) return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
+
+        refillTubeBagIfNeeded();
+        var choice = tubeBag.pollFirst();
+        if (choice == null || choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
             return CommandResult.fail(CommandResult.Code.INVALID_LEVEL, "No spawn choices");
         }
 
@@ -91,8 +210,25 @@ public final class CombatController {
         }
 
         state.grid[empty[0]][empty[1]] = instance;
-        state.tubeCooldownRemaining = 0.6f;
+        state.tubeCharges = Math.max(0, state.tubeCharges - 1);
+
+        // Cooldown only after the last spit.
+        if (state.tubeCharges <= 0) state.tubeCooldownRemaining = getTubeCooldownSeconds();
+
+        CombatLog.d("spawn ingredient type=" + choice.type() + " at=" + empty[0] + "," + empty[1]);
         return CommandResult.ok();
+    }
+
+    private float getTubeCooldownSeconds() {
+        float cd = state.level == null ? context.config.tubeCooldownSeconds : state.level.tubeCooldownSeconds;
+        if (cd <= 0f) cd = context.config.tubeCooldownSeconds;
+        return Math.max(0.25f, cd);
+    }
+
+    private void refillTubeBagIfNeeded() {
+        if (!tubeBag.isEmpty()) return;
+        int bagSize = Math.max(1, state.tubeMaxCharges > 0 ? state.tubeMaxCharges : DEFAULT_TUBE_BAG_SIZE);
+        tubeBag.addAll(context.tubeSpawnService.buildSpawnBagForLevel(state.level.levelNumber, bagSize));
     }
 
     public CommandResult requestMoveIngredient(int fromCol, int fromRow, int toCol, int toRow) {
@@ -107,6 +243,29 @@ public final class CombatController {
         state.grid[toCol][toRow] = src;
         state.grid[fromCol][fromRow] = null;
         return CommandResult.ok();
+    }
+
+    public CommandResult requestMoveOrFuse(int fromCol, int fromRow, int toCol, int toRow) {
+        if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
+        if (!isValidCell(fromCol, fromRow) || !isValidCell(toCol, toRow)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Invalid cell");
+        if (isTubeCell(toCol, toRow) || isTubeCell(fromCol, fromRow)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Tube cell");
+
+        if (fromCol == toCol && fromRow == toRow) return CommandResult.ok();
+
+        IngredientInstance src = state.grid[fromCol][fromRow];
+        if (src == null) return CommandResult.fail(CommandResult.Code.CELL_EMPTY, "Source empty");
+
+        IngredientInstance dst = state.grid[toCol][toRow];
+        if (dst == null) {
+            return requestMoveIngredient(fromCol, fromRow, toCol, toRow);
+        }
+
+        CommandResult fuse = requestFuse(fromCol, fromRow, toCol, toRow);
+        if (fuse.success) {
+            CombatLog.d("fusion created at=" + fromCol + "," + fromRow);
+            return fuse;
+        }
+        return CommandResult.fail(CommandResult.Code.CELL_OCCUPIED, "Target occupied");
     }
 
     public CommandResult requestFuse(int colA, int rowA, int colB, int rowB) {
@@ -143,23 +302,64 @@ public final class CombatController {
     }
 
     public CommandResult requestDeployFusionFromGrid(int fromCol, int fromRow, boolean leftSide, int slotIndex) {
+        // Deprecated: left/right slot deployment replaced by 12-socket deployment.
+        return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Use socket deployment");
+    }
+
+    public CommandResult requestDeployFusionToSocket(int fromCol, int fromRow, int socketId) {
         if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
         if (!isValidCell(fromCol, fromRow) || isTubeCell(fromCol, fromRow)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Invalid cell");
+        if (socketId < 0 || socketId >= state.conveyorSockets.length) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Bad socket");
+        if (state.conveyorSockets[socketId] != null) return CommandResult.fail(CommandResult.Code.SLOT_OCCUPIED, "Socket occupied");
 
         IngredientInstance src = state.grid[fromCol][fromRow];
         if (!(src instanceof FusionInstance fusion)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Not a fusion");
 
-        if (!context.unlocks.isConveyorSlotUnlocked(leftSide, slotIndex)) {
-            return CommandResult.fail(CommandResult.Code.SLOT_LOCKED, "Slot locked");
-        }
+        state.conveyorSockets[socketId] = fusion;
+        state.grid[fromCol][fromRow] = null;
+        state.fusionAttackCooldownSockets[socketId] = 0f;
+        CombatLog.d("fusion deployed socket=" + socketId);
+        return CommandResult.ok();
+    }
 
-        FusionInstance[] arr = leftSide ? state.conveyorLeft : state.conveyorRight;
-        if (slotIndex < 0 || slotIndex >= arr.length) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Bad slot");
-        if (arr[slotIndex] != null) return CommandResult.fail(CommandResult.Code.SLOT_OCCUPIED, "Slot occupied");
+    public CommandResult requestDeployFusionFromGridToSocket(int fromCol, int fromRow, int socketId) {
+        if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
+        if (!isValidCell(fromCol, fromRow) || isTubeCell(fromCol, fromRow)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Invalid cell");
+        if (socketId < 0 || socketId >= state.conveyorSockets.length) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Bad socket");
 
-        arr[slotIndex] = fusion;
+        IngredientInstance src = state.grid[fromCol][fromRow];
+        if (!(src instanceof FusionInstance fusion)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Not a fusion");
+        if (state.conveyorSockets[socketId] != null) return CommandResult.fail(CommandResult.Code.SLOT_OCCUPIED, "Socket occupied");
+
+        state.conveyorSockets[socketId] = fusion;
         state.grid[fromCol][fromRow] = null;
         return CommandResult.ok();
+    }
+
+    private boolean isPathIndexOccupied(int idx, int pathLen) {
+        if (idx < 0 || idx >= pathLen) return false;
+        for (int i = 0; i < state.conveyorSockets.length; i++) {
+            if (state.conveyorSockets[i] != null && state.conveyorSocketPathIndex[i] == idx) return true;
+        }
+        return false;
+    }
+
+    public void debugForceWin() {
+        if (state.result == CombatResult.RUNNING) state.result = CombatResult.WIN;
+    }
+
+    public void debugForceLose() {
+        if (state.result == CombatResult.RUNNING) state.result = CombatResult.LOSE;
+    }
+
+    public void debugDamageEnemy(int amount) {
+        if (state.activeEnemy == null) return;
+        state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - Math.max(1, amount));
+        if (state.activeEnemy.hp <= 0) {
+            CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
+            state.activeEnemy = null;
+            state.enemySpawnCooldownRemaining = state.level.spawnIntervalSeconds;
+        }
     }
 
     private boolean isTubeCell(int c, int r) {
@@ -170,14 +370,149 @@ public final class CombatController {
         return c >= 0 && c < AppConstants.GRID_COLS && r >= 0 && r < AppConstants.GRID_ROWS;
     }
 
-    private int[] findFirstEmptyNonTubeCell() {
+    private int[] findRandomEmptyNonTubeCell() {
+        int emptyCount = 0;
         for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 if (isTubeCell(c, r)) continue;
-                if (state.grid[c][r] == null) return new int[]{c, r};
+                if (state.grid[c][r] == null) emptyCount++;
+            }
+        }
+        if (emptyCount == 0) return null;
+
+        int pick = rng.nextInt(emptyCount);
+        for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
+            for (int c = 0; c < AppConstants.GRID_COLS; c++) {
+                if (isTubeCell(c, r)) continue;
+                if (state.grid[c][r] != null) continue;
+                if (pick == 0) return new int[]{c, r};
+                pick--;
             }
         }
         return null;
+    }
+
+    private void ensureEnemySpawned() {
+        if (state.level == null) return;
+        if (state.activeEnemy != null) return;
+        if (state.enemySpawnCooldownRemaining > 0f) return;
+        if (state.level.enemyPool.isEmpty()) return;
+
+        EnemyType chosenType = chooseWeightedEnemyType(state.level);
+        EnemyDefinition def = context.definitions.getEnemy(chosenType).orElse(null);
+        if (def == null) return;
+
+        int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier));
+        state.activeEnemy = new EnemyInstance(nextInstanceId(), chosenType, scaledHp);
+        state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
+        CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp);
+    }
+
+    private EnemyType chooseWeightedEnemyType(LevelDefinition level) {
+        float total = 0f;
+        for (var e : level.enemyPool) total += e.weight() > 0f ? e.weight() : 0f;
+        if (total <= 0f) {
+            return level.enemyPool.get(context.random.nextInt(level.enemyPool.size())).enemyType();
+        }
+        float r = context.random.nextFloat() * total;
+        float acc = 0f;
+        for (var e : level.enemyPool) {
+            float w = e.weight() > 0f ? e.weight() : 0f;
+            acc += w;
+            if (r <= acc) return e.enemyType();
+        }
+        return level.enemyPool.get(level.enemyPool.size() - 1).enemyType();
+    }
+
+    private void updateFusionAutoAttack(float delta) {
+        if (state.activeEnemy == null) return;
+
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance fusion = state.conveyorSockets[socketId];
+            if (fusion == null) continue;
+            state.fusionAttackCooldownSockets[socketId] = Math.max(0f, state.fusionAttackCooldownSockets[socketId] - delta);
+            if (state.fusionAttackCooldownSockets[socketId] > 0f) continue;
+            attackEnemyFromFusionSocket(socketId, fusion);
+            state.fusionAttackCooldownSockets[socketId] = fusion.stats.attackIntervalSeconds();
+        }
+    }
+
+    private void attackEnemyFromFusionSocket(int socketId, FusionInstance fusion) {
+        if (state.activeEnemy == null) return;
+
+        int pathIndex = state.conveyorSocketPathIndex[socketId];
+        if (pathIndex != ATTACK_ZONE_INDEX) return;
+        CombatLog.d("fusion at attack zone socket=" + socketId);
+
+        int base = Math.max(0, fusion.stats.atk());
+        float variance = Math.max(0f, fusion.stats.variance());
+        float roll = (rng.nextFloat() * 2f - 1f) * variance;
+        int dmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(base * (1f + roll)));
+
+        boolean special = rng.nextFloat() < fusion.stats.specialChance();
+        if (special) dmg *= 2;
+
+        CombatLog.d("fusion hit enemy dmg=" + dmg + (special ? " SPECIAL" : ""));
+
+        if (feedback != null) {
+            // Map socket-based attacks through the new socket anchor.
+            feedback.onFusionAttack(true, socketId, dmg, special);
+            feedback.onEnemyDamaged(dmg, special);
+        }
+
+        state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - dmg);
+        if (state.activeEnemy.hp <= 0) {
+            CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
+            if (feedback != null) feedback.onEnemyDefeated();
+            state.activeEnemy = null;
+            state.enemySpawnCooldownRemaining = state.level.spawnIntervalSeconds + CombatTuning.ENEMY_SPAWN_DELAY_AFTER_DEATH_SECONDS;
+        }
+    }
+
+    private void updateEnemyAttack(float delta) {
+        if (state.level == null) return;
+        if (state.activeEnemy == null) return;
+
+        EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
+        if (def == null || def.attack == null) return;
+
+        state.enemyAttackCooldownRemaining = Math.max(0f, state.enemyAttackCooldownRemaining - delta);
+        if (state.enemyAttackCooldownRemaining > 0f) return;
+        state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
+
+        int scaledDmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(def.attack.damage() * state.level.enemyAtkMultiplier));
+
+        int targetSocket = findFirstOccupiedSocket();
+        FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
+        if (target == null) {
+            state.tubeHp = Math.max(0, state.tubeHp - scaledDmg);
+            CombatLog.d("tube damaged amount=" + scaledDmg + " tubeHp=" + state.tubeHp);
+            if (feedback != null) feedback.onTubeDamaged(scaledDmg);
+            if (state.tubeHp <= 0) {
+                state.result = CombatResult.LOSE;
+            }
+            return;
+        }
+
+        target.hp = Math.max(0, target.hp - scaledDmg);
+        CombatLog.d("fusion damaged amount=" + scaledDmg + " hp=" + target.hp + "/" + target.maxHp);
+        if (feedback != null) {
+            feedback.onFusionDamaged(true, targetSocket, scaledDmg);
+        }
+        if (target.hp <= 0) {
+            state.conveyorSockets[targetSocket] = null;
+            state.fusionAttackCooldownSockets[targetSocket] = 0f;
+            CombatLog.d("fusion destroyed");
+            if (feedback != null) feedback.onFusionDestroyed(true, targetSocket);
+        }
+    }
+
+    private int findFirstOccupiedSocket() {
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f != null && f.hp > 0) return socketId;
+        }
+        return -1;
     }
 
     private void clearGrid() {
@@ -189,8 +524,11 @@ public final class CombatController {
     }
 
     private void clearConveyor() {
-        for (int i = 0; i < state.conveyorLeft.length; i++) state.conveyorLeft[i] = null;
-        for (int i = 0; i < state.conveyorRight.length; i++) state.conveyorRight[i] = null;
+        for (int i = 0; i < state.conveyorSockets.length; i++) {
+            state.conveyorSockets[i] = null;
+            state.fusionAttackCooldownSockets[i] = 0f;
+            state.conveyorSocketPathIndex[i] = i;
+        }
     }
 
     private String nextInstanceId() {
@@ -198,4 +536,3 @@ public final class CombatController {
         return "i" + instanceCounter + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
 }
-

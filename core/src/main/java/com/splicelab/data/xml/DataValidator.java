@@ -79,7 +79,7 @@ public final class DataValidator {
             if (lvl.enemyPool.isEmpty()) report.error("levels", "Level " + i + " has no enemies in pool");
             for (EntityType e : lvl.availableEntities) if (definitions.getEntity(e).isEmpty()) report.error("levels", "Level " + i + " references missing entity " + e);
             for (ItemType it : lvl.availableItems) if (definitions.getItem(it).isEmpty()) report.error("levels", "Level " + i + " references missing item " + it);
-            for (EnemyType en : lvl.enemyPool) if (definitions.getEnemy(en).isEmpty()) report.error("levels", "Level " + i + " references missing enemy " + en);
+            for (var en : lvl.enemyPool) if (definitions.getEnemy(en.enemyType()).isEmpty()) report.error("levels", "Level " + i + " references missing enemy " + en.enemyType());
             if (lvl.durationSeconds <= 0) report.error("levels", "Level " + i + " durationSeconds must be >0");
             if (lvl.tubeHp <= 0) report.error("levels", "Level " + i + " tubeHp must be >0");
         }

@@ -10,11 +10,13 @@ public final class GameConfigXmlParser {
             return fallback;
         }
         // Current schema is minimal; keep fallback for fields not present.
+        int tubeMaxHp = getInt(root, "tube@maxHp", fallback.tubeMaxHp, report);
+        float tubeTapCooldown = getFloat(root, "spawn/tubeTapCooldownSeconds@value", fallback.tubeCooldownSeconds, report);
         int maxLeft = getInt(root, "conveyor/maxLeftSlots@value", fallback.maxConveyorSlotsPerSide, report);
         int maxRight = getInt(root, "conveyor/maxRightSlots@value", fallback.maxConveyorSlotsPerSide, report);
         int maxSide = Math.max(maxLeft, maxRight);
-        report.info("game_config.xml", "Loaded config: maxLeftSlots=" + maxLeft + ", maxRightSlots=" + maxRight);
-        return new GameConfig(fallback.saveSchemaVersion, maxSide);
+        report.info("game_config.xml", "Loaded config: tubeMaxHp=" + tubeMaxHp + ", tubeTapCooldownSeconds=" + tubeTapCooldown + ", maxLeftSlots=" + maxLeft + ", maxRightSlots=" + maxRight);
+        return new GameConfig(fallback.saveSchemaVersion, maxSide, tubeTapCooldown, fallback.maxTubeCharges, tubeMaxHp);
     }
 
     private static int getInt(XmlReader.Element root, String path, int fallback, DataValidationReport report) {
@@ -24,6 +26,9 @@ public final class GameConfigXmlParser {
             for (String p : parts) {
                 if (p.contains("@")) {
                     String[] a = p.split("@");
+                    if (a[0].isEmpty()) {
+                        return Integer.parseInt(cur.getAttribute(a[1], String.valueOf(fallback)));
+                    }
                     return Integer.parseInt(cur.getChildByName(a[0]).getAttribute(a[1], String.valueOf(fallback)));
                 }
                 cur = cur.getChildByName(p);
@@ -32,6 +37,28 @@ public final class GameConfigXmlParser {
             return fallback;
         } catch (Exception ex) {
             report.warn("game_config.xml", "Bad int for " + path);
+            return fallback;
+        }
+    }
+
+    private static float getFloat(XmlReader.Element root, String path, float fallback, DataValidationReport report) {
+        try {
+            String[] parts = path.split("/");
+            XmlReader.Element cur = root;
+            for (String p : parts) {
+                if (p.contains("@")) {
+                    String[] a = p.split("@");
+                    if (a[0].isEmpty()) {
+                        return Float.parseFloat(cur.getAttribute(a[1], String.valueOf(fallback)));
+                    }
+                    return Float.parseFloat(cur.getChildByName(a[0]).getAttribute(a[1], String.valueOf(fallback)));
+                }
+                cur = cur.getChildByName(p);
+                if (cur == null) return fallback;
+            }
+            return fallback;
+        } catch (Exception ex) {
+            report.warn("game_config.xml", "Bad float for " + path);
             return fallback;
         }
     }
