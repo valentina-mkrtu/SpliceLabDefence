@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<localization locale="en" version="1">
+    <!-- Currencies -->
+    <string key="CUR_COINS_NAME" value="Coins" />
+    <string key="CUR_DNA_NAME" value="DNA" />
+    <string key="CUR_GEMS_NAME" value="Gems" />
+
+    <!-- DNA boosts -->
+    <string key="BOOST_INSTANT_TUBE_COOLDOWN_NAME" value="Instant Cooldown" />
+    <string key="BOOST_INSTANT_TUBE_COOLDOWN_DESC" value="Refresh the Tube tap cooldown instantly." />
+    <string key="BOOST_EXTRA_TUBE_CHARGE_NAME" value="Extra Tube Charge" />
+    <string key="BOOST_EXTRA_TUBE_CHARGE_DESC" value="Adds a temporary extra Tube charge for this run." />
+    <string key="BOOST_FUSION_REPAIR_NAME" value="Fusion Repair" />
+    <string key="BOOST_FUSION_REPAIR_DESC" value="Restore a deployed fusion a bit (feature placeholder)." />
+    <string key="BOOST_DOUBLE_SPECIAL_CHANCE_NAME" value="Double Special Chance" />
+    <string key="BOOST_DOUBLE_SPECIAL_CHANCE_DESC" value="Doubles special trigger chance for this run (feature placeholder)." />
+    <string key="BOOST_START_WITH_EXTRA_INGREDIENT_NAME" value="Start With Extra Ingredient" />
+    <string key="BOOST_START_WITH_EXTRA_INGREDIENT_DESC" value="Begin the level with one extra ingredient ready." />
+
+    <!-- Entities -->
+    <string key="ENTITY_SLIME_NAME" value="Slime" />
+    <string key="ENTITY_SLIME_SHORT" value="Big-hearted blob tank." />
+    <string key="ENTITY_SLIME_LONG" value="A squishy lab goober that soaks hits, gums up trouble, and keeps your Tube safe." />
+
+    <string key="ENTITY_MECH_NAME" value="Mech" />
+    <string key="ENTITY_MECH_SHORT" value="Precise damage chassis." />
+    <string key="ENTITY_MECH_LONG" value="A clunky-cute combat rig that fires fast and hits hard when your fusions need focus." />
+
+    <string key="ENTITY_FUNGUS_NAME" value="Fungus" />
+    <string key="ENTITY_FUNGUS_SHORT" value="Sporey scaler with bite." />
+    <string key="ENTITY_FUNGUS_LONG" value="A bouncy mushroom buddy that loves long fights—its spores make problems worse over time." />
+
+    <!-- Items -->
+    <string key="ITEM_BATTERY_NAME" value="Battery" />
+    <string key="ITEM_BATTERY_SHORT" value="Zaps faster, hits harder." />
+    <string key="ITEM_BATTERY_LONG" value="A crackling power cell. Great for speeding up attacks and adding punch." />
+
+    <string key="ITEM_TOXIC_WASTE_NAME" value="Toxic Waste" />
+    <string key="ITEM_TOXIC_WASTE_SHORT" value="Nasty goo, nasty bonuses." />
+    <string key="ITEM_TOXIC_WASTE_LONG" value="A sloshing canister of who-knows-what. Strong utility with a splash of chaos." />
+
+    <string key="ITEM_RADIOACTIVE_GOO_NAME" value="Radioactive Goo" />
+    <string key="ITEM_RADIOACTIVE_GOO_SHORT" value="High damage, high chaos." />
+    <string key="ITEM_RADIOACTIVE_GOO_LONG" value="Glowing slime-glop that supercharges attacks. Unstable, but worth the risk." />
+
+    <string key="ITEM_CRYOGEL_NAME" value="Cryogel" />
+    <string key="ITEM_CRYOGEL_SHORT" value="Chunky defense, chilly tempo." />
+    <string key="ITEM_CRYOGEL_LONG" value="A cold pack from the forbidden freezer. Makes fusions tougher, a bit slower." />
+
+    <string key="ITEM_CRYSTAL_SHARD_NAME" value="Crystal Shard" />
+    <string key="ITEM_CRYSTAL_SHARD_SHORT" value="Sharp, shiny, surprising." />
+    <string key="ITEM_CRYSTAL_SHARD_LONG" value="A prismatic splinter that helps specials pop more often with cleaner damage." />
+
+    <string key="ITEM_NANOBOTS_NAME" value="Nanobots" />
+    <string key="ITEM_NANOBOTS_SHORT" value="Reliable upgrades, tiny helpers." />
+    <string key="ITEM_NANOBOTS_LONG" value="Micro-machines that tighten your build. More consistency, more control." />
+
+    <!-- Fusions (names + short + long + ability) -->
+    <string key="FUSION_SLIME_BATTERY_NAME" value="Volt Slime" />
+    <string key="FUSION_SLIME_BATTERY_SHORT" value="A tanky blob with a pop." />
+    <string key="FUSION_SLIME_BATTERY_LONG" value="Electric slime that holds the line and jitters with stored charge." />
+    <string key="FUSION_SLIME_BATTERY_ABILITY_NAME" value="Static Cling" />
+    <string key="FUSION_SLIME_BATTERY_ABILITY_DESC" value="Special: briefly jolts the target (ability placeholder)." />
+
+    <string key="FUSION_SLIME_TOXIC_WASTE_NAME" value="Hazmat Slime" />
+    <string key="FUSION_SLIME_TOXIC_WASTE_SHORT" value="Too gross to ignore." />
+    <string key="FUSION_SLIME_TOXIC_WASTE_LONG" value="A waddling ooze that smells like trouble and refuses to go away." />
+    <string key="FUSION_SLIME_TOXIC_WASTE_ABILITY_NAME" value="Sludge Splash" />
+    <string key="FUSION_SLIME_TOXIC_WASTE_ABILITY_DESC" value="Special: splashes toxins for extra chip (ability placeholder)." />
+
+    <string key="FUSION_SLIME_RADIOACTIVE_GOO_NAME" value="Glow Slime" />
+    <string key="FUSION_SLIME_RADIOACTIVE_GOO_SHORT" value="Bright, brave, unstable." />
+    <string key="FUSION_SLIME_RADIOACTIVE_GOO_LONG" value="A luminous blob that hits surprisingly hard for something so huggable." />
+    <string key="FUSION_SLIME_RADIOACTIVE_GOO_ABILITY_NAME" value="Gamma Wiggle" />
+    <string key="FUSION_SLIME_RADIOACTIVE_GOO_ABILITY_DESC" value="Special: burst damage with high variance (ability placeholder)." />
+
+    <string key="FUSION_SLIME_CRYOGEL_NAME" value="Frost Slime" />
+    <string key="FUSION_SLIME_CRYOGEL_SHORT" value="Extra squish, extra chill." />
+    <string key="FUSION_SLIME_CRYOGEL_LONG" value="A cold, chunky slime that slows the chaos by simply not dying." />
+    <string key="FUSION_SLIME_CRYOGEL_ABILITY_NAME" value="Cold Hug" />
+    <string key="FUSION_SLIME_CRYOGEL_ABILITY_DESC" value="Special: slows an enemy briefly (ability placeholder)." />
+
+    <string key="FUSION_SLIME_CRYSTAL_SHARD_NAME" value="Prism Slime" />
+    <string key="FUSION_SLIME_CRYSTAL_SHARD_SHORT" value="Shiny shield wall." />
+    <string key="FUSION_SLIME_CRYSTAL_SHARD_LONG" value="A gem-studded blob that reflects the lab lights like a disco hazard." />
+    <string key="FUSION_SLIME_CRYSTAL_SHARD_ABILITY_NAME" value="Glint Guard" />
+    <string key="FUSION_SLIME_CRYSTAL_SHARD_ABILITY_DESC" value="Special: higher special pop rate (ability placeholder)." />
+
+    <string key="FUSION_SLIME_NANOBOTS_NAME" value="Patch Slime" />
+    <string key="FUSION_SLIME_NANOBOTS_SHORT" value="Tiny helpers, big tank." />
+    <string key="FUSION_SLIME_NANOBOTS_LONG" value="A slime full of busy little robots that keep it together under pressure." />
+    <string key="FUSION_SLIME_NANOBOTS_ABILITY_NAME" value="Auto-Repair" />
+    <string key="FUSION_SLIME_NANOBOTS_ABILITY_DESC" value="Special: restores some HP (ability placeholder)." />
+
+    <string key="FUSION_MECH_BATTERY_NAME" value="Overclock Mech" />
+    <string key="FUSION_MECH_BATTERY_SHORT" value="Fast clicks, loud sparks." />
+    <string key="FUSION_MECH_BATTERY_LONG" value="A toy-like combat rig that fires faster when it smells ozone." />
+    <string key="FUSION_MECH_BATTERY_ABILITY_NAME" value="Overcharge" />
+    <string key="FUSION_MECH_BATTERY_ABILITY_DESC" value="Special: rapid burst volley (ability placeholder)." />
+
+    <string key="FUSION_MECH_TOXIC_WASTE_NAME" value="Corrosive Mech" />
+    <string key="FUSION_MECH_TOXIC_WASTE_SHORT" value="Rust never sleeps." />
+    <string key="FUSION_MECH_TOXIC_WASTE_LONG" value="A grimy little walker that turns stolen tools into dripping hazards." />
+    <string key="FUSION_MECH_TOXIC_WASTE_ABILITY_NAME" value="Acid Spray" />
+    <string key="FUSION_MECH_TOXIC_WASTE_ABILITY_DESC" value="Special: applies a lingering damage effect (ability placeholder)." />
+
+    <string key="FUSION_MECH_RADIOACTIVE_GOO_NAME" value="Reactor Mech" />
+    <string key="FUSION_MECH_RADIOACTIVE_GOO_SHORT" value="Unstable, unstoppable." />
+    <string key="FUSION_MECH_RADIOACTIVE_GOO_LONG" value="A mini reactor on legs. Great damage, questionable safety stickers." />
+    <string key="FUSION_MECH_RADIOACTIVE_GOO_ABILITY_NAME" value="Critical Leak" />
+    <string key="FUSION_MECH_RADIOACTIVE_GOO_ABILITY_DESC" value="Special: huge spike damage with variance (ability placeholder)." />
+
+    <string key="FUSION_MECH_CRYOGEL_NAME" value="Cryo Mech" />
+    <string key="FUSION_MECH_CRYOGEL_SHORT" value="Chilled armor plating." />
+    <string key="FUSION_MECH_CRYOGEL_LONG" value="A frosty walker that trades speed for staying power." />
+    <string key="FUSION_MECH_CRYOGEL_ABILITY_NAME" value="Freeze Frame" />
+    <string key="FUSION_MECH_CRYOGEL_ABILITY_DESC" value="Special: briefly slows an enemy (ability placeholder)." />
+
+    <string key="FUSION_MECH_CRYSTAL_SHARD_NAME" value="Shard Mech" />
+    <string key="FUSION_MECH_CRYSTAL_SHARD_SHORT" value="Clean cuts, clean crits." />
+    <string key="FUSION_MECH_CRYSTAL_SHARD_LONG" value="A bright, prismatic striker that loves precision hits." />
+    <string key="FUSION_MECH_CRYSTAL_SHARD_ABILITY_NAME" value="Laser Point" />
+    <string key="FUSION_MECH_CRYSTAL_SHARD_ABILITY_DESC" value="Special: higher special trigger chance (ability placeholder)." />
+
+    <string key="FUSION_MECH_NANOBOTS_NAME" value="Service Mech" />
+    <string key="FUSION_MECH_NANOBOTS_SHORT" value="Reliable damage dealer." />
+    <string key="FUSION_MECH_NANOBOTS_LONG" value="A maintenance bot gone heroic—steady output with tiny repair swarms." />
+    <string key="FUSION_MECH_NANOBOTS_ABILITY_NAME" value="Calibration" />
+    <string key="FUSION_MECH_NANOBOTS_ABILITY_DESC" value="Special: reduces variance for a moment (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_BATTERY_NAME" value="Spore Spark" />
+    <string key="FUSION_FUNGUS_BATTERY_SHORT" value="Poison with a zap." />
+    <string key="FUSION_FUNGUS_BATTERY_LONG" value="A jittery mushroom buddy that spreads spores with a static crackle." />
+    <string key="FUSION_FUNGUS_BATTERY_ABILITY_NAME" value="Shock Spores" />
+    <string key="FUSION_FUNGUS_BATTERY_ABILITY_DESC" value="Special: bonus damage over time (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_TOXIC_WASTE_NAME" value="Mold Muck" />
+    <string key="FUSION_FUNGUS_TOXIC_WASTE_SHORT" value="Spreads the ick." />
+    <string key="FUSION_FUNGUS_TOXIC_WASTE_LONG" value="A cheerful little fungus that turns waste into weaponized grime." />
+    <string key="FUSION_FUNGUS_TOXIC_WASTE_ABILITY_NAME" value="Toxic Bloom" />
+    <string key="FUSION_FUNGUS_TOXIC_WASTE_ABILITY_DESC" value="Special: stronger poison stacks (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_RADIOACTIVE_GOO_NAME" value="Neon Mycelium" />
+    <string key="FUSION_FUNGUS_RADIOACTIVE_GOO_SHORT" value="Glows, grows, goes." />
+    <string key="FUSION_FUNGUS_RADIOACTIVE_GOO_LONG" value="Radio-spores that hit hard and scale into a glowing mess." />
+    <string key="FUSION_FUNGUS_RADIOACTIVE_GOO_ABILITY_NAME" value="Mutant Burst" />
+    <string key="FUSION_FUNGUS_RADIOACTIVE_GOO_ABILITY_DESC" value="Special: damage spikes after stacking (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_CRYOGEL_NAME" value="Chillcap" />
+    <string key="FUSION_FUNGUS_CRYOGEL_SHORT" value="Slow burn, cold bite." />
+    <string key="FUSION_FUNGUS_CRYOGEL_LONG" value="A frosty fungus that keeps fighting long enough for spores to matter." />
+    <string key="FUSION_FUNGUS_CRYOGEL_ABILITY_NAME" value="Spore Fog" />
+    <string key="FUSION_FUNGUS_CRYOGEL_ABILITY_DESC" value="Special: slows enemies in a small area (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_CRYSTAL_SHARD_NAME" value="Gemcap" />
+    <string key="FUSION_FUNGUS_CRYSTAL_SHARD_SHORT" value="Pretty poison." />
+    <string key="FUSION_FUNGUS_CRYSTAL_SHARD_LONG" value="A sparkling shroom that makes specials happen more often." />
+    <string key="FUSION_FUNGUS_CRYSTAL_SHARD_ABILITY_NAME" value="Prismatic Spores" />
+    <string key="FUSION_FUNGUS_CRYSTAL_SHARD_ABILITY_DESC" value="Special: boosted special chance (ability placeholder)." />
+
+    <string key="FUSION_FUNGUS_NANOBOTS_NAME" value="Bio-Compiler" />
+    <string key="FUSION_FUNGUS_NANOBOTS_SHORT" value="Stacks and scales cleanly." />
+    <string key="FUSION_FUNGUS_NANOBOTS_LONG" value="Nanobots help spores propagate efficiently—less chaos, more ramp." />
+    <string key="FUSION_FUNGUS_NANOBOTS_ABILITY_NAME" value="Culture Upgrade" />
+    <string key="FUSION_FUNGUS_NANOBOTS_ABILITY_DESC" value="Special: scaling bonus increases over time (ability placeholder)." />
+
+    <!-- Enemies -->
+    <string key="ENEMY_SMUGGLER_GRUNT_NAME" value="Smuggler Grunt" />
+    <string key="ENEMY_SMUGGLER_GRUNT_SHORT" value="Toy thief with a bad plan." />
+    <string key="ENEMY_NET_THROWER_NAME" value="Net Thrower" />
+    <string key="ENEMY_NET_THROWER_SHORT" value="Trips your lab goons." />
+    <string key="ENEMY_TOOL_RAIDER_NAME" value="Tool Raider" />
+    <string key="ENEMY_TOOL_RAIDER_SHORT" value="Swings stolen equipment." />
+    <string key="ENEMY_GAS_BOMBER_NAME" value="Gas Bomber" />
+    <string key="ENEMY_GAS_BOMBER_SHORT" value="Puffs chaotic gas." />
+    <string key="ENEMY_SHIELD_SMUGGLER_NAME" value="Shield Smuggler" />
+    <string key="ENEMY_SHIELD_SMUGGLER_SHORT" value="Hard to shove back." />
+    <string key="ENEMY_DRONE_THIEF_NAME" value="Drone Thief" />
+    <string key="ENEMY_DRONE_THIEF_SHORT" value="Fast flyer, sticky fingers." />
+    <string key="ENEMY_MUTATION_HUNTER_NAME" value="Mutation Hunter" />
+    <string key="ENEMY_MUTATION_HUNTER_SHORT" value="Hunts your best fusion." />
+    <string key="ENEMY_BLACKMARKET_BRUTE_NAME" value="Blackmarket Brute" />
+    <string key="ENEMY_BLACKMARKET_BRUTE_SHORT" value="Big body, big hits." />
+    <string key="ENEMY_BOSS_SMUGGLER_CAPTAIN_NAME" value="Smuggler Captain" />
+    <string key="ENEMY_BOSS_SMUGGLER_CAPTAIN_SHORT" value="The boss with the biggest bag." />
+
+    <!-- Tutorial -->
+    <string key="TUTORIAL_TAP_TUBE" value="Tap the Tube to spawn an ingredient." />
+    <string key="TUTORIAL_SPAWN_SECOND" value="Tap again to spawn a second ingredient." />
+    <string key="TUTORIAL_FUSE" value="Drag an entity onto an item to fuse them." />
+    <string key="TUTORIAL_DEPLOY" value="Drag the fusion into a conveyor slot to deploy." />
+    <string key="TUTORIAL_ENEMY" value="Enemies crawl out of the vent—stop them from reaching the Tube." />
+    <string key="TUTORIAL_REWARD" value="Survive the timer to win Coins and DNA." />
+    <string key="TUTORIAL_AD_BOOST" value="Optional: watch an ad for a quick boost." />
+
+    <!-- Ad reward placements -->
+    <string key="AD_EXTRA_INGREDIENT_NAME" value="Extra Ingredient" />
+    <string key="AD_EXTRA_INGREDIENT_DESC" value="Get one extra ingredient immediately." />
+    <string key="AD_INSTANT_TUBE_COOLDOWN_NAME" value="Instant Tube Cooldown" />
+    <string key="AD_INSTANT_TUBE_COOLDOWN_DESC" value="Refresh the Tube cooldown right now." />
+    <string key="AD_DOUBLE_WIN_REWARD_NAME" value="Double Win Reward" />
+    <string key="AD_DOUBLE_WIN_REWARD_DESC" value="Double your level rewards (feature placeholder)." />
+    <string key="AD_REVIVE_TUBE_NAME" value="Revive Tube" />
+    <string key="AD_REVIVE_TUBE_DESC" value="Restore the Tube and keep fighting." />
+    <string key="AD_EXTRA_TUBE_CHARGE_NAME" value="Extra Tube Charge" />
+    <string key="AD_EXTRA_TUBE_CHARGE_DESC" value="Add one extra Tube charge for this level." />
+
+    <!-- Unlock messages -->
+    <string key="UNLOCK_LVL1_MSG" value="Welcome to Splice Lab! New ingredients available." />
+    <string key="UNLOCK_LVL3_MSG" value="New item unlocked: Cryogel." />
+    <string key="UNLOCK_LVL5_MSG" value="Conveyor expanded: +1 left slot." />
+    <string key="UNLOCK_LVL7_MSG" value="New item unlocked: Crystal Shard." />
+    <string key="UNLOCK_LVL10_MSG" value="New entity unlocked: Fungus." />
+    <string key="UNLOCK_LVL12_MSG" value="Conveyor expanded: +1 right slot." />
+    <string key="UNLOCK_LVL15_MSG" value="New item unlocked: Radioactive Goo." />
+    <string key="UNLOCK_LVL20_MSG" value="New item unlocked: Nanobots." />
+    <string key="UNLOCK_LVL25_MSG" value="Conveyor expanded: +1 left slot." />
+    <string key="UNLOCK_LVL32_MSG" value="Conveyor expanded: +1 right slot." />
+    <string key="UNLOCK_LVL40_MSG" value="Feature unlocked: Double rewards (coming soon)." />
+    <string key="UNLOCK_LVL45_MSG" value="Feature unlocked: DNA boosts (coming soon)." />
+    <string key="UNLOCK_LVL50_MSG" value="Boss level unlocked: Smuggler Captain." />
+
+    <!-- Level story + objective keys (50 explicit) -->
+    <string key="LEVEL_1_STORY" value="Day 1: The vents are rattling..." />
+    <string key="LEVEL_1_OBJECTIVE" value="Survive the breach." />
+    <string key="LEVEL_2_STORY" value="Day 1: More footsteps in the ducts." />
+    <string key="LEVEL_2_OBJECTIVE" value="Keep the Tube safe." />
+    <string key="LEVEL_3_STORY" value="Day 1: Something cold drips from above." />
+    <string key="LEVEL_3_OBJECTIVE" value="Fuse fast, defend longer." />
+    <string key="LEVEL_4_STORY" value="Day 1: A net snaps open in the dark." />
+    <string key="LEVEL_4_OBJECTIVE" value="Hold your ground." />
+    <string key="LEVEL_5_STORY" value="Day 1: Conveyor belts squeal—upgrade time." />
+    <string key="LEVEL_5_OBJECTIVE" value="Use the new slot to stabilize." />
+    <string key="LEVEL_6_STORY" value="Day 1: The smugglers brought friends." />
+    <string key="LEVEL_6_OBJECTIVE" value="Survive the wave." />
+    <string key="LEVEL_7_STORY" value="Day 1: A shard glitters in the drain." />
+    <string key="LEVEL_7_OBJECTIVE" value="Try a sharper fusion." />
+    <string key="LEVEL_8_STORY" value="Day 1: Stolen tools clank in the vents." />
+    <string key="LEVEL_8_OBJECTIVE" value="Protect the Tube." />
+    <string key="LEVEL_9_STORY" value="Day 1: The lab lights flicker with panic." />
+    <string key="LEVEL_9_OBJECTIVE" value="Survive the timer." />
+    <string key="LEVEL_10_STORY" value="Day 1: A mushroom peeks from a beaker." />
+    <string key="LEVEL_10_OBJECTIVE" value="Deploy Fungus to scale." />
+    <string key="LEVEL_11_STORY" value="Day 1: The vent coughs up chaos." />
+    <string key="LEVEL_11_OBJECTIVE" value="Don’t let them reach the Tube." />
+    <string key="LEVEL_12_STORY" value="Day 1: More belt space, more problems." />
+    <string key="LEVEL_12_OBJECTIVE" value="Fill the right lane." />
+    <string key="LEVEL_13_STORY" value="Day 1: A green cloud rolls in." />
+    <string key="LEVEL_13_OBJECTIVE" value="Survive the stink." />
+    <string key="LEVEL_14_STORY" value="Day 1: Shields scrape along the floor." />
+    <string key="LEVEL_14_OBJECTIVE" value="Break through defenders." />
+    <string key="LEVEL_15_STORY" value="Day 1: The goo glows. That can’t be good." />
+    <string key="LEVEL_15_OBJECTIVE" value="Handle unstable power." />
+    <string key="LEVEL_16_STORY" value="Day 2: Morning shift, same smugglers." />
+    <string key="LEVEL_16_OBJECTIVE" value="Survive the second day." />
+    <string key="LEVEL_17_STORY" value="Day 2: They learned your tricks." />
+    <string key="LEVEL_17_OBJECTIVE" value="Adapt your fusions." />
+    <string key="LEVEL_18_STORY" value="Day 2: A shield wall forms." />
+    <string key="LEVEL_18_OBJECTIVE" value="Outlast the push." />
+    <string key="LEVEL_19_STORY" value="Day 2: More thieves squeeze through." />
+    <string key="LEVEL_19_OBJECTIVE" value="Keep your lanes filled." />
+    <string key="LEVEL_20_STORY" value="Day 2: Tiny robots buzz in the vents." />
+    <string key="LEVEL_20_OBJECTIVE" value="Try Nanobots." />
+    <string key="LEVEL_21_STORY" value="Day 2: A drone whines overhead." />
+    <string key="LEVEL_21_OBJECTIVE" value="Don’t blink." />
+    <string key="LEVEL_22_STORY" value="Day 2: The belts jam with action." />
+    <string key="LEVEL_22_OBJECTIVE" value="Survive the rush." />
+    <string key="LEVEL_23_STORY" value="Day 2: Faster enemies, faster fusions." />
+    <string key="LEVEL_23_OBJECTIVE" value="Maintain control." />
+    <string key="LEVEL_24_STORY" value="Day 2: Tools and nets everywhere." />
+    <string key="LEVEL_24_OBJECTIVE" value="Keep the Tube intact." />
+    <string key="LEVEL_25_STORY" value="Day 2: Conveyor expansion—left lane opens up." />
+    <string key="LEVEL_25_OBJECTIVE" value="Use the extra slot." />
+    <string key="LEVEL_26_STORY" value="Day 2: The vent won’t stop coughing." />
+    <string key="LEVEL_26_OBJECTIVE" value="Survive." />
+    <string key="LEVEL_27_STORY" value="Day 2: Your lab buddies are getting tougher." />
+    <string key="LEVEL_27_OBJECTIVE" value="Win the timer." />
+    <string key="LEVEL_28_STORY" value="Day 2: A hunter stalks the conveyor." />
+    <string key="LEVEL_28_OBJECTIVE" value="Keep your best fusion alive." />
+    <string key="LEVEL_29_STORY" value="Day 2: Brutes are coming. Big ones." />
+    <string key="LEVEL_29_OBJECTIVE" value="Brace for impact." />
+    <string key="LEVEL_30_STORY" value="Day 2: The lab shakes with stomps." />
+    <string key="LEVEL_30_OBJECTIVE" value="Survive the surge." />
+    <string key="LEVEL_31_STORY" value="Day 2: The smugglers brought better gear." />
+    <string key="LEVEL_31_OBJECTIVE" value="Stay ahead." />
+    <string key="LEVEL_32_STORY" value="Day 2: Right lane upgrade—more deployments." />
+    <string key="LEVEL_32_OBJECTIVE" value="Fill the new right slot." />
+    <string key="LEVEL_33_STORY" value="Day 2: Everything moves faster now." />
+    <string key="LEVEL_33_OBJECTIVE" value="Keep up." />
+    <string key="LEVEL_34_STORY" value="Day 2: The vent roars." />
+    <string key="LEVEL_34_OBJECTIVE" value="Hold the line." />
+    <string key="LEVEL_35_STORY" value="Day 2: Last shift—don’t drop the Tube." />
+    <string key="LEVEL_35_OBJECTIVE" value="Finish Day 2." />
+    <string key="LEVEL_36_STORY" value="Day 3: Night lab. Loud lab." />
+    <string key="LEVEL_36_OBJECTIVE" value="Survive Day 3." />
+    <string key="LEVEL_37_STORY" value="Day 3: The smugglers are desperate." />
+    <string key="LEVEL_37_OBJECTIVE" value="Endure." />
+    <string key="LEVEL_38_STORY" value="Day 3: A wave of brutes blocks the vents." />
+    <string key="LEVEL_38_OBJECTIVE" value="Don’t let them pile up." />
+    <string key="LEVEL_39_STORY" value="Day 3: Hunters mark your strongest fusion." />
+    <string key="LEVEL_39_OBJECTIVE" value="Protect your carry." />
+    <string key="LEVEL_40_STORY" value="Day 3: A new feature is teased on the lab monitor." />
+    <string key="LEVEL_40_OBJECTIVE" value="Survive (double rewards coming soon)." />
+    <string key="LEVEL_41_STORY" value="Day 3: Drones zip through the cracks." />
+    <string key="LEVEL_41_OBJECTIVE" value="Keep lanes covered." />
+    <string key="LEVEL_42_STORY" value="Day 3: The belt speed feels… unfair." />
+    <string key="LEVEL_42_OBJECTIVE" value="Stay efficient." />
+    <string key="LEVEL_43_STORY" value="Day 3: Gas canisters roll like toys." />
+    <string key="LEVEL_43_OBJECTIVE" value="Survive the chaos." />
+    <string key="LEVEL_44_STORY" value="Day 3: Shields, brutes, and bad vibes." />
+    <string key="LEVEL_44_OBJECTIVE" value="Keep the Tube alive." />
+    <string key="LEVEL_45_STORY" value="Day 3: DNA boost protocols appear (soon!)." />
+    <string key="LEVEL_45_OBJECTIVE" value="Survive (boosts coming soon)." />
+    <string key="LEVEL_46_STORY" value="Day 3: The vent heat spikes." />
+    <string key="LEVEL_46_OBJECTIVE" value="Outlast them." />
+    <string key="LEVEL_47_STORY" value="Day 3: The lab alarm doesn’t stop." />
+    <string key="LEVEL_47_OBJECTIVE" value="Keep fighting." />
+    <string key="LEVEL_48_STORY" value="Day 3: Your fusions are the only thing standing." />
+    <string key="LEVEL_48_OBJECTIVE" value="Survive." />
+    <string key="LEVEL_49_STORY" value="Day 3: The smugglers rally for one last push." />
+    <string key="LEVEL_49_OBJECTIVE" value="Prepare for the boss." />
+    <string key="LEVEL_50_STORY" value="Day 3: The Smuggler Captain steps out." />
+    <string key="LEVEL_50_OBJECTIVE" value="Defeat the boss by surviving the timer." />
+</localization>

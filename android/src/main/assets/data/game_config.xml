@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gameConfig version="1">
+    <tube maxHp="300" />
+
+    <spawn>
+        <tubeTapCooldownSeconds value="2.5" />
+    </spawn>
+
+    <combat>
+        <fusionMaxOnField value="6" />
+    </combat>
+
+    <conveyor>
+        <maxLeftSlots value="3" />
+        <maxRightSlots value="3" />
+    </conveyor>
+</gameConfig>

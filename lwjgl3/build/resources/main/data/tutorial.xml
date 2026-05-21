@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tutorial version="1">
+    <step id="TUT_TAP_TUBE" messageKey="TUTORIAL_TAP_TUBE" />
+    <step id="TUT_SPAWN_SECOND" messageKey="TUTORIAL_SPAWN_SECOND" />
+    <step id="TUT_FUSE" messageKey="TUTORIAL_FUSE" />
+    <step id="TUT_DEPLOY" messageKey="TUTORIAL_DEPLOY" />
+    <step id="TUT_ENEMY" messageKey="TUTORIAL_ENEMY" />
+    <step id="TUT_REWARD" messageKey="TUTORIAL_REWARD" />
+    <step id="TUT_AD_BOOST" messageKey="TUTORIAL_AD_BOOST" />
+</tutorial>

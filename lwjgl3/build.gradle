@@ -1,0 +1,36 @@
+apply plugin: 'application'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+mainClassName = 'com.splicelab.lwjgl3.Lwjgl3Launcher'
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+}
+
+// Allow desktop runner to read the same design XML as Android.
+// This copies android assets into the lwjgl3 resources output so
+// Gdx.files.internal("data/*.xml") works in :lwjgl3:run.
+sourceSets {
+    main {
+        resources {
+            srcDir "../android/src/main/assets"
+        }
+    }
+}
+
+application {
+    mainClass = mainClassName
+}
+
+run {
+    // Required on macOS for LWJGL3/GLFW.
+    jvmArgs += ["-XstartOnFirstThread"]
+}
