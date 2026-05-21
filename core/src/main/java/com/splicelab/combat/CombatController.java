@@ -118,6 +118,17 @@ public final class CombatController {
             state.tubeCooldownRemaining = Math.max(0f, state.tubeCooldownRemaining - delta);
         }
 
+        // Tube charge regeneration: when the tube is below max charges, it regains 1 charge
+        // each time the tube cooldown elapses.
+        //
+        // Without this, once charges hit 0 the tube becomes permanently unusable.
+        if (state.level != null && state.tubeCharges < getMaxTubeCharges()) {
+            if (state.tubeCooldownRemaining <= 0f) {
+                state.tubeCharges = Math.min(getMaxTubeCharges(), state.tubeCharges + 1);
+                state.tubeCooldownRemaining = getTubeCooldownSeconds();
+            }
+        }
+
         if (state.enemySpawnCooldownRemaining > 0f) {
             state.enemySpawnCooldownRemaining = Math.max(0f, state.enemySpawnCooldownRemaining - delta);
         }
@@ -206,11 +217,22 @@ public final class CombatController {
         }
 
         state.grid[empty[0]][empty[1]] = instance;
-        float cd = state.level.tubeCooldownSeconds <= 0f ? context.config.tubeCooldownSeconds : state.level.tubeCooldownSeconds;
-        state.tubeCooldownRemaining = cd;
+        state.tubeCooldownRemaining = getTubeCooldownSeconds();
         state.tubeCharges = Math.max(0, state.tubeCharges - 1);
         CombatLog.d("spawn ingredient type=" + choice.type() + " at=" + empty[0] + "," + empty[1]);
         return CommandResult.ok();
+    }
+
+    private float getTubeCooldownSeconds() {
+        float cd = state.level == null ? context.config.tubeCooldownSeconds : state.level.tubeCooldownSeconds;
+        if (cd <= 0f) cd = context.config.tubeCooldownSeconds;
+        return Math.max(0.25f, cd);
+    }
+
+    private int getMaxTubeCharges() {
+        int charges = state.level == null ? context.config.maxTubeCharges : state.level.maxTubeCharges;
+        if (charges <= 0) charges = context.config.maxTubeCharges;
+        return Math.max(1, charges);
     }
 
     public CommandResult requestMoveIngredient(int fromCol, int fromRow, int toCol, int toRow) {

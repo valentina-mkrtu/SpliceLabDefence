@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
 import com.splicelab.assets.PlaceholderSkinFactory;
@@ -56,6 +57,8 @@ public final class LabGameView {
 
     private final Table beltLayer;
     private final Table[] beltCells;
+
+    private final Table beltLoop;
 
     public LabGameView(GameContext context) {
         this.context = context;
@@ -149,6 +152,11 @@ public final class LabGameView {
         beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
         root.addActor(beltLayer);
 
+        // Visible placeholder conveyor loop.
+        beltLoop = new Table();
+        beltLoop.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        beltLayer.addActor(beltLoop);
+
         beltCells = new Table[]{
                 makeBeltCell(),
                 makeBeltCell(),
@@ -166,6 +174,7 @@ public final class LabGameView {
         attackZoneMarker = new Table();
         attackZoneMarker.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.55f)));
         attackZoneMarker.setSize(22, 22);
+        attackZoneMarker.add(ui.label("ATTACK")).pad(2);
         root.addActor(attackZoneMarker);
         positionAttackZoneMarker();
     }
@@ -188,6 +197,19 @@ public final class LabGameView {
             float y = center.y + (float) Math.sin(a) * ry;
             beltCells[i].setPosition(x - beltCells[i].getWidth() / 2f, y - beltCells[i].getHeight() / 2f);
         }
+
+        // Place a readable conveyor loop behind the anchors.
+        float loopPad = 38f;
+        float loopW = rx * 2f + loopPad * 2f;
+        float loopH = ry * 2f + loopPad * 2f;
+        beltLoop.setSize(loopW, loopH);
+        beltLoop.setPosition(center.x - loopW / 2f, center.y - loopH / 2f);
+        beltLoop.setBackground(makeLoopDrawable());
+    }
+
+    private Drawable makeLoopDrawable() {
+        // Dark belt with slightly lighter inner to suggest a track.
+        return skin.newDrawable("white", new Color(0.08f, 0.09f, 0.11f, 0.85f));
     }
 
     private void positionAttackZoneMarker() {
