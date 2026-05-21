@@ -43,24 +43,16 @@ public final class LabGameScreen extends BaseScreen {
 
             @Override
             public void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex) {
-                var anchor = view.getConveyorSlotAnchor(leftSide, slotIndex);
-                var dest = view.getConveyorAnchor(pathIndex);
-                if (anchor != null && dest != null) {
-                    com.badlogic.gdx.math.Vector2 p = dest.localToStageCoordinates(new com.badlogic.gdx.math.Vector2(dest.getWidth() / 2f, dest.getHeight() / 2f));
-                    anchor.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo(p.x - anchor.getWidth() / 2f, p.y - anchor.getHeight() / 2f, com.splicelab.combat.CombatTuning.CONVEYOR_MOVE_DURATION_SECONDS));
-                }
+                // Sockets are visualized in LabGameView; no slot actor to move here.
             }
 
             @Override
             public void onFusionAttack(boolean leftSide, int slotIndex, int damage, boolean special) {
-                var from = view.getConveyorSlotAnchor(leftSide, slotIndex);
+                // Projectiles originate from the attack-zone socket anchor.
+                var from = view.getConveyorAnchor(com.splicelab.combat.CombatTuning.ATTACK_ZONE_INDEX);
                 var to = view.getEnemyAnchor();
-                if (from != null && to != null) {
-                    view.spawnProjectile(from, to, special ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.CYAN, null);
-                }
-                if (special && from != null) {
-                    view.floatTextNear(from, "SPECIAL!", com.badlogic.gdx.graphics.Color.GOLD);
-                }
+                if (from != null && to != null) view.spawnProjectile(from, to, special ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.CYAN, null);
+                if (special && from != null) view.floatTextNear(from, "SPECIAL!", com.badlogic.gdx.graphics.Color.GOLD);
             }
 
             @Override

@@ -21,6 +21,8 @@ public final class CombatController {
 
     private final java.util.Random rng = new java.util.Random();
 
+    private static final int TUBE_BATCH_SPAWN_COUNT = 4;
+
     public interface CombatFeedback {
         int getConveyorPathLength();
 
@@ -192,34 +194,40 @@ public final class CombatController {
         if (!com.splicelab.debug.DebugFlags.FREE_TUBE_SPAWN && state.tubeCooldownRemaining > 0f) {
             return CommandResult.fail(CommandResult.Code.TUBE_ON_COOLDOWN, "Tube on cooldown");
         }
-        if (state.tubeCharges <= 0) {
-            return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "No tube charges");
+        if (state.tubeCharges <= 0) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "No tube charges");
+
+        int spawned = 0;
+        for (int n = 0; n < TUBE_BATCH_SPAWN_COUNT; n++) {
+            int[] empty = findRandomEmptyNonTubeCell();
+            if (empty == null) break;
+
+            var choice = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
+            if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
+                return CommandResult.fail(CommandResult.Code.INVALID_LEVEL, "No spawn choices");
+            }
+
+            String id = nextInstanceId();
+            IngredientInstance instance;
+            if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.ENTITY) {
+                EntityType e = choice.entityType();
+                instance = SimpleIngredientInstance.ofEntity(id, e);
+            } else {
+                ItemType i = choice.itemType();
+                instance = SimpleIngredientInstance.ofItem(id, i);
+            }
+
+            state.grid[empty[0]][empty[1]] = instance;
+            spawned++;
+            CombatLog.d("spawn ingredient type=" + choice.type() + " at=" + empty[0] + "," + empty[1]);
         }
 
-        int[] empty = findRandomEmptyNonTubeCell();
-        if (empty == null) {
+        if (spawned <= 0) {
             return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
         }
 
-        var choice = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
-        if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
-            return CommandResult.fail(CommandResult.Code.INVALID_LEVEL, "No spawn choices");
-        }
-
-        String id = nextInstanceId();
-        IngredientInstance instance;
-        if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.ENTITY) {
-            EntityType e = choice.entityType();
-            instance = SimpleIngredientInstance.ofEntity(id, e);
-        } else {
-            ItemType i = choice.itemType();
-            instance = SimpleIngredientInstance.ofItem(id, i);
-        }
-
-        state.grid[empty[0]][empty[1]] = instance;
+        // One activation = one batch.
         state.tubeCooldownRemaining = getTubeCooldownSeconds();
         state.tubeCharges = Math.max(0, state.tubeCharges - 1);
-        CombatLog.d("spawn ingredient type=" + choice.type() + " at=" + empty[0] + "," + empty[1]);
         return CommandResult.ok();
     }
 

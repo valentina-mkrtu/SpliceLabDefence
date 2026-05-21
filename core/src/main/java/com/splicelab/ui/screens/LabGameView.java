@@ -24,7 +24,6 @@ import com.splicelab.model.ingredient.IngredientInstance;
 import com.splicelab.model.ingredient.SimpleIngredientInstance;
 import com.splicelab.ui.UiConstants;
 import com.splicelab.ui.UiFactory;
-import com.splicelab.ui.widgets.ConveyorSlotWidget;
 import com.splicelab.ui.widgets.GridCellWidget;
 import com.splicelab.ui.widgets.HpBarWidget;
 import com.splicelab.ui.widgets.LevelTimerWidget;
@@ -38,8 +37,11 @@ public final class LabGameView {
     private final Table root;
     private final GridCellWidget[][] cells = new GridCellWidget[AppConstants.GRID_COLS][AppConstants.GRID_ROWS];
     private final TubeWidget tube;
-    private final ConveyorSlotWidget[] leftSlots;
-    private final ConveyorSlotWidget[] rightSlots;
+    // 12-socket conveyor prototype.
+    private static final int SOCKET_COUNT = 12;
+    private final Table[] conveyorSockets;
+    private final int[] socketPathIndex;
+    private final FusionInstance[] socketFusion;
     private final LevelTimerWidget timer;
 
     private final Label tubeStatus;
@@ -56,9 +58,8 @@ public final class LabGameView {
     private final DragAndDrop dragAndDrop = new DragAndDrop();
 
     private final Table beltLayer;
-    private final Table[] beltCells;
-
     private final Table beltLoop;
+    private final Table[] pathAnchors;
 
     public LabGameView(GameContext context) {
         this.context = context;
@@ -82,22 +83,9 @@ public final class LabGameView {
 
         Table conveyor = ui.panel();
         conveyor.add(ui.label("Conveyor / Vent"))
-                .colspan(3)
                 .pad(8)
                 .row();
 
-        leftSlots = new ConveyorSlotWidget[context.config.maxConveyorSlotsPerSide];
-        rightSlots = new ConveyorSlotWidget[context.config.maxConveyorSlotsPerSide];
-        Table slotsTable = new Table();
-        Table left = new Table();
-        Table right = new Table();
-        for (int i = 0; i < leftSlots.length; i++) {
-            leftSlots[i] = new ConveyorSlotWidget(skin, ui, true, i);
-            rightSlots[i] = new ConveyorSlotWidget(skin, ui, false, i);
-            left.add(leftSlots[i]).size(120, 70).pad(4).row();
-            right.add(rightSlots[i]).size(120, 70).pad(4).row();
-        }
-        slotsTable.add(left).pad(6);
         Table enemyPanel = new Table();
         enemyPanel.add(ui.label("ENEMY")).row();
         enemyLabel = ui.label("-");
@@ -112,9 +100,7 @@ public final class LabGameView {
         enemyPanel.row();
         enemyPanel.add(enemyVisual).size(140, 90).pad(6);
 
-        slotsTable.add(enemyPanel).pad(6);
-        slotsTable.add(right).pad(6);
-        conveyor.add(slotsTable).pad(6);
+        conveyor.add(enemyPanel).pad(6);
 
         Table gridPanel = ui.panel();
         gridPanel.add(ui.label("Lab Grid"))
@@ -146,7 +132,7 @@ public final class LabGameView {
         root.add(conveyor).growX().height(360).pad(UiConstants.PAD).row();
         root.add(gridPanel).grow().pad(UiConstants.PAD);
 
-        // Conveyor belt layer: invisible waypoint squares in a clockwise loop.
+        // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();
         beltLayer.setFillParent(true);
         beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
@@ -157,19 +143,22 @@ public final class LabGameView {
         beltLoop.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
         beltLayer.addActor(beltLoop);
 
-        beltCells = new Table[]{
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell(),
-                makeBeltCell()
-        };
-        for (Table c : beltCells) beltLayer.addActor(c);
+        pathAnchors = new Table[SOCKET_COUNT];
+        for (int i = 0; i < pathAnchors.length; i++) {
+            pathAnchors[i] = makePathAnchor();
+            beltLayer.addActor(pathAnchors[i]);
+        }
 
-        layoutBeltCells();
+        conveyorSockets = new Table[SOCKET_COUNT];
+        socketPathIndex = new int[SOCKET_COUNT];
+        socketFusion = new FusionInstance[SOCKET_COUNT];
+        for (int i = 0; i < SOCKET_COUNT; i++) {
+            conveyorSockets[i] = makeSocket(i);
+            socketPathIndex[i] = i;
+            beltLayer.addActor(conveyorSockets[i]);
+        }
+
+        layoutConveyorPath();
 
         attackZoneMarker = new Table();
         attackZoneMarker.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.55f)));
@@ -179,32 +168,83 @@ public final class LabGameView {
         positionAttackZoneMarker();
     }
 
-    private Table makeBeltCell() {
+    private Table makePathAnchor() {
         Table t = new Table();
-        t.setSize(64, 64);
+        t.setSize(10, 10);
         t.setVisible(false);
-        t.setBackground(skin.newDrawable("white", new Color(0.2f, 0.8f, 1f, 0.15f)));
         return t;
     }
 
-    private void layoutBeltCells() {
-        Vector2 center = enemyVisual.localToStageCoordinates(new Vector2(enemyVisual.getWidth() / 2f, enemyVisual.getHeight() / 2f));
-        float rx = 210f;
-        float ry = 95f;
-        for (int i = 0; i < beltCells.length; i++) {
-            float a = (float) (Math.PI * 2.0 * i / beltCells.length);
-            float x = center.x + (float) Math.cos(a) * rx;
-            float y = center.y + (float) Math.sin(a) * ry;
-            beltCells[i].setPosition(x - beltCells[i].getWidth() / 2f, y - beltCells[i].getHeight() / 2f);
+    private Table makeSocket(int index) {
+        Table t = new Table();
+        t.setSize(44, 44);
+        t.setBackground(skin.newDrawable("white", new Color(0.16f, 0.17f, 0.2f, 0.95f)));
+        Label lbl = ui.label(String.valueOf(index));
+        lbl.setColor(new Color(1f, 1f, 1f, 0.65f));
+        t.add(lbl);
+        return t;
+    }
+
+    private void layoutConveyorPath() {
+        // Fixed 12-point loop in beltLayer coordinates.
+        // Keep it stable: do not depend on child actor layout/initialization.
+        float margin = 70f;
+        float combatTopY = root.getHeight() - 70f;
+        float combatBottomY = root.getHeight() - 330f;
+        float leftX = margin;
+        float rightX = root.getWidth() - margin;
+
+        float topY = combatTopY;
+        float bottomY = combatBottomY;
+        float midY = (topY + bottomY) / 2f;
+        float midX = (leftX + rightX) / 2f;
+
+        Vector2[] pts = new Vector2[]{
+                // top row (L -> C -> R)
+                new Vector2(leftX, topY),
+                new Vector2(midX, topY),
+                new Vector2(rightX, topY),
+                // right side (T -> M -> B)
+                new Vector2(rightX, (topY + midY) / 2f),
+                new Vector2(rightX, midY),
+                new Vector2(rightX, (midY + bottomY) / 2f),
+                // bottom row (R -> C -> L)
+                new Vector2(rightX, bottomY),
+                new Vector2(midX, bottomY),
+                new Vector2(leftX, bottomY),
+                // left side (B -> M -> T)
+                new Vector2(leftX, (midY + bottomY) / 2f),
+                new Vector2(leftX, midY),
+                new Vector2(leftX, (topY + midY) / 2f)
+        };
+
+        // Visible belt loop background around the points.
+        float loopPad = 50f;
+        beltLoop.setSize((rightX - leftX) + loopPad * 2f, (topY - bottomY) + loopPad * 2f);
+        beltLoop.setPosition(leftX - loopPad, bottomY - loopPad);
+        beltLoop.setBackground(makeLoopDrawable());
+
+        for (int i = 0; i < pts.length; i++) {
+            pathAnchors[i].setPosition(pts[i].x, pts[i].y);
         }
 
-        // Place a readable conveyor loop behind the anchors.
-        float loopPad = 38f;
-        float loopW = rx * 2f + loopPad * 2f;
-        float loopH = ry * 2f + loopPad * 2f;
-        beltLoop.setSize(loopW, loopH);
-        beltLoop.setPosition(center.x - loopW / 2f, center.y - loopH / 2f);
-        beltLoop.setBackground(makeLoopDrawable());
+        // Place sockets at their current path indices.
+        for (int i = 0; i < conveyorSockets.length; i++) {
+            setSocketToPathIndex(i, socketPathIndex[i], false);
+        }
+    }
+
+    private void setSocketToPathIndex(int socketIndex, int pathIndex, boolean animate) {
+        Actor anchor = getConveyorAnchor(pathIndex);
+        if (anchor == null) return;
+        float x = anchor.getX() - conveyorSockets[socketIndex].getWidth() / 2f;
+        float y = anchor.getY() - conveyorSockets[socketIndex].getHeight() / 2f;
+        if (!animate) {
+            conveyorSockets[socketIndex].setPosition(x, y);
+        } else {
+            conveyorSockets[socketIndex].clearActions();
+            conveyorSockets[socketIndex].addAction(Actions.moveTo(x, y, CombatTuning.CONVEYOR_MOVE_DURATION_SECONDS));
+        }
     }
 
     private Drawable makeLoopDrawable() {
@@ -237,17 +277,14 @@ public final class LabGameView {
             }
         }
 
-        for (int i = 0; i < leftSlots.length; i++) {
-            dragAndDrop.addTarget(new ConveyorTarget(leftSlots[i], true, i, controller));
-        }
-        for (int i = 0; i < rightSlots.length; i++) {
-            dragAndDrop.addTarget(new ConveyorTarget(rightSlots[i], false, i, controller));
+        for (int i = 0; i < conveyorSockets.length; i++) {
+            dragAndDrop.addTarget(new ConveyorSocketTarget(conveyorSockets[i], i, controller));
         }
     }
 
     public void syncFromState(CombatState state) {
         if (state == null) return;
-        layoutBeltCells();
+        layoutConveyorPath();
         positionAttackZoneMarker();
         timer.setSeconds(state.remainingTimeSeconds);
         tubeStatus.setText("Tube HP " + state.tubeHp + " | CD " + String.format("%.1f", state.tubeCooldownRemaining) + " | Charges " + state.tubeCharges);
@@ -267,19 +304,28 @@ public final class LabGameView {
             }
         }
 
-        for (int i = 0; i < leftSlots.length; i++) {
-            boolean unlocked = context.unlocks.isConveyorSlotUnlocked(true, i);
-            leftSlots[i].setLocked(!unlocked);
+        // Socket visuals show deployed fusions.
+        for (int i = 0; i < socketFusion.length; i++) socketFusion[i] = null;
+        for (int i = 0; i < state.conveyorLeft.length; i++) {
             FusionInstance f = state.conveyorLeft[i];
-            leftSlots[i].setText(unlocked ? (f == null ? "Empty" : f.displayName + "\n" + f.hp + "/" + f.maxHp) : "Locked");
-            leftSlots[i].setHpPercent(f == null ? 1f : (f.hp / (float) Math.max(1, f.maxHp)));
+            if (f == null) continue;
+            int idx = state.conveyorPathIndexLeft[i];
+            if (idx >= 0 && idx < SOCKET_COUNT) socketFusion[idx] = f;
         }
-        for (int i = 0; i < rightSlots.length; i++) {
-            boolean unlocked = context.unlocks.isConveyorSlotUnlocked(false, i);
-            rightSlots[i].setLocked(!unlocked);
+        for (int i = 0; i < state.conveyorRight.length; i++) {
             FusionInstance f = state.conveyorRight[i];
-            rightSlots[i].setText(unlocked ? (f == null ? "Empty" : f.displayName + "\n" + f.hp + "/" + f.maxHp) : "Locked");
-            rightSlots[i].setHpPercent(f == null ? 1f : (f.hp / (float) Math.max(1, f.maxHp)));
+            if (f == null) continue;
+            int idx = state.conveyorPathIndexRight[i];
+            if (idx >= 0 && idx < SOCKET_COUNT) socketFusion[idx] = f;
+        }
+
+        for (int i = 0; i < conveyorSockets.length; i++) {
+            conveyorSockets[i].clearChildren();
+            String label = socketFusion[i] == null ? String.valueOf(i) : ("F\n" + socketFusion[i].displayName);
+            Label lbl = ui.label(label);
+            lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
+            lbl.setColor(new Color(1f, 1f, 1f, socketFusion[i] == null ? 0.65f : 1f));
+            conveyorSockets[i].add(lbl).grow();
         }
 
         if (state.activeEnemy == null) {
@@ -347,21 +393,17 @@ public final class LabGameView {
     }
 
     public Actor getConveyorSlotAnchor(boolean leftSide, int index) {
-        if (leftSide) {
-            if (index < 0 || index >= leftSlots.length) return null;
-            return leftSlots[index];
-        }
-        if (index < 0 || index >= rightSlots.length) return null;
-        return rightSlots[index];
+        // Slot actors are no longer used for the conveyor prototype.
+        return null;
     }
 
     public int getConveyorPathLength() {
-        return beltCells.length;
+        return SOCKET_COUNT;
     }
 
     public Actor getConveyorAnchor(int pathIndex) {
-        if (pathIndex < 0 || pathIndex >= beltCells.length) return null;
-        return beltCells[pathIndex];
+        if (pathIndex < 0 || pathIndex >= pathAnchors.length) return null;
+        return pathAnchors[pathIndex];
     }
 
     private static String labelFor(IngredientInstance inst) {
@@ -416,15 +458,13 @@ public final class LabGameView {
         }
     }
 
-    private final class ConveyorTarget extends DragAndDrop.Target {
-        private final boolean leftSide;
-        private final int index;
+    private final class ConveyorSocketTarget extends DragAndDrop.Target {
+        private final int socketIndex;
         private final CombatController controller;
 
-        public ConveyorTarget(ConveyorSlotWidget actor, boolean leftSide, int index, CombatController controller) {
+        public ConveyorSocketTarget(Actor actor, int socketIndex, CombatController controller) {
             super(actor);
-            this.leftSide = leftSide;
-            this.index = index;
+            this.socketIndex = socketIndex;
             this.controller = controller;
         }
 
@@ -436,7 +476,11 @@ public final class LabGameView {
         @Override
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
-            controller.requestDeployFusionFromGrid(from.col, from.row, leftSide, index);
+            // Map socket index to controller slot (left side uses 0..2, right side uses 0..2).
+            // To keep prototype playable, use all 12 sockets as valid indices by spreading across slots.
+            boolean leftSide = socketIndex < 6;
+            int slot = Math.min(2, socketIndex % 3);
+            controller.requestDeployFusionFromGrid(from.col, from.row, leftSide, slot);
         }
     }
 }
