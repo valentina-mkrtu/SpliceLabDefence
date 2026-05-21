@@ -65,7 +65,7 @@ public final class CombatController {
 
         state.level = level;
         state.remainingTimeSeconds = level.durationSeconds;
-        state.tubeHp = level.tubeHp;
+        state.tubeHp = level.tubeHp > 0 ? level.tubeHp : context.config.tubeMaxHp;
 
         float cd = level.tubeCooldownSeconds <= 0f ? context.config.tubeCooldownSeconds : level.tubeCooldownSeconds;
         int charges = level.maxTubeCharges <= 0 ? context.config.maxTubeCharges : level.maxTubeCharges;

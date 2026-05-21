@@ -48,12 +48,14 @@ public final class LabGameView {
     private final HpBarWidget enemyHpBar;
     private final Table enemyVisual;
 
-    private final Actor[] conveyorAnchors;
     private final Table attackZoneMarker;
 
     private Runnable onTubeTapped;
 
     private final DragAndDrop dragAndDrop = new DragAndDrop();
+
+    private final Table beltLayer;
+    private final Table[] beltCells;
 
     public LabGameView(GameContext context) {
         this.context = context;
@@ -141,20 +143,51 @@ public final class LabGameView {
         root.add(conveyor).growX().height(360).pad(UiConstants.PAD).row();
         root.add(gridPanel).grow().pad(UiConstants.PAD);
 
-        conveyorAnchors = new Actor[]{
-                leftSlots[0],
-                enemyVisual,
-                rightSlots[0],
-                rightSlots[Math.min(1, rightSlots.length - 1)],
-                enemyHpBar,
-                leftSlots[Math.min(1, leftSlots.length - 1)]
+        // Conveyor belt layer: invisible waypoint squares in a clockwise loop.
+        beltLayer = new Table();
+        beltLayer.setFillParent(true);
+        beltLayer.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        root.addActor(beltLayer);
+
+        beltCells = new Table[]{
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell(),
+                makeBeltCell()
         };
+        for (Table c : beltCells) beltLayer.addActor(c);
+
+        layoutBeltCells();
 
         attackZoneMarker = new Table();
         attackZoneMarker.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.55f)));
         attackZoneMarker.setSize(22, 22);
         root.addActor(attackZoneMarker);
         positionAttackZoneMarker();
+    }
+
+    private Table makeBeltCell() {
+        Table t = new Table();
+        t.setSize(64, 64);
+        t.setVisible(false);
+        t.setBackground(skin.newDrawable("white", new Color(0.2f, 0.8f, 1f, 0.15f)));
+        return t;
+    }
+
+    private void layoutBeltCells() {
+        Vector2 center = enemyVisual.localToStageCoordinates(new Vector2(enemyVisual.getWidth() / 2f, enemyVisual.getHeight() / 2f));
+        float rx = 210f;
+        float ry = 95f;
+        for (int i = 0; i < beltCells.length; i++) {
+            float a = (float) (Math.PI * 2.0 * i / beltCells.length);
+            float x = center.x + (float) Math.cos(a) * rx;
+            float y = center.y + (float) Math.sin(a) * ry;
+            beltCells[i].setPosition(x - beltCells[i].getWidth() / 2f, y - beltCells[i].getHeight() / 2f);
+        }
     }
 
     private void positionAttackZoneMarker() {
@@ -192,6 +225,7 @@ public final class LabGameView {
 
     public void syncFromState(CombatState state) {
         if (state == null) return;
+        layoutBeltCells();
         positionAttackZoneMarker();
         timer.setSeconds(state.remainingTimeSeconds);
         tubeStatus.setText("Tube HP " + state.tubeHp + " | CD " + String.format("%.1f", state.tubeCooldownRemaining) + " | Charges " + state.tubeCharges);
@@ -300,12 +334,12 @@ public final class LabGameView {
     }
 
     public int getConveyorPathLength() {
-        return conveyorAnchors.length;
+        return beltCells.length;
     }
 
     public Actor getConveyorAnchor(int pathIndex) {
-        if (pathIndex < 0 || pathIndex >= conveyorAnchors.length) return null;
-        return conveyorAnchors[pathIndex];
+        if (pathIndex < 0 || pathIndex >= beltCells.length) return null;
+        return beltCells[pathIndex];
     }
 
     private static String labelFor(IngredientInstance inst) {
