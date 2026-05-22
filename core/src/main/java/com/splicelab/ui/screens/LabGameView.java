@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -46,6 +47,8 @@ public final class LabGameView {
     // Positive value shifts the whole belt-line segment upward.
     private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.01f;
 
+    private static final int ATTACK_MARKER_PATH_INDEX = com.splicelab.combat.CombatTuning.ATTACK_ZONE_INDEX;
+
     private final GameContext context;
     private final Skin skin;
     private final UiFactory ui;
@@ -77,6 +80,7 @@ public final class LabGameView {
     private final Image enemyIcon;
 
     private final Table attackZoneMarker;
+    private final AttackZoneMarkerActor attackZoneMarkerActor;
 
     private float beltPhase;
 
@@ -124,8 +128,7 @@ public final class LabGameView {
 
         // Upper HUD should not paint a panel background; let the gameplay background show through.
         Table top = new Table();
-        top.add(ui.label("Combat Area (prototype)")).pad(8).left();
-        tubeStatus = ui.label("Tube");
+        tubeStatus = ui.label("");
         top.add(tubeStatus).pad(8).left();
         timer = new LevelTimerWidget(skin, ui);
         top.add(timer).expandX().right().pad(8);
@@ -136,18 +139,13 @@ public final class LabGameView {
 
         // Middle section should not paint a panel background; let the gameplay background show through.
         Table conveyor = new Table();
-        conveyor.add(ui.label("Conveyor / Vent"))
-                .pad(8)
-                .row();
 
         Table enemyPanel = new Table();
-        enemyPanel.add(ui.label("ENEMY")).row();
         enemyLabel = ui.label("-");
         enemyLabel.setVisible(false);
         enemyPanel.add(enemyLabel).pad(0).row();
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
         enemyHpBar.setSize(180, 10);
-        enemyPanel.add(enemyHpBar).pad(4).row();
 
         shaftBgTexture = new Texture(SHAFT_BG_TEXTURE_PATH);
 
@@ -163,10 +161,14 @@ public final class LabGameView {
         shaftBg.getColor().a = 1f;
         root.addActor(shaftBg);
 
-        enemyIcon.setSize(160, 120);
-        enemyIcon.setPosition(-20f, 20f);
+        enemyIcon.setSize(225, 168);
+        enemyIcon.setPosition(-21f, 55f);
         enemyVisual.addActor(enemyIcon);
-        enemyPanel.add(enemyVisual).size(160, 140).pad(6).padBottom(20);
+
+        // Keep enemy HP bar above the enemy image.
+        enemyHpBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 6f);
+        enemyVisual.addActor(enemyHpBar);
+        enemyPanel.add(enemyVisual).size(160, 140).pad(6).padTop(30).padBottom(70);
 
         conveyor.add(enemyPanel).pad(6);
 
@@ -180,7 +182,8 @@ public final class LabGameView {
         // Scale the frame up uniformly to better align with top section composition.
         gridPanel = new Table();
         gridPanel.setTransform(true);
-        gridPanel.setPosition(0f, 200f);
+        // Grid is placed later by Table layout; don't pin it here.
+        gridPanel.setPosition(0f, 0f);
         var gridBg = PlaceholderSkinFactory.getDrawableIfPresent(skin, "fusion_station_bg");
         if (gridBg != null) {
             gridPanel.setBackground(gridBg);
@@ -211,9 +214,10 @@ public final class LabGameView {
         gridPanel.add(grid).padLeft(22).padRight(36).padTop(4);
 
         root.add(top).growX().height(60).row();
-        root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).padBottom(-18).row();
+        root.add(conveyor).growX().expandY().height(300).pad(UiConstants.PAD + 2).padBottom(-18).row();
         // Don't stretch the fusion station frame; center it at native size.
-        root.add(gridPanel).pad(UiConstants.PAD + 2).padTop(10).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
+        // Push grid up closer to conveyor.
+        root.add(gridPanel).pad(UiConstants.PAD + 2).padTop(-20).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
 
         // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();
@@ -251,10 +255,12 @@ public final class LabGameView {
         layoutConveyorPath();
 
         attackZoneMarker = new Table();
-        attackZoneMarker.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.55f)));
         attackZoneMarker.setSize(22, 22);
-        attackZoneMarker.add(ui.label("ATTACK")).pad(2);
         root.addActor(attackZoneMarker);
+
+        attackZoneMarkerActor = new AttackZoneMarkerActor(new Color(1f, 1f, 0.2f, 0.85f));
+        attackZoneMarkerActor.setSize(24, 18);
+        root.addActor(attackZoneMarkerActor);
         positionAttackZoneMarker();
     }
 
@@ -410,11 +416,54 @@ public final class LabGameView {
         float trackOffsetY = loopSize * BELT_TRACK_VERTICAL_OFFSET_RATIO;
         float trackBottom = loopY + loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
         float trackTop = loopY + loopSize - loopSize * BELT_TRACK_INSET_Y_RATIO + trackOffsetY;
+        float trackCornerRadius = Math.min(trackRight - trackLeft, trackTop - trackBottom) * BELT_TRACK_CORNER_RADIUS_RATIO;
 
-        float x = trackRight;
-        float y = (trackBottom + trackTop) * 0.5f;
+        // Keep marker closer to belt edge.
+        // Place marker at the exact combat checkpoint.
+        int pathLen = SOCKET_COUNT;
+        float idx01 = ((ATTACK_MARKER_PATH_INDEX % pathLen) + pathLen) % pathLen;
+        float perimeter = roundedTrackPerimeter(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
+        float slotPhaseOffset = beltLoopLineActor.getSlotCenterOffset(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
+        float d = (slotPhaseOffset + perimeter * (idx01 / (float) pathLen)) % perimeter;
+        PathSample sample = sampleRoundedTrack(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius, d);
+
+        // Nudge outward (to the right) so it hugs the belt edge.
+        float x = sample.x() + 18f;
+        float y = sample.y();
         Vector2 p = beltLayer.localToStageCoordinates(new Vector2(x, y));
-        attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
+        attackZoneMarker.setVisible(false);
+        attackZoneMarkerActor.setPosition(p.x - attackZoneMarkerActor.getWidth() / 2f, p.y - attackZoneMarkerActor.getHeight() / 2f);
+    }
+
+    private static final class AttackZoneMarkerActor extends Actor {
+        private final ShapeRenderer shapes = new ShapeRenderer();
+        private final Color color;
+
+        private AttackZoneMarkerActor(Color color) {
+            this.color = new Color(color);
+            setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            batch.end();
+            shapes.setProjectionMatrix(getStage().getCamera().combined);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(color.r, color.g, color.b, color.a * parentAlpha);
+
+            float x = getX();
+            float y = getY();
+            float w = getWidth();
+            float h = getHeight();
+            // Triangle points left toward belt.
+            shapes.triangle(x + w, y, x + w, y + h, x, y + h * 0.5f);
+            shapes.end();
+            batch.begin();
+        }
+
+        public void dispose() {
+            shapes.dispose();
+        }
     }
 
     private void layoutShaftBackground() {
@@ -434,10 +483,10 @@ public final class LabGameView {
         float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
         float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
 
-        float shaftW = loopSize * 0.00064f;
-        float shaftH = loopSize * 0.00076f;
-        float shaftX = loopX + loopSize * 0.005f;
-        float shaftY = loopY + loopSize * 0.005f;
+        float shaftW = loopSize * 0.432f;
+        float shaftH = loopSize * 0.432f;
+        float shaftX = loopX + (loopSize - shaftW) * 0.5f;
+        float shaftY = loopY + (loopSize - shaftH) * 0.5f;
         shaftBg.setBounds(shaftX, shaftY, shaftW, shaftH);
     }
 
@@ -451,6 +500,7 @@ public final class LabGameView {
     }
 
     public void dispose() {
+        if (attackZoneMarkerActor != null) attackZoneMarkerActor.dispose();
         beltLoopLineTexture.dispose();
         beltLoopBaseTexture.dispose();
         shaftBgTexture.dispose();
@@ -533,7 +583,8 @@ public final class LabGameView {
                 if (iconPath != null) {
                     Image icon = new Image(new TextureRegionDrawable(new TextureRegion(new Texture(iconPath))));
                     icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                    conveyorSockets[i].add(icon).size(60, 60);
+                    // Make fusion icons 50% bigger on the belt.
+                    conveyorSockets[i].add(icon).size(90, 90);
                 }
             }
         }
@@ -542,6 +593,7 @@ public final class LabGameView {
             enemyHpBar.setPercent(0f);
             enemyVisual.setVisible(false);
         } else {
+            enemyIcon.setScale(1f);
             EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
             int maxHp = def == null ? Math.max(1, state.activeEnemy.hp) : Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier));
             enemyHpBar.setPercent(state.activeEnemy.hp / (float) maxHp);
@@ -559,6 +611,8 @@ public final class LabGameView {
                 case BOSS_SMUGGLER_CAPTAIN -> enemyBoss1Texture;
             };
             enemyIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
+            // Make enemy image 10% smaller.
+            enemyIcon.setScale(0.9f);
         }
     }
 

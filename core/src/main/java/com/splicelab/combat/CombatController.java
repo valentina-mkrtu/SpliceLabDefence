@@ -22,9 +22,6 @@ public final class CombatController {
     private final java.util.Random rng = new java.util.Random();
 
     private static final int DEFAULT_TUBE_BAG_SIZE = 8;
-
-    private static final int ATTACK_ZONE_INDEX = 4;
-
     private final java.util.ArrayDeque<com.splicelab.services.TubeSpawnService.SpawnChoice> tubeBag = new java.util.ArrayDeque<>();
 
     public interface CombatFeedback {
@@ -84,7 +81,8 @@ public final class CombatController {
         refillTubeBagIfNeeded();
         state.activeEnemy = null;
         state.enemySpawnCooldownRemaining = 0f;
-        state.enemyAttackCooldownRemaining = 0f;
+        // Enemy attacks every 3 seconds.
+        state.enemyAttackCooldownRemaining = 3f;
         state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
         for (int i = 0; i < state.fusionAttackCooldownSockets.length; i++) state.fusionAttackCooldownSockets[i] = 0f;
 
@@ -474,7 +472,7 @@ public final class CombatController {
 
         int scaledDmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(def.attack.damage() * state.level.enemyAtkMultiplier));
 
-        int targetSocket = findFirstOccupiedSocket();
+        int targetSocket = findRandomOccupiedSocket();
         FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
         if (target == null) {
             state.tubeHp = Math.max(0, state.tubeHp - scaledDmg);
@@ -499,10 +497,20 @@ public final class CombatController {
         }
     }
 
-    private int findFirstOccupiedSocket() {
+    private int findRandomOccupiedSocket() {
+        int count = 0;
         for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
             FusionInstance f = state.conveyorSockets[socketId];
-            if (f != null && f.hp > 0) return socketId;
+            if (f != null && f.hp > 0) count++;
+        }
+        if (count == 0) return -1;
+
+        int pick = rng.nextInt(count);
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f == null || f.hp <= 0) continue;
+            if (pick == 0) return socketId;
+            pick--;
         }
         return -1;
     }

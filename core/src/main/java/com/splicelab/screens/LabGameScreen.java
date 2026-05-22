@@ -51,7 +51,7 @@ public final class LabGameScreen extends BaseScreen {
                 // Projectiles originate from the attacking socket's current position.
                 var from = view.getSocketActor(slotIndex);
                 var to = view.getEnemyAnchor();
-                if (from != null && to != null) view.spawnProjectile(from, to, special ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.CYAN, null);
+                if (from != null && to != null) view.spawnProjectile(from, to, com.badlogic.gdx.graphics.Color.GREEN, null);
                 if (special && from != null) view.floatTextNear(from, "SPECIAL!", com.badlogic.gdx.graphics.Color.GOLD);
             }
 
@@ -76,7 +76,7 @@ public final class LabGameScreen extends BaseScreen {
                 var anchor = view.getSocketActor(slotIndex);
                 if (anchor != null) {
                     view.floatTextNear(anchor, "-" + damage, com.badlogic.gdx.graphics.Color.SCARLET);
-                    view.spawnProjectile(view.getEnemyAnchor(), anchor, com.badlogic.gdx.graphics.Color.GRAY, null);
+                    view.spawnProjectile(view.getEnemyAnchor(), anchor, com.badlogic.gdx.graphics.Color.RED, null);
                 }
             }
 
@@ -93,6 +93,9 @@ public final class LabGameScreen extends BaseScreen {
                 var anchor = view.getTubeAnchor();
                 if (anchor != null) {
                     view.floatTextNear(anchor, "-" + damage, com.badlogic.gdx.graphics.Color.SCARLET);
+                    // Enemy throws a red ball at the tube when no fusions are deployed.
+                    var from = view.getEnemyAnchor();
+                    if (from != null) view.spawnProjectile(from, anchor, com.badlogic.gdx.graphics.Color.RED, null);
                 }
             }
         });

@@ -1563,8 +1563,8 @@
             <item id="NANOBOTS" />
         </allowedItems>
         <enemyPool>
-            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
             <enemy id="BLACKMARKET_BRUTE" />
+            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
         </enemyPool>
         <rewards winCoins="1000" winDna="55" firstWinBonusCoins="800" firstWinBonusDna="45" />
     </level>
