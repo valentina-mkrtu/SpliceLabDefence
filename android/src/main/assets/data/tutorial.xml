@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<tutorial version="1">
-    <step id="TUT_TAP_TUBE" messageKey="TUTORIAL_TAP_TUBE" />
-    <step id="TUT_SPAWN_SECOND" messageKey="TUTORIAL_SPAWN_SECOND" />
-    <step id="TUT_FUSE" messageKey="TUTORIAL_FUSE" />
-    <step id="TUT_DEPLOY" messageKey="TUTORIAL_DEPLOY" />
-    <step id="TUT_ENEMY" messageKey="TUTORIAL_ENEMY" />
-    <step id="TUT_REWARD" messageKey="TUTORIAL_REWARD" />
-    <step id="TUT_AD_BOOST" messageKey="TUTORIAL_AD_BOOST" />
+<tutorial version="2">
+    <step id="TUT_TAP_TUBE" messageKey="TUTORIAL_TAP_TUBE" highlightElement="ui_tube" pauseGame="true" />
+    <step id="TUT_SPAWN_SECOND" messageKey="TUTORIAL_SPAWN_SECOND" highlightElement="ui_tube" pauseGame="true" />
+    <step id="TUT_COOLDOWN" messageKey="TUTORIAL_COOLDOWN" highlightElement="ui_tube_timer" pauseGame="false" />
+
+    <step id="TUT_FUSE" messageKey="TUTORIAL_FUSE" highlightElement="grid_unlocked" pauseGame="true" />
+    <step id="TUT_DEPLOY" messageKey="TUTORIAL_DEPLOY" highlightElement="conveyor_slot_left_1" pauseGame="true" />
+
+    <step id="TUT_COMBAT_EXPLAIN" messageKey="TUTORIAL_COMBAT_EXPLAIN" highlightElement="conveyor_attack_zone" pauseGame="true" />
+    <step id="TUT_ENEMY" messageKey="TUTORIAL_ENEMY" highlightElement="environment_vent" pauseGame="false" />
+
+    <step id="TUT_REWARD" messageKey="TUTORIAL_REWARD" highlightElement="ui_victory_screen" pauseGame="true" />
+    <step id="TUT_UPGRADES" messageKey="TUTORIAL_UPGRADES" highlightElement="ui_shop_coins" pauseGame="true" />
+    <step id="TUT_AD_BOOST" messageKey="TUTORIAL_AD_BOOST" highlightElement="ui_ad_boost_button" pauseGame="true" />
 </tutorial>

@@ -1,8 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<adRewards version="1">
-    <placement id="AD_EXTRA_INGREDIENT" displayNameKey="AD_EXTRA_INGREDIENT_NAME" descriptionKey="AD_EXTRA_INGREDIENT_DESC" />
-    <placement id="AD_INSTANT_TUBE_COOLDOWN" displayNameKey="AD_INSTANT_TUBE_COOLDOWN_NAME" descriptionKey="AD_INSTANT_TUBE_COOLDOWN_DESC" />
-    <placement id="AD_DOUBLE_WIN_REWARD" displayNameKey="AD_DOUBLE_WIN_REWARD_NAME" descriptionKey="AD_DOUBLE_WIN_REWARD_DESC" isPlaceholder="true" />
-    <placement id="AD_REVIVE_TUBE" displayNameKey="AD_REVIVE_TUBE_NAME" descriptionKey="AD_REVIVE_TUBE_DESC" />
-    <placement id="AD_EXTRA_TUBE_CHARGE" displayNameKey="AD_EXTRA_TUBE_CHARGE_NAME" descriptionKey="AD_EXTRA_TUBE_CHARGE_DESC" />
+<adRewards version="2">
+    <placement id="AD_DOUBLE_WIN_REWARD"
+               displayNameKey="AD_DOUBLE_WIN_REWARD_NAME"
+               descriptionKey="AD_DOUBLE_WIN_REWARD_DESC"
+               isPlaceholder="false"
+               rewardMultiplier="2.0"
+               maxPerDay="5" />
+
+    <placement id="AD_EXTRA_INGREDIENT"
+               displayNameKey="AD_EXTRA_INGREDIENT_NAME"
+               descriptionKey="AD_EXTRA_INGREDIENT_DESC"
+               maxPerLevel="3"
+               cooldownSeconds="30" />
+
+    <placement id="AD_INSTANT_TUBE_COOLDOWN"
+               displayNameKey="AD_INSTANT_TUBE_COOLDOWN_NAME"
+               descriptionKey="AD_INSTANT_TUBE_COOLDOWN_DESC"
+               maxPerLevel="2"
+               cooldownSeconds="45" />
+
+    <placement id="AD_EXTRA_TUBE_CHARGE"
+               displayNameKey="AD_EXTRA_TUBE_CHARGE_NAME"
+               descriptionKey="AD_EXTRA_TUBE_CHARGE_DESC"
+               maxPerLevel="1"
+               bonusAmount="1" />
+
+    <placement id="AD_REVIVE_TUBE"
+               displayNameKey="AD_REVIVE_TUBE_NAME"
+               descriptionKey="AD_REVIVE_TUBE_DESC"
+               maxPerLevel="1"
+               restoreHpPercent="50" />
+
+    <placement id="AD_FUSION_OVERCLOCK"
+               displayNameKey="AD_FUSION_OVERCLOCK_NAME"
+               descriptionKey="AD_FUSION_OVERCLOCK_DESC"
+               maxPerLevel="1"
+               durationSeconds="15"
+               statMultiplier="2.0" />
+
+    <placement id="AD_REPAIR_BELT"
+               displayNameKey="AD_REPAIR_BELT_NAME"
+               descriptionKey="AD_REPAIR_BELT_DESC"
+               maxPerLevel="2"
+               restoreHpPercent="100"
+               cooldownSeconds="60" />
 </adRewards>
