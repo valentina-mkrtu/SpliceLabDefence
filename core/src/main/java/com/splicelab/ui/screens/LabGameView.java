@@ -161,7 +161,7 @@ public final class LabGameView {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 GridCellWidget cell = new GridCellWidget(skin, ui, c, r);
                 cells[c][r] = cell;
-                grid.add(cell).size(72, 72).pad(4);
+                grid.add(cell).size(80, 80).pad(8);
             }
             grid.row();
         }
@@ -175,8 +175,8 @@ public final class LabGameView {
             }
         });
 
-        // Center the grid inside the fixed frame.
-        gridPanel.add(grid).pad(40);
+        // Center the grid inside the fixed frame (slightly down+left for visual balance).
+        gridPanel.add(grid).padTop(36).padLeft(28).padRight(44).padBottom(40);
 
         root.add(top).growX().height(60).row();
         root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).row();
@@ -394,6 +394,13 @@ public final class LabGameView {
     public void dispose() {
         beltLoopLineTexture.dispose();
         beltLoopBaseTexture.dispose();
+        tube.dispose();
+
+        for (int c = 0; c < AppConstants.GRID_COLS; c++) {
+            for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
+                cells[c][r].dispose();
+            }
+        }
     }
 
     public void setOnTubeTapped(Runnable onTubeTapped) {
@@ -454,10 +461,10 @@ public final class LabGameView {
             conveyorSockets[i].clearChildren();
             if (socketFusion[i] == null) {
                 conveyorSockets[i].setVisible(true);
-                conveyorSockets[i].setBackground(skin.newDrawable("white", new Color(0.05f, 0.06f, 0.08f, 0.12f)));
+                conveyorSockets[i].getColor().a = 0.45f;
             } else {
                 conveyorSockets[i].setVisible(true);
-                conveyorSockets[i].setBackground(skin.newDrawable("white", new Color(0.05f, 0.06f, 0.08f, 0.55f)));
+                conveyorSockets[i].getColor().a = 1f;
                 Label lbl = ui.label("F\n" + socketFusion[i].displayName);
                 lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
                 lbl.setColor(Color.WHITE);

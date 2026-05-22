@@ -1,19 +1,25 @@
 package com.splicelab.ui.widgets;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.splicelab.ui.UiFactory;
 
 public final class ConveyorSlotWidget extends Group {
+    private static final String SLOT_ICON_TEXTURE_PATH = "art/icons/slot.png";
+
     public final boolean leftSide;
     public final int index;
     private final Table bg;
     private final Label label;
     private final Skin skin;
     private final com.splicelab.ui.widgets.HpBarWidget hpBar;
+    private final Texture slotTexture;
 
     public ConveyorSlotWidget(Skin skin, UiFactory ui, boolean leftSide, int index) {
         this.skin = skin;
@@ -22,6 +28,11 @@ public final class ConveyorSlotWidget extends Group {
 
         bg = new Table();
         bg.setFillParent(true);
+
+        slotTexture = new Texture(SLOT_ICON_TEXTURE_PATH);
+        Image slotImage = new Image(new TextureRegion(slotTexture));
+        bg.add(slotImage).grow();
+        bg.row();
         label = ui.label("");
         bg.add(label);
         addActor(bg);
@@ -35,9 +46,13 @@ public final class ConveyorSlotWidget extends Group {
         setLocked(true);
     }
 
+    public void dispose() {
+        slotTexture.dispose();
+    }
+
     public void setLocked(boolean locked) {
-        Color c = locked ? new Color(0.25f, 0.1f, 0.1f, 1f) : new Color(0.1f, 0.25f, 0.12f, 1f);
-        bg.setBackground(skin.newDrawable("white", c));
+        Color c = locked ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 1f, 1f, 1f);
+        bg.setColor(c);
     }
 
     public void setText(String txt) {
