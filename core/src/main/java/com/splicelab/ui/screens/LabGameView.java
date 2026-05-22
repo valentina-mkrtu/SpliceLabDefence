@@ -20,6 +20,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
+import com.splicelab.model.EntityType;
+import com.splicelab.model.ItemType;
 import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.combat.CombatController;
 import com.splicelab.combat.CombatState;
@@ -35,6 +37,9 @@ import com.splicelab.ui.widgets.GridCellWidget;
 import com.splicelab.ui.widgets.HpBarWidget;
 import com.splicelab.ui.widgets.LevelTimerWidget;
 import com.splicelab.ui.widgets.TubeWidget;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public final class LabGameView {
     private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
@@ -81,6 +86,8 @@ public final class LabGameView {
     private final Texture enemyReg3Texture;
     private final Texture enemyBoss1Texture;
     private final Texture enemyBoss2Texture;
+
+    private final Map<String, Texture> textureCache = new HashMap<>();
     private final Image enemyIcon;
 
     private final Table attackZoneMarker;
@@ -515,6 +522,11 @@ public final class LabGameView {
         enemyBoss2Texture.dispose();
         tube.dispose();
 
+        for (Texture t : textureCache.values()) {
+            if (t != null) t.dispose();
+        }
+        textureCache.clear();
+
         for (int c = 0; c < AppConstants.GRID_COLS; c++) {
             for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
                 cells[c][r].dispose();
@@ -567,6 +579,9 @@ public final class LabGameView {
             }
         }
 
+        // Keep belt phase in sync with combat sim so attack checkpoint lines up.
+        beltPhase = state.conveyorBeltPhase;
+
         // Socket visuals show deployed fusions.
         for (int i = 0; i < socketFusion.length; i++) socketFusion[i] = state.conveyorSockets[i];
         for (int i = 0; i < conveyorSockets.length; i++) socketPathIndex[i] = state.conveyorSocketPathIndex[i];
@@ -585,11 +600,22 @@ public final class LabGameView {
                 conveyorSockets[i].getColor().a = 1f;
                 String iconPath = iconFor(socketFusion[i]);
                 if (iconPath != null) {
-                    Image icon = new Image(new TextureRegionDrawable(new TextureRegion(new Texture(iconPath))));
-                    icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                    // Make fusion icons 50% bigger on the belt.
-                    conveyorSockets[i].add(icon).size(90, 90);
+                    Texture tex = getTextureCached(iconPath);
+                    if (tex != null) {
+                        Image icon = new Image(new TextureRegionDrawable(new TextureRegion(tex)));
+                        icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
+                        // Make fusion icons 50% bigger on the belt.
+                        conveyorSockets[i].add(icon).size(90, 90);
+                    }
                 }
+
+                // Per-fusion HP bar.
+                HpBarWidget hp = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.2f, 0.95f, 0.2f, 1f));
+                hp.setSize(70, 7);
+                float pct = socketFusion[i].maxHp <= 0 ? 1f : (socketFusion[i].hp / (float) socketFusion[i].maxHp);
+                hp.setPercent(pct);
+                hp.setPosition(10f, conveyorSockets[i].getHeight() - 14f);
+                conveyorSockets[i].addActor(hp);
             }
         }
 
@@ -690,6 +716,15 @@ public final class LabGameView {
         return pathAnchors[pathIndex];
     }
 
+    private Texture getTextureCached(String path) {
+        if (path == null || path.isBlank()) return null;
+        Texture existing = textureCache.get(path);
+        if (existing != null) return existing;
+        Texture created = new Texture(path);
+        textureCache.put(path, created);
+        return created;
+    }
+
     private static String labelFor(IngredientInstance inst) {
         if (inst == null) return "";
         if (inst instanceof FusionInstance f) {
@@ -705,21 +740,72 @@ public final class LabGameView {
     private static String iconFor(IngredientInstance inst) {
         if (inst == null) return null;
         if (inst instanceof FusionInstance f) {
-            if (f.entityType != null && f.itemType != null
-                    && f.entityType.name().equalsIgnoreCase("SLIME")
-                    && f.itemType.name().equalsIgnoreCase("BATTERY")) {
-                return "art/fusions/electroslime.png";
-            }
+            return fusionIconPath(f.entityType, f.itemType);
         }
         if (inst instanceof SimpleIngredientInstance s) {
             if (s.kind() == IngredientKind.ENTITY && s.entityType().name().equalsIgnoreCase("SLIME")) {
-                return "art/entities/slime.png";
+                return entityIconPath(s.entityType());
             }
-            if (s.kind() == IngredientKind.ITEM && s.itemType().name().equalsIgnoreCase("BATTERY")) {
-                return "art/items/battery.png";
+            if (s.kind() == IngredientKind.ENTITY) {
+                return entityIconPath(s.entityType());
+            }
+            if (s.kind() == IngredientKind.ITEM) {
+                return itemIconPath(s.itemType());
             }
         }
         return null;
+    }
+
+    private static String entityIconPath(EntityType type) {
+        if (type == null) return null;
+        return switch (type) {
+            case SLIME -> "characters/slime/slime.png";
+            case MECH -> "characters/mech/mech.png";
+            case FUNGUS -> "characters/fungy/fungy.png";
+        };
+    }
+
+    private static String itemIconPath(ItemType type) {
+        if (type == null) return null;
+        // Item art lives in android assets/art/items.
+        return switch (type) {
+            case BATTERY -> "art/items/battery.png";
+            case TOXIC_WASTE -> "art/items/toxicwaste.png";
+            case RADIOACTIVE_GOO -> "art/items/radioactivegoo.png";
+            case CRYOGEL -> "art/items/criogel.png";
+            case CRYSTAL_SHARD -> "art/items/crystalshard.png";
+            case NANOBOTS -> "art/items/nanobots.png";
+        };
+    }
+
+    private static String fusionIconPath(EntityType entityType, ItemType itemType) {
+        if (entityType == null || itemType == null) return null;
+        return switch (entityType) {
+            case SLIME -> switch (itemType) {
+                case BATTERY -> "characters/slime/electroslime.png";
+                case TOXIC_WASTE -> "characters/slime/toxicslime.png";
+                case RADIOACTIVE_GOO -> "characters/slime/radioactiveslime.png";
+                case CRYOGEL -> "characters/slime/crioslime.png";
+                case CRYSTAL_SHARD -> "characters/slime/crystalslime.png";
+                case NANOBOTS -> "characters/slime/nanoslime.png";
+            };
+            case MECH -> switch (itemType) {
+                case BATTERY -> "characters/mech/mechbot.png";
+                case TOXIC_WASTE -> "characters/mech/toxicmech.png";
+                case RADIOACTIVE_GOO -> "characters/mech/radioactivemech.png";
+                case CRYOGEL -> "characters/mech/criomech.png";
+                case CRYSTAL_SHARD -> "characters/mech/crystalmech.png";
+                case NANOBOTS -> "characters/mech/nanomechbot.png";
+            };
+            case FUNGUS -> switch (itemType) {
+                case BATTERY -> "characters/fungy/electrofungy.png";
+                case TOXIC_WASTE -> "characters/fungy/toxicfungy.png";
+                case RADIOACTIVE_GOO -> "characters/fungy/radioactivefungy.png";
+                case CRYOGEL -> "characters/fungy/criofungy.png";
+                case CRYSTAL_SHARD -> "characters/fungy/crystalfungy.png";
+                case NANOBOTS -> "characters/fungy/nanofungy.png";
+            };
+        };
     }
 
     private static final class MovingBeltLineActor extends Actor {

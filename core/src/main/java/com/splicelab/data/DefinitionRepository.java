@@ -62,6 +62,13 @@ public final class DefinitionRepository {
         return Optional.ofNullable(enemies.get(type));
     }
 
+    public int getEnemyThreat(EnemyType type) {
+        EnemyDefinition def = enemies.get(type);
+        if (def == null) return 0;
+        // Threat is stored as rewardWeight for now (XML uses threat/rewardWeight).
+        return Math.max(0, Math.round(def.rewardWeight));
+    }
+
     public static DefinitionRepository createStarter() {
         MutableDefinitions m = new MutableDefinitions();
 

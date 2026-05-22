@@ -1,1571 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
-<levels version="1">
-    <level number="1" day="1" durationSeconds="165" maxTubeCharges="8" tubeCooldownSeconds="15.0"
-           enemyHpMultiplier="0.92" enemyAtkMultiplier="0.92" enemySpawnIntervalSeconds="7.75"
-           baseCoins="40" baseDna="2"
-           storyKey="LEVEL_1_STORY" objectiveKey="LEVEL_1_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
-        </enemyPool>
+<levels version="2">
+    <!-- Designed levels 1-10 with explicit tube bag8 compositions + scripted enemy waves. -->
+
+    <level number="1" day="1" durationSeconds="120" maxTubeCharges="8" tubeCooldownSeconds="15.0"
+           enemyHpMultiplier="0.85" enemyAtkMultiplier="0.85" enemySpawnIntervalSeconds="8.0"
+           tubeHp="300" baseCoins="40" baseDna="2">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="3" />
+                <entity id="MECH" count="1" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYOGEL" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SMUGGLER_GRUNT" weight="1" /></enemyPool>
+        <enemyWave><enemy id="SMUGGLER_GRUNT" count="14" /></enemyWave>
         <rewards winCoins="40" winDna="2" firstWinBonusCoins="60" firstWinBonusDna="3" />
     </level>
-    <level number="2" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.04" enemyAtkMultiplier="1.00" enemySpawnIntervalSeconds="7.55"
-           baseCoins="54" baseDna="3"
-           storyKey="LEVEL_2_STORY" objectiveKey="LEVEL_2_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-        </enemyPool>
-        <rewards winCoins="54" winDna="3" firstWinBonusCoins="60" firstWinBonusDna="3" />
-    </level>
-    <level number="3" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.16" enemyAtkMultiplier="1.08" enemySpawnIntervalSeconds="7.40"
-           baseCoins="69" baseDna="4"
-           storyKey="LEVEL_3_STORY" objectiveKey="LEVEL_3_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-        </enemyPool>
-        <rewards winCoins="69" winDna="4" firstWinBonusCoins="60" firstWinBonusDna="3" />
-    </level>
-    <level number="4" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.28" enemyAtkMultiplier="1.18" enemySpawnIntervalSeconds="7.25"
-           baseCoins="83" baseDna="5"
-           storyKey="LEVEL_4_STORY" objectiveKey="LEVEL_4_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-        </enemyPool>
-        <rewards winCoins="83" winDna="5" firstWinBonusCoins="66" firstWinBonusDna="4" />
-    </level>
-    <level number="5" day="1" durationSeconds="175"
-           enemyHpMultiplier="1.41" enemyAtkMultiplier="1.26" enemySpawnIntervalSeconds="7.15"
-           baseCoins="98" baseDna="6"
-           storyKey="LEVEL_5_STORY" objectiveKey="LEVEL_5_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-        </enemyPool>
-        <rewards winCoins="98" winDna="6" firstWinBonusCoins="78" firstWinBonusDna="4" />
-    </level>
-    <level number="6" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.55" enemyAtkMultiplier="1.34" enemySpawnIntervalSeconds="7.05"
-           baseCoins="112" baseDna="6"
-           storyKey="LEVEL_6_STORY" objectiveKey="LEVEL_6_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-        </enemyPool>
-        <rewards winCoins="112" winDna="6" firstWinBonusCoins="89" firstWinBonusDna="4" />
-    </level>
-    <level number="7" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.70" enemyAtkMultiplier="1.42" enemySpawnIntervalSeconds="6.95"
-           baseCoins="127" baseDna="7"
-           storyKey="LEVEL_7_STORY" objectiveKey="LEVEL_7_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-        </enemyPool>
-        <rewards winCoins="127" winDna="7" firstWinBonusCoins="101" firstWinBonusDna="5" />
-    </level>
-    <level number="8" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.83" enemyAtkMultiplier="1.50" enemySpawnIntervalSeconds="6.85"
-           baseCoins="141" baseDna="8"
-           storyKey="LEVEL_8_STORY" objectiveKey="LEVEL_8_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-        </enemyPool>
-        <rewards winCoins="141" winDna="8" firstWinBonusCoins="112" firstWinBonusDna="6" />
-    </level>
-    <level number="9" day="1" durationSeconds="165"
-           enemyHpMultiplier="1.96" enemyAtkMultiplier="1.58" enemySpawnIntervalSeconds="6.75"
-           baseCoins="156" baseDna="9"
-           storyKey="LEVEL_9_STORY" objectiveKey="LEVEL_9_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-        </enemyPool>
-        <rewards winCoins="156" winDna="9" firstWinBonusCoins="124" firstWinBonusDna="7" />
-    </level>
-    <level number="10" day="1" durationSeconds="175"
-           enemyHpMultiplier="2.10" enemyAtkMultiplier="1.66" enemySpawnIntervalSeconds="6.65"
-           baseCoins="170" baseDna="10"
-           storyKey="LEVEL_10_STORY" objectiveKey="LEVEL_10_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-        </enemyPool>
-        <rewards winCoins="170" winDna="10" firstWinBonusCoins="136" firstWinBonusDna="8" />
-    </level>
-    <level number="11" day="1" durationSeconds="165"
-           enemyHpMultiplier="2.33" enemyAtkMultiplier="1.82" enemySpawnIntervalSeconds="6.58"
-           baseCoins="185" baseDna="11"
-           storyKey="LEVEL_11_STORY" objectiveKey="LEVEL_11_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-        </enemyPool>
-        <rewards winCoins="185" winDna="11" firstWinBonusCoins="148" firstWinBonusDna="8" />
-    </level>
-    <level number="12" day="1" durationSeconds="165"
-           enemyHpMultiplier="2.46" enemyAtkMultiplier="1.90" enemySpawnIntervalSeconds="6.49"
-           baseCoins="199" baseDna="12"
-           storyKey="LEVEL_12_STORY" objectiveKey="LEVEL_12_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-        </enemyPool>
-        <rewards winCoins="199" winDna="12" firstWinBonusCoins="159" firstWinBonusDna="9" />
-    </level>
-    <level number="13" day="1" durationSeconds="165"
-           enemyHpMultiplier="2.59" enemyAtkMultiplier="1.98" enemySpawnIntervalSeconds="6.40"
-           baseCoins="214" baseDna="13"
-           storyKey="LEVEL_13_STORY" objectiveKey="LEVEL_13_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-        </enemyPool>
-        <rewards winCoins="214" winDna="13" firstWinBonusCoins="171" firstWinBonusDna="10" />
-    </level>
-    <level number="14" day="1" durationSeconds="165"
-           enemyHpMultiplier="2.72" enemyAtkMultiplier="2.06" enemySpawnIntervalSeconds="6.31"
-           baseCoins="228" baseDna="13"
-           storyKey="LEVEL_14_STORY" objectiveKey="LEVEL_14_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-        </enemyPool>
-        <rewards winCoins="228" winDna="13" firstWinBonusCoins="182" firstWinBonusDna="10" />
-    </level>
-    <level number="15" day="1" durationSeconds="175"
-           enemyHpMultiplier="2.86" enemyAtkMultiplier="2.14" enemySpawnIntervalSeconds="6.21"
-           baseCoins="243" baseDna="14"
-           storyKey="LEVEL_15_STORY" objectiveKey="LEVEL_15_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-        </enemyPool>
-        <rewards winCoins="243" winDna="14" firstWinBonusCoins="194" firstWinBonusDna="11" />
-    </level>
-    <level number="16" day="2" durationSeconds="180"
-           enemyHpMultiplier="2.99" enemyAtkMultiplier="2.22" enemySpawnIntervalSeconds="6.12"
-           baseCoins="257" baseDna="15"
-           storyKey="LEVEL_16_STORY" objectiveKey="LEVEL_16_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-        </enemyPool>
-        <rewards winCoins="257" winDna="15" firstWinBonusCoins="205" firstWinBonusDna="12" />
-    </level>
-    <level number="17" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.12" enemyAtkMultiplier="2.31" enemySpawnIntervalSeconds="6.03"
-           baseCoins="272" baseDna="16"
-           storyKey="LEVEL_17_STORY" objectiveKey="LEVEL_17_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-        </enemyPool>
-        <rewards winCoins="272" winDna="16" firstWinBonusCoins="217" firstWinBonusDna="12" />
-    </level>
-    <level number="18" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.26" enemyAtkMultiplier="2.39" enemySpawnIntervalSeconds="5.94"
-           baseCoins="286" baseDna="17"
-           storyKey="LEVEL_18_STORY" objectiveKey="LEVEL_18_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-        </enemyPool>
-        <rewards winCoins="286" winDna="17" firstWinBonusCoins="228" firstWinBonusDna="13" />
-    </level>
-    <level number="19" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.39" enemyAtkMultiplier="2.47" enemySpawnIntervalSeconds="5.85"
-           baseCoins="301" baseDna="18"
-           storyKey="LEVEL_19_STORY" objectiveKey="LEVEL_19_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-        </enemyPool>
-        <rewards winCoins="301" winDna="18" firstWinBonusCoins="240" firstWinBonusDna="14" />
-    </level>
-    <level number="20" day="2" durationSeconds="190"
-           enemyHpMultiplier="3.52" enemyAtkMultiplier="2.55" enemySpawnIntervalSeconds="5.76"
-           baseCoins="315" baseDna="19"
-           storyKey="LEVEL_20_STORY" objectiveKey="LEVEL_20_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-        </enemyPool>
-        <rewards winCoins="315" winDna="19" firstWinBonusCoins="252" firstWinBonusDna="15" />
-    </level>
-    <level number="21" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.65" enemyAtkMultiplier="2.63" enemySpawnIntervalSeconds="5.66"
-           baseCoins="330" baseDna="20"
-           storyKey="LEVEL_21_STORY" objectiveKey="LEVEL_21_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-        </enemyPool>
-        <rewards winCoins="330" winDna="20" firstWinBonusCoins="264" firstWinBonusDna="16" />
-    </level>
-    <level number="22" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.79" enemyAtkMultiplier="2.71" enemySpawnIntervalSeconds="5.57"
-           baseCoins="344" baseDna="20"
-           storyKey="LEVEL_22_STORY" objectiveKey="LEVEL_22_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-        </enemyPool>
-        <rewards winCoins="344" winDna="20" firstWinBonusCoins="275" firstWinBonusDna="16" />
-    </level>
-    <level number="23" day="2" durationSeconds="180"
-           enemyHpMultiplier="3.92" enemyAtkMultiplier="2.80" enemySpawnIntervalSeconds="5.48"
-           baseCoins="359" baseDna="21"
-           storyKey="LEVEL_23_STORY" objectiveKey="LEVEL_23_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-        </enemyPool>
-        <rewards winCoins="359" winDna="21" firstWinBonusCoins="287" firstWinBonusDna="16" />
-    </level>
-    <level number="24" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.05" enemyAtkMultiplier="2.88" enemySpawnIntervalSeconds="5.39"
-           baseCoins="373" baseDna="22"
-           storyKey="LEVEL_24_STORY" objectiveKey="LEVEL_24_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-        </enemyPool>
-        <rewards winCoins="373" winDna="22" firstWinBonusCoins="298" firstWinBonusDna="17" />
-    </level>
-    <level number="25" day="2" durationSeconds="190"
-           enemyHpMultiplier="4.18" enemyAtkMultiplier="2.96" enemySpawnIntervalSeconds="5.30"
-           baseCoins="388" baseDna="23"
-           storyKey="LEVEL_25_STORY" objectiveKey="LEVEL_25_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-        </enemyPool>
-        <rewards winCoins="388" winDna="23" firstWinBonusCoins="310" firstWinBonusDna="18" />
-    </level>
-    <level number="26" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.32" enemyAtkMultiplier="3.04" enemySpawnIntervalSeconds="5.20"
-           baseCoins="402" baseDna="24"
-           storyKey="LEVEL_26_STORY" objectiveKey="LEVEL_26_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-        </enemyPool>
-        <rewards winCoins="402" winDna="24" firstWinBonusCoins="321" firstWinBonusDna="19" />
-    </level>
-    <level number="27" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.45" enemyAtkMultiplier="3.12" enemySpawnIntervalSeconds="5.11"
-           baseCoins="417" baseDna="25"
-           storyKey="LEVEL_27_STORY" objectiveKey="LEVEL_27_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-        </enemyPool>
-        <rewards winCoins="417" winDna="25" firstWinBonusCoins="333" firstWinBonusDna="20" />
-    </level>
-    <level number="28" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.58" enemyAtkMultiplier="3.20" enemySpawnIntervalSeconds="5.02"
-           baseCoins="431" baseDna="26"
-           storyKey="LEVEL_28_STORY" objectiveKey="LEVEL_28_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="431" winDna="26" firstWinBonusCoins="344" firstWinBonusDna="20" />
-    </level>
-    <level number="29" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.71" enemyAtkMultiplier="3.29" enemySpawnIntervalSeconds="4.93"
-           baseCoins="446" baseDna="27"
-           storyKey="LEVEL_29_STORY" objectiveKey="LEVEL_29_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="446" winDna="27" firstWinBonusCoins="356" firstWinBonusDna="21" />
-    </level>
-    <level number="30" day="2" durationSeconds="190"
-           enemyHpMultiplier="4.85" enemyAtkMultiplier="3.37" enemySpawnIntervalSeconds="4.84"
-           baseCoins="460" baseDna="27"
-           storyKey="LEVEL_30_STORY" objectiveKey="LEVEL_30_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="460" winDna="27" firstWinBonusCoins="368" firstWinBonusDna="21" />
-    </level>
-    <level number="31" day="2" durationSeconds="180"
-           enemyHpMultiplier="4.98" enemyAtkMultiplier="3.45" enemySpawnIntervalSeconds="4.74"
-           baseCoins="475" baseDna="28"
-           storyKey="LEVEL_31_STORY" objectiveKey="LEVEL_31_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="475" winDna="28" firstWinBonusCoins="380" firstWinBonusDna="22" />
-    </level>
-    <level number="32" day="2" durationSeconds="180"
-           enemyHpMultiplier="5.11" enemyAtkMultiplier="3.53" enemySpawnIntervalSeconds="4.65"
-           baseCoins="489" baseDna="29"
-           storyKey="LEVEL_32_STORY" objectiveKey="LEVEL_32_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="489" winDna="29" firstWinBonusCoins="391" firstWinBonusDna="23" />
-    </level>
-    <level number="33" day="2" durationSeconds="180"
-           enemyHpMultiplier="5.24" enemyAtkMultiplier="3.61" enemySpawnIntervalSeconds="4.56"
-           baseCoins="504" baseDna="30"
-           storyKey="LEVEL_33_STORY" objectiveKey="LEVEL_33_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="504" winDna="30" firstWinBonusCoins="403" firstWinBonusDna="24" />
-    </level>
-    <level number="34" day="2" durationSeconds="180"
-           enemyHpMultiplier="5.38" enemyAtkMultiplier="3.69" enemySpawnIntervalSeconds="4.47"
-           baseCoins="518" baseDna="31"
-           storyKey="LEVEL_34_STORY" objectiveKey="LEVEL_34_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-        </enemyPool>
-        <rewards winCoins="518" winDna="31" firstWinBonusCoins="414" firstWinBonusDna="24" />
-    </level>
-    <level number="35" day="2" durationSeconds="190"
-           enemyHpMultiplier="5.51" enemyAtkMultiplier="3.78" enemySpawnIntervalSeconds="4.38"
-           baseCoins="533" baseDna="32"
-           storyKey="LEVEL_35_STORY" objectiveKey="LEVEL_35_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="533" winDna="32" firstWinBonusCoins="426" firstWinBonusDna="25" />
-    </level>
-    <level number="36" day="3" durationSeconds="195"
-           enemyHpMultiplier="5.64" enemyAtkMultiplier="3.86" enemySpawnIntervalSeconds="4.29"
-           baseCoins="547" baseDna="33"
-           storyKey="LEVEL_36_STORY" objectiveKey="LEVEL_36_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="547" winDna="33" firstWinBonusCoins="437" firstWinBonusDna="26" />
-    </level>
-    <level number="37" day="3" durationSeconds="195"
-           enemyHpMultiplier="5.78" enemyAtkMultiplier="3.94" enemySpawnIntervalSeconds="4.19"
-           baseCoins="562" baseDna="34"
-           storyKey="LEVEL_37_STORY" objectiveKey="LEVEL_37_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="562" winDna="34" firstWinBonusCoins="449" firstWinBonusDna="27" />
-    </level>
-    <level number="38" day="3" durationSeconds="195"
-           enemyHpMultiplier="5.91" enemyAtkMultiplier="4.02" enemySpawnIntervalSeconds="4.10"
-           baseCoins="576" baseDna="34"
-           storyKey="LEVEL_38_STORY" objectiveKey="LEVEL_38_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="576" winDna="34" firstWinBonusCoins="460" firstWinBonusDna="27" />
-    </level>
-    <level number="39" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.04" enemyAtkMultiplier="4.10" enemySpawnIntervalSeconds="4.01"
-           baseCoins="591" baseDna="35"
-           storyKey="LEVEL_39_STORY" objectiveKey="LEVEL_39_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="591" winDna="35" firstWinBonusCoins="472" firstWinBonusDna="28" />
-    </level>
-    <level number="40" day="3" durationSeconds="205"
-           enemyHpMultiplier="6.17" enemyAtkMultiplier="4.18" enemySpawnIntervalSeconds="3.92"
-           baseCoins="605" baseDna="36"
-           storyKey="LEVEL_40_STORY" objectiveKey="LEVEL_40_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="605" winDna="36" firstWinBonusCoins="484" firstWinBonusDna="28" />
-    </level>
-    <level number="41" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.31" enemyAtkMultiplier="4.27" enemySpawnIntervalSeconds="3.83"
-           baseCoins="620" baseDna="37"
-           storyKey="LEVEL_41_STORY" objectiveKey="LEVEL_41_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="620" winDna="37" firstWinBonusCoins="496" firstWinBonusDna="29" />
-    </level>
-    <level number="42" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.44" enemyAtkMultiplier="4.35" enemySpawnIntervalSeconds="3.73"
-           baseCoins="634" baseDna="38"
-           storyKey="LEVEL_42_STORY" objectiveKey="LEVEL_42_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="634" winDna="38" firstWinBonusCoins="507" firstWinBonusDna="30" />
-    </level>
-    <level number="43" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.57" enemyAtkMultiplier="4.43" enemySpawnIntervalSeconds="3.64"
-           baseCoins="649" baseDna="39"
-           storyKey="LEVEL_43_STORY" objectiveKey="LEVEL_43_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="649" winDna="39" firstWinBonusCoins="519" firstWinBonusDna="31" />
-    </level>
-    <level number="44" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.70" enemyAtkMultiplier="4.51" enemySpawnIntervalSeconds="3.55"
-           baseCoins="663" baseDna="40"
-           storyKey="LEVEL_44_STORY" objectiveKey="LEVEL_44_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="663" winDna="40" firstWinBonusCoins="530" firstWinBonusDna="32" />
-    </level>
-    <level number="45" day="3" durationSeconds="205"
-           enemyHpMultiplier="6.84" enemyAtkMultiplier="4.59" enemySpawnIntervalSeconds="3.46"
-           baseCoins="678" baseDna="41"
-           storyKey="LEVEL_45_STORY" objectiveKey="LEVEL_45_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="678" winDna="41" firstWinBonusCoins="542" firstWinBonusDna="32" />
-    </level>
-    <level number="46" day="3" durationSeconds="195"
-           enemyHpMultiplier="6.97" enemyAtkMultiplier="4.67" enemySpawnIntervalSeconds="3.37"
-           baseCoins="692" baseDna="41"
-           storyKey="LEVEL_46_STORY" objectiveKey="LEVEL_46_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="692" winDna="41" firstWinBonusCoins="553" firstWinBonusDna="32" />
-    </level>
-    <level number="47" day="3" durationSeconds="195"
-           enemyHpMultiplier="7.10" enemyAtkMultiplier="4.76" enemySpawnIntervalSeconds="3.28"
-           baseCoins="707" baseDna="42"
-           storyKey="LEVEL_47_STORY" objectiveKey="LEVEL_47_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="707" winDna="42" firstWinBonusCoins="565" firstWinBonusDna="33" />
-    </level>
-    <level number="48" day="3" durationSeconds="195"
-           enemyHpMultiplier="7.23" enemyAtkMultiplier="4.84" enemySpawnIntervalSeconds="3.18"
-           baseCoins="721" baseDna="43"
-           storyKey="LEVEL_48_STORY" objectiveKey="LEVEL_48_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="721" winDna="43" firstWinBonusCoins="576" firstWinBonusDna="34" />
-    </level>
-    <level number="49" day="3" durationSeconds="195"
-           enemyHpMultiplier="7.37" enemyAtkMultiplier="4.92" enemySpawnIntervalSeconds="3.09"
-           baseCoins="736" baseDna="44"
-           storyKey="LEVEL_49_STORY" objectiveKey="LEVEL_49_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="736" winDna="44" firstWinBonusCoins="588" firstWinBonusDna="35" />
-    </level>
-    <level number="50" day="3" durationSeconds="205"
-           enemyHpMultiplier="7.50" enemyAtkMultiplier="5.00" enemySpawnIntervalSeconds="3.00"
-           baseCoins="750" baseDna="45"
-           storyKey="LEVEL_50_STORY" objectiveKey="LEVEL_50_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
-        </enemyPool>
-        <rewards winCoins="750" winDna="45" firstWinBonusCoins="600" firstWinBonusDna="36" />
+
+    <level number="2" day="1" durationSeconds="130" maxTubeCharges="8" tubeCooldownSeconds="14.0"
+           enemyHpMultiplier="0.95" enemyAtkMultiplier="0.90" enemySpawnIntervalSeconds="7.6"
+           tubeHp="300" baseCoins="50" baseDna="3">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="2" />
+                <entity id="MECH" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="2" />
+                <item id="CRYOGEL" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SMUGGLER_GRUNT" weight="1" /></enemyPool>
+        <enemyWave><enemy id="SMUGGLER_GRUNT" count="16" /></enemyWave>
+        <rewards winCoins="50" winDna="3" firstWinBonusCoins="60" firstWinBonusDna="3" />
     </level>
 
-    <level number="51" day="4" durationSeconds="205" maxTubeCharges="8" tubeCooldownSeconds="14.0"
-           enemyHpMultiplier="7.70" enemyAtkMultiplier="5.12" enemySpawnIntervalSeconds="2.95"
-           baseCoins="775" baseDna="46"
-           storyKey="LEVEL_51_STORY" objectiveKey="LEVEL_51_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="775" winDna="46" firstWinBonusCoins="620" firstWinBonusDna="37" />
+    <level number="3" day="1" durationSeconds="140" maxTubeCharges="9" tubeCooldownSeconds="14.0"
+           enemyHpMultiplier="1.08" enemyAtkMultiplier="0.98" enemySpawnIntervalSeconds="7.2"
+           tubeHp="310" baseCoins="60" baseDna="4">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="2" />
+                <entity id="MECH" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="2" />
+                <item id="CRYOGEL" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SMUGGLER_GRUNT" weight="0.7" /><enemy id="NET_THROWER" weight="0.3" /></enemyPool>
+        <enemyWave><enemy id="SMUGGLER_GRUNT" count="12" /><enemy id="NET_THROWER" count="6" /></enemyWave>
+        <rewards winCoins="60" winDna="4" firstWinBonusCoins="60" firstWinBonusDna="3" />
     </level>
 
-    <level number="52" day="4" durationSeconds="210" maxTubeCharges="8" tubeCooldownSeconds="14.0"
-           enemyHpMultiplier="7.90" enemyAtkMultiplier="5.25" enemySpawnIntervalSeconds="2.90"
-           baseCoins="800" baseDna="47"
-           storyKey="LEVEL_52_STORY" objectiveKey="LEVEL_52_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="800" winDna="47" firstWinBonusCoins="640" firstWinBonusDna="38" />
+    <level number="4" day="1" durationSeconds="150" maxTubeCharges="9" tubeCooldownSeconds="13.5"
+           enemyHpMultiplier="1.22" enemyAtkMultiplier="1.05" enemySpawnIntervalSeconds="6.9"
+           tubeHp="320" baseCoins="75" baseDna="5">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="2" />
+                <entity id="MECH" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYOGEL" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SMUGGLER_GRUNT" weight="0.6" /><enemy id="NET_THROWER" weight="0.4" /></enemyPool>
+        <enemyWave><enemy id="SMUGGLER_GRUNT" count="10" /><enemy id="NET_THROWER" count="8" /></enemyWave>
+        <rewards winCoins="75" winDna="5" firstWinBonusCoins="65" firstWinBonusDna="4" />
     </level>
 
-    <level number="53" day="4" durationSeconds="210" maxTubeCharges="9" tubeCooldownSeconds="13.5"
-           enemyHpMultiplier="8.10" enemyAtkMultiplier="5.38" enemySpawnIntervalSeconds="2.85"
-           baseCoins="825" baseDna="48"
-           storyKey="LEVEL_53_STORY" objectiveKey="LEVEL_53_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="825" winDna="48" firstWinBonusCoins="660" firstWinBonusDna="38" />
+    <level number="5" day="1" durationSeconds="160" maxTubeCharges="10" tubeCooldownSeconds="13.0"
+           enemyHpMultiplier="1.38" enemyAtkMultiplier="1.15" enemySpawnIntervalSeconds="6.7"
+           tubeHp="330" baseCoins="90" baseDna="6">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="2" />
+                <entity id="MECH" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYOGEL" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SMUGGLER_GRUNT" weight="0.45" /><enemy id="NET_THROWER" weight="0.35" /><enemy id="TOOL_RAIDER" weight="0.20" /></enemyPool>
+        <enemyWave><enemy id="SMUGGLER_GRUNT" count="8" /><enemy id="NET_THROWER" count="7" /><enemy id="TOOL_RAIDER" count="4" /></enemyWave>
+        <rewards winCoins="90" winDna="6" firstWinBonusCoins="75" firstWinBonusDna="4" />
     </level>
 
-    <level number="54" day="4" durationSeconds="215" maxTubeCharges="9" tubeCooldownSeconds="13.5"
-           enemyHpMultiplier="8.30" enemyAtkMultiplier="5.52" enemySpawnIntervalSeconds="2.80"
-           baseCoins="850" baseDna="49"
-           storyKey="LEVEL_54_STORY" objectiveKey="LEVEL_54_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="850" winDna="49" firstWinBonusCoins="680" firstWinBonusDna="39" />
+    <level number="6" day="1" durationSeconds="165" maxTubeCharges="10" tubeCooldownSeconds="12.5"
+           enemyHpMultiplier="1.55" enemyAtkMultiplier="1.25" enemySpawnIntervalSeconds="6.4"
+           tubeHp="340" baseCoins="105" baseDna="7">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /><item id="RADIOACTIVE_GOO" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="2" />
+                <entity id="MECH" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYOGEL" count="1" />
+                <item id="RADIOACTIVE_GOO" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="NET_THROWER" weight="0.35" /><enemy id="TOOL_RAIDER" weight="0.35" /><enemy id="GAS_BOMBER" weight="0.30" /></enemyPool>
+        <enemyWave><enemy id="NET_THROWER" count="7" /><enemy id="TOOL_RAIDER" count="6" /><enemy id="GAS_BOMBER" count="6" /></enemyWave>
+        <rewards winCoins="105" winDna="7" firstWinBonusCoins="85" firstWinBonusDna="5" />
     </level>
 
-    <level number="55" day="4" durationSeconds="215" maxTubeCharges="9" tubeCooldownSeconds="13.0"
-           enemyHpMultiplier="8.50" enemyAtkMultiplier="5.67" enemySpawnIntervalSeconds="2.75"
-           baseCoins="875" baseDna="50"
-           storyKey="LEVEL_55_STORY" objectiveKey="LEVEL_55_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="875" winDna="50" firstWinBonusCoins="700" firstWinBonusDna="40" />
+    <level number="7" day="1" durationSeconds="170" maxTubeCharges="10" tubeCooldownSeconds="12.0"
+           enemyHpMultiplier="1.72" enemyAtkMultiplier="1.35" enemySpawnIntervalSeconds="6.1"
+           tubeHp="350" baseCoins="120" baseDna="8">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /><entity id="FUNGUS" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /><item id="RADIOACTIVE_GOO" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="1" />
+                <entity id="MECH" count="2" />
+                <entity id="FUNGUS" count="1" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYOGEL" count="1" />
+                <item id="RADIOACTIVE_GOO" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="TOOL_RAIDER" weight="0.45" /><enemy id="GAS_BOMBER" weight="0.35" /><enemy id="SHIELD_SMUGGLER" weight="0.20" /></enemyPool>
+        <enemyWave><enemy id="TOOL_RAIDER" count="7" /><enemy id="GAS_BOMBER" count="7" /><enemy id="SHIELD_SMUGGLER" count="4" /></enemyWave>
+        <rewards winCoins="120" winDna="8" firstWinBonusCoins="95" firstWinBonusDna="6" />
     </level>
 
-    <level number="56" day="4" durationSeconds="220" maxTubeCharges="9" tubeCooldownSeconds="13.0"
-           enemyHpMultiplier="8.72" enemyAtkMultiplier="5.82" enemySpawnIntervalSeconds="2.70"
-           baseCoins="900" baseDna="51"
-           storyKey="LEVEL_56_STORY" objectiveKey="LEVEL_56_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="900" winDna="51" firstWinBonusCoins="720" firstWinBonusDna="41" />
+    <level number="8" day="1" durationSeconds="175" maxTubeCharges="10" tubeCooldownSeconds="11.5"
+           enemyHpMultiplier="1.92" enemyAtkMultiplier="1.48" enemySpawnIntervalSeconds="5.9"
+           tubeHp="360" baseCoins="135" baseDna="9">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /><entity id="FUNGUS" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /><item id="RADIOACTIVE_GOO" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="1" />
+                <entity id="MECH" count="1" />
+                <entity id="FUNGUS" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="TOXIC_WASTE" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+                <item id="RADIOACTIVE_GOO" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="GAS_BOMBER" weight="0.35" /><enemy id="SHIELD_SMUGGLER" weight="0.35" /><enemy id="DRONE_THIEF" weight="0.30" /></enemyPool>
+        <enemyWave><enemy id="GAS_BOMBER" count="7" /><enemy id="DRONE_THIEF" count="7" /><enemy id="SHIELD_SMUGGLER" count="5" /></enemyWave>
+        <rewards winCoins="135" winDna="9" firstWinBonusCoins="110" firstWinBonusDna="7" />
     </level>
 
-    <level number="57" day="4" durationSeconds="220" maxTubeCharges="10" tubeCooldownSeconds="12.5"
-           enemyHpMultiplier="8.94" enemyAtkMultiplier="5.98" enemySpawnIntervalSeconds="2.65"
-           baseCoins="925" baseDna="52"
-           storyKey="LEVEL_57_STORY" objectiveKey="LEVEL_57_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="925" winDna="52" firstWinBonusCoins="740" firstWinBonusDna="42" />
+    <level number="9" day="1" durationSeconds="180" maxTubeCharges="10" tubeCooldownSeconds="11.0"
+           enemyHpMultiplier="2.15" enemyAtkMultiplier="1.62" enemySpawnIntervalSeconds="5.6"
+           tubeHp="370" baseCoins="150" baseDna="10">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /><entity id="FUNGUS" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /><item id="RADIOACTIVE_GOO" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="1" />
+                <entity id="MECH" count="2" />
+                <entity id="FUNGUS" count="1" />
+                <item id="BATTERY" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+                <item id="RADIOACTIVE_GOO" count="1" />
+                <item id="CRYOGEL" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="SHIELD_SMUGGLER" weight="0.30" /><enemy id="MUTATION_HUNTER" weight="0.40" /><enemy id="DRONE_THIEF" weight="0.30" /></enemyPool>
+        <enemyWave><enemy id="DRONE_THIEF" count="7" /><enemy id="SHIELD_SMUGGLER" count="6" /><enemy id="MUTATION_HUNTER" count="6" /></enemyWave>
+        <rewards winCoins="150" winDna="10" firstWinBonusCoins="125" firstWinBonusDna="8" />
     </level>
 
-    <level number="58" day="4" durationSeconds="225" maxTubeCharges="10" tubeCooldownSeconds="12.5"
-           enemyHpMultiplier="9.16" enemyAtkMultiplier="6.14" enemySpawnIntervalSeconds="2.60"
-           baseCoins="950" baseDna="53"
-           storyKey="LEVEL_58_STORY" objectiveKey="LEVEL_58_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="950" winDna="53" firstWinBonusCoins="760" firstWinBonusDna="43" />
-    </level>
-
-    <level number="59" day="4" durationSeconds="225" maxTubeCharges="10" tubeCooldownSeconds="12.0"
-           enemyHpMultiplier="9.38" enemyAtkMultiplier="6.31" enemySpawnIntervalSeconds="2.55"
-           baseCoins="975" baseDna="54"
-           storyKey="LEVEL_59_STORY" objectiveKey="LEVEL_59_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="SMUGGLER_GRUNT" />
-            <enemy id="NET_THROWER" />
-            <enemy id="TOOL_RAIDER" />
-            <enemy id="GAS_BOMBER" />
-            <enemy id="SHIELD_SMUGGLER" />
-            <enemy id="DRONE_THIEF" />
-            <enemy id="MUTATION_HUNTER" />
-            <enemy id="BLACKMARKET_BRUTE" />
-        </enemyPool>
-        <rewards winCoins="975" winDna="54" firstWinBonusCoins="780" firstWinBonusDna="44" />
-    </level>
-
-    <level number="60" day="4" durationSeconds="230" maxTubeCharges="10" tubeCooldownSeconds="12.0"
-           enemyHpMultiplier="9.60" enemyAtkMultiplier="6.48" enemySpawnIntervalSeconds="2.50"
-           baseCoins="1000" baseDna="55"
-           storyKey="LEVEL_60_STORY" objectiveKey="LEVEL_60_OBJECTIVE">
-        <allowedEntities>
-            <entity id="SLIME" />
-            <entity id="MECH" />
-            <entity id="FUNGUS" />
-        </allowedEntities>
-        <allowedItems>
-            <item id="BATTERY" />
-            <item id="TOXIC_WASTE" />
-            <item id="CRYOGEL" />
-            <item id="CRYSTAL_SHARD" />
-            <item id="RADIOACTIVE_GOO" />
-            <item id="NANOBOTS" />
-        </allowedItems>
-        <enemyPool>
-            <enemy id="BLACKMARKET_BRUTE" />
-            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
-        </enemyPool>
-        <rewards winCoins="1000" winDna="55" firstWinBonusCoins="800" firstWinBonusDna="45" />
+    <level number="10" day="1" durationSeconds="185" maxTubeCharges="10" tubeCooldownSeconds="10.5"
+           enemyHpMultiplier="2.35" enemyAtkMultiplier="1.78" enemySpawnIntervalSeconds="5.4"
+           tubeHp="380" baseCoins="165" baseDna="11">
+        <allowedEntities><entity id="SLIME" /><entity id="MECH" /><entity id="FUNGUS" /></allowedEntities>
+        <allowedItems><item id="BATTERY" /><item id="TOXIC_WASTE" /><item id="CRYOGEL" /><item id="CRYSTAL_SHARD" /><item id="RADIOACTIVE_GOO" /><item id="NANOBOTS" /></allowedItems>
+        <tubeBag>
+            <bag8>
+                <entity id="SLIME" count="1" />
+                <entity id="MECH" count="1" />
+                <entity id="FUNGUS" count="2" />
+                <item id="BATTERY" count="1" />
+                <item id="RADIOACTIVE_GOO" count="1" />
+                <item id="NANOBOTS" count="1" />
+                <item id="CRYSTAL_SHARD" count="1" />
+            </bag8>
+        </tubeBag>
+        <enemyPool><enemy id="MUTATION_HUNTER" weight="0.45" /><enemy id="BLACKMARKET_BRUTE" weight="0.30" /><enemy id="DRONE_THIEF" weight="0.25" /></enemyPool>
+        <enemyWave><enemy id="DRONE_THIEF" count="7" /><enemy id="MUTATION_HUNTER" count="7" /><enemy id="BLACKMARKET_BRUTE" count="5" /></enemyWave>
+        <rewards winCoins="165" winDna="11" firstWinBonusCoins="140" firstWinBonusDna="9" />
     </level>
 </levels>

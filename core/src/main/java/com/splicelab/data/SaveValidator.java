@@ -31,6 +31,7 @@ public final class SaveValidator {
         data.currentLevel = Math.max(1, data.currentLevel);
         data.coins = Math.max(0, data.coins);
         data.dna = Math.max(0, data.dna);
+        data.endlessBestSurvivalSeconds = Math.max(0f, data.endlessBestSurvivalSeconds);
 
         data.unlockedConveyorSlotsLeft = clamp(data.unlockedConveyorSlotsLeft, 0, config.maxConveyorSlotsPerSide);
         data.unlockedConveyorSlotsRight = clamp(data.unlockedConveyorSlotsRight, 0, config.maxConveyorSlotsPerSide);
@@ -81,4 +82,3 @@ public final class SaveValidator {
         }
     }
 }
-

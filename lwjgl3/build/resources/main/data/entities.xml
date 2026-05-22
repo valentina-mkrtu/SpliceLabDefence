@@ -1,38 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<entities version="1">
-    <entity id="SLIME"
-            displayNameKey="ENTITY_SLIME_NAME"
-            shortDescriptionKey="ENTITY_SLIME_SHORT"
-            longDescriptionKey="ENTITY_SLIME_LONG"
-            baseHp="80"
-            baseAtk="8"
-            attackIntervalSeconds="1.5"
-            specialChance="0.18"
-            variance="0.20"
-            element="BIO"
-            role="TANK_CONTROL" />
+<entities version="2">
+    <entity id="SLIME" displayNameKey="ENTITY_SLIME_NAME" shortDescriptionKey="ENTITY_SLIME_SHORT" longDescriptionKey="ENTITY_SLIME_LONG"
+            baseHp="100" baseAtk="5" attackIntervalSeconds="1.6" specialChance="0.15" variance="0.20" element="BIO" role="TANK_CONTROL" />
 
-    <entity id="MECH"
-            displayNameKey="ENTITY_MECH_NAME"
-            shortDescriptionKey="ENTITY_MECH_SHORT"
-            longDescriptionKey="ENTITY_MECH_LONG"
-            baseHp="55"
-            baseAtk="14"
-            attackIntervalSeconds="1.1"
-            specialChance="0.13"
-            variance="0.16"
-            element="TECH"
-            role="DPS_PRECISION" />
+    <entity id="MECH" displayNameKey="ENTITY_MECH_NAME" shortDescriptionKey="ENTITY_MECH_SHORT" longDescriptionKey="ENTITY_MECH_LONG"
+            baseHp="45" baseAtk="12" attackIntervalSeconds="1.0" specialChance="0.10" variance="0.15" element="TECH" role="DPS_PRECISION" />
 
-    <entity id="FUNGUS"
-            displayNameKey="ENTITY_FUNGUS_NAME"
-            shortDescriptionKey="ENTITY_FUNGUS_SHORT"
-            longDescriptionKey="ENTITY_FUNGUS_LONG"
-            baseHp="65"
-            baseAtk="10"
-            attackIntervalSeconds="1.35"
-            specialChance="0.20"
-            variance="0.22"
-            element="SPORE"
-            role="DOT_SCALING" />
+    <entity id="FUNGUS" displayNameKey="ENTITY_FUNGUS_NAME" shortDescriptionKey="ENTITY_FUNGUS_SHORT" longDescriptionKey="ENTITY_FUNGUS_LONG"
+            baseHp="70" baseAtk="8" attackIntervalSeconds="1.4" specialChance="0.25" variance="0.22" element="SPORE" role="DOT_SCALING" />
 </entities>

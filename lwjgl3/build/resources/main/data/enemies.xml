@@ -1,93 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<enemies version="1">
-    <enemy id="SMUGGLER_GRUNT"
-           displayNameKey="ENEMY_SMUGGLER_GRUNT_NAME"
-           shortDescriptionKey="ENEMY_SMUGGLER_GRUNT_SHORT"
-           baseHp="22"
-           baseAtk="4"
-           attackIntervalSeconds="1.6"
-           moveSpeed="1.00"
-           threat="1"
-           silhouette="enemy_grunt" />
+<enemies version="2">
+    <enemy id="SMUGGLER_GRUNT" displayNameKey="ENEMY_SMUGGLER_GRUNT_NAME" shortDescriptionKey="ENEMY_SMUGGLER_GRUNT_SHORT"
+           baseHp="20" baseAtk="3" attackIntervalSeconds="1.6" moveSpeed="1.00" threat="1" silhouette="enemy_grunt" />
 
-    <enemy id="NET_THROWER"
-           displayNameKey="ENEMY_NET_THROWER_NAME"
-           shortDescriptionKey="ENEMY_NET_THROWER_SHORT"
-           baseHp="18"
-           baseAtk="3"
-           attackIntervalSeconds="1.2"
-           moveSpeed="1.15"
-           threat="1"
-           silhouette="enemy_net" />
+    <enemy id="NET_THROWER" displayNameKey="ENEMY_NET_THROWER_NAME" shortDescriptionKey="ENEMY_NET_THROWER_SHORT"
+           baseHp="15" baseAtk="2" attackIntervalSeconds="1.2" moveSpeed="1.15" threat="1" silhouette="enemy_net" />
 
-    <enemy id="TOOL_RAIDER"
-           displayNameKey="ENEMY_TOOL_RAIDER_NAME"
-           shortDescriptionKey="ENEMY_TOOL_RAIDER_SHORT"
-           baseHp="26"
-           baseAtk="5"
-           attackIntervalSeconds="1.7"
-           moveSpeed="0.95"
-           threat="2"
-           silhouette="enemy_tool" />
+    <enemy id="DRONE_THIEF" displayNameKey="ENEMY_DRONE_THIEF_NAME" shortDescriptionKey="ENEMY_DRONE_THIEF_SHORT"
+           baseHp="12" baseAtk="3" attackIntervalSeconds="1.1" moveSpeed="1.40" threat="2" silhouette="enemy_drone" />
 
-    <enemy id="GAS_BOMBER"
-           displayNameKey="ENEMY_GAS_BOMBER_NAME"
-           shortDescriptionKey="ENEMY_GAS_BOMBER_SHORT"
-           baseHp="20"
-           baseAtk="6"
-           attackIntervalSeconds="2.1"
-           moveSpeed="0.90"
-           threat="2"
-           silhouette="enemy_gas" />
+    <enemy id="TOOL_RAIDER" displayNameKey="ENEMY_TOOL_RAIDER_NAME" shortDescriptionKey="ENEMY_TOOL_RAIDER_SHORT"
+           baseHp="30" baseAtk="5" attackIntervalSeconds="1.7" moveSpeed="0.95" threat="2" silhouette="enemy_tool" />
 
-    <enemy id="SHIELD_SMUGGLER"
-           displayNameKey="ENEMY_SHIELD_SMUGGLER_NAME"
-           shortDescriptionKey="ENEMY_SHIELD_SMUGGLER_SHORT"
-           baseHp="38"
-           baseAtk="4"
-           attackIntervalSeconds="1.8"
-           moveSpeed="0.85"
-           threat="3"
-           silhouette="enemy_shield" />
+    <enemy id="GAS_BOMBER" displayNameKey="ENEMY_GAS_BOMBER_NAME" shortDescriptionKey="ENEMY_GAS_BOMBER_SHORT"
+           baseHp="22" baseAtk="4" attackIntervalSeconds="2.1" moveSpeed="0.95" threat="2" silhouette="enemy_gas" />
 
-    <enemy id="DRONE_THIEF"
-           displayNameKey="ENEMY_DRONE_THIEF_NAME"
-           shortDescriptionKey="ENEMY_DRONE_THIEF_SHORT"
-           baseHp="16"
-           baseAtk="4"
-           attackIntervalSeconds="1.1"
-           moveSpeed="1.30"
-           threat="2"
-           silhouette="enemy_drone" />
+    <enemy id="MUTATION_HUNTER" displayNameKey="ENEMY_MUTATION_HUNTER_NAME" shortDescriptionKey="ENEMY_MUTATION_HUNTER_SHORT"
+           baseHp="35" baseAtk="8" attackIntervalSeconds="1.5" moveSpeed="1.10" threat="4" silhouette="enemy_hunter" />
 
-    <enemy id="MUTATION_HUNTER"
-           displayNameKey="ENEMY_MUTATION_HUNTER_NAME"
-           shortDescriptionKey="ENEMY_MUTATION_HUNTER_SHORT"
-           baseHp="34"
-           baseAtk="8"
-           attackIntervalSeconds="1.5"
-           moveSpeed="1.05"
-           threat="4"
-           silhouette="enemy_hunter" />
+    <enemy id="SHIELD_SMUGGLER" displayNameKey="ENEMY_SHIELD_SMUGGLER_NAME" shortDescriptionKey="ENEMY_SHIELD_SMUGGLER_SHORT"
+           baseHp="45" baseAtk="3" attackIntervalSeconds="1.8" moveSpeed="0.80" threat="3" silhouette="enemy_shield" />
 
-    <enemy id="BLACKMARKET_BRUTE"
-           displayNameKey="ENEMY_BLACKMARKET_BRUTE_NAME"
-           shortDescriptionKey="ENEMY_BLACKMARKET_BRUTE_SHORT"
-           baseHp="48"
-           baseAtk="10"
-           attackIntervalSeconds="1.9"
-           moveSpeed="0.80"
-           threat="5"
-           silhouette="enemy_brute" />
+    <enemy id="BLACKMARKET_BRUTE" displayNameKey="ENEMY_BLACKMARKET_BRUTE_NAME" shortDescriptionKey="ENEMY_BLACKMARKET_BRUTE_SHORT"
+           baseHp="60" baseAtk="12" attackIntervalSeconds="2.0" moveSpeed="0.75" threat="5" silhouette="enemy_brute" />
 
-    <enemy id="BOSS_SMUGGLER_CAPTAIN"
-           displayNameKey="ENEMY_BOSS_SMUGGLER_CAPTAIN_NAME"
-           shortDescriptionKey="ENEMY_BOSS_SMUGGLER_CAPTAIN_SHORT"
-           baseHp="140"
-           baseAtk="14"
-           attackIntervalSeconds="1.6"
-           moveSpeed="0.90"
-           threat="10"
-           isBoss="true"
-           silhouette="enemy_boss_captain" />
+    <enemy id="BOSS_SMUGGLER_CAPTAIN" displayNameKey="ENEMY_BOSS_SMUGGLER_CAPTAIN_NAME" shortDescriptionKey="ENEMY_BOSS_SMUGGLER_CAPTAIN_SHORT"
+           baseHp="200" baseAtk="15" attackIntervalSeconds="1.6" moveSpeed="0.85" threat="10" isBoss="true" silhouette="enemy_boss_captain" />
 </enemies>

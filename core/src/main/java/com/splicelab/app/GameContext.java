@@ -13,6 +13,7 @@ import com.splicelab.services.RandomService;
 import com.splicelab.services.RewardService;
 import com.splicelab.services.TubeSpawnService;
 import com.splicelab.services.UnlockService;
+import com.splicelab.telemetry.TelemetryBus;
 
 public final class GameContext {
     public final AssetService assets;
@@ -29,6 +30,7 @@ public final class GameContext {
     public final RandomService random;
     public final AdRewardService adRewardService;
     public final GameConfig config;
+    public final TelemetryBus telemetry;
 
     public GameContext(
             AssetService assets,
@@ -44,7 +46,8 @@ public final class GameContext {
             LevelService levelService,
             RandomService random,
             AdRewardService adRewardService,
-            GameConfig config
+            GameConfig config,
+            TelemetryBus telemetry
     ) {
         this.assets = assets;
         this.audio = audio;
@@ -60,6 +63,6 @@ public final class GameContext {
         this.random = random;
         this.adRewardService = adRewardService;
         this.config = config;
+        this.telemetry = telemetry == null ? new TelemetryBus() : telemetry;
     }
 }
-

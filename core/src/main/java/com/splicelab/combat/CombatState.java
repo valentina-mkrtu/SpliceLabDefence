@@ -6,6 +6,7 @@ import com.splicelab.model.ingredient.FusionInstance;
 import com.splicelab.model.ingredient.IngredientInstance;
 import com.splicelab.model.level.LevelDefinition;
 
+
 public final class CombatState {
     public LevelDefinition level;
     public float remainingTimeSeconds;
@@ -17,6 +18,9 @@ public final class CombatState {
 
     public final IngredientInstance[][] grid = new IngredientInstance[AppConstants.GRID_COLS][AppConstants.GRID_ROWS];
 
+    // Tube spawn pity system (consecutive ITEM spawns).
+    public int consecutiveItemSpawns;
+
     public final FusionInstance[] conveyorSockets;
     public final int[] conveyorSocketPathIndex;
 
@@ -26,8 +30,17 @@ public final class CombatState {
 
     public EnemyInstance activeEnemy;
 
+    public int enemyWaveIndex;
+
     public float enemySpawnCooldownRemaining;
     public float enemyAttackCooldownRemaining;
+
+    // Endless mode scaling.
+    public boolean endlessMode;
+    public float endlessElapsedSeconds;
+    public int endlessScalingStepsApplied;
+    public float endlessHpMultiplierBonus;
+    public float endlessAtkMultiplierBonus;
 
     public final float[] fusionAttackCooldownSockets;
 

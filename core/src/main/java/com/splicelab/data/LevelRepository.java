@@ -44,9 +44,11 @@ public final class LevelRepository {
                 List.of(EntityType.SLIME, EntityType.MECH, EntityType.FUNGUS),
                 List.of(ItemType.BATTERY, ItemType.TOXIC_WASTE, ItemType.CRYOGEL, ItemType.CRYSTAL_SHARD),
                 List.of(new LevelDefinition.EnemySpawnEntry(EnemyType.SMUGGLER_GRUNT, 1f)),
+                List.of(),
                 1.0f,
                 1.0f,
                 2.2f,
+                List.of(),
                 LevelRewardDefinition.of(50, 5),
                 "Smugglers breached the vents. Fuse fast.",
                 null

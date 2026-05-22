@@ -23,6 +23,7 @@ import com.splicelab.services.RandomService;
 import com.splicelab.services.RewardService;
 import com.splicelab.services.TubeSpawnService;
 import com.splicelab.services.UnlockService;
+import com.splicelab.telemetry.TelemetryBus;
 
 public final class SpliceLabGame extends Game {
     private SpriteBatch batch;
@@ -58,6 +59,7 @@ public final class SpliceLabGame extends Game {
         TubeSpawnService tubeSpawnService = new TubeSpawnService(definitionRepository, levelRepository, saveRepository, randomService);
         LevelService levelService = new LevelService(levelRepository);
         AdRewardService adRewardService = new AdRewardService();
+        TelemetryBus telemetry = new TelemetryBus();
 
         context = new GameContext(
                 assets,
@@ -73,8 +75,11 @@ public final class SpliceLabGame extends Game {
                 levelService,
                 randomService,
                 adRewardService,
-                config
+                config,
+                telemetry
         );
+
+        adRewardService.setTelemetry(telemetry);
 
         setScreen(new LoadingScreen(this, context));
     }

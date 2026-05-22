@@ -9,14 +9,53 @@ public final class GameConfigXmlParser {
             report.error("game_config.xml", "Root is null");
             return fallback;
         }
-        // Current schema is minimal; keep fallback for fields not present.
         int tubeMaxHp = getInt(root, "tube@maxHp", fallback.tubeMaxHp, report);
+
+        int gridCols = getInt(root, "grid@columns", fallback.gridCols, report);
+        int gridRows = getInt(root, "grid@rows", fallback.gridRows, report);
+        int gridTotalSlots = getInt(root, "grid@totalSlots", fallback.gridTotalSlots, report);
+
         float tubeTapCooldown = getFloat(root, "spawn/tubeTapCooldownSeconds@value", fallback.tubeCooldownSeconds, report);
+        float entityWeight = getFloat(root, "spawn/dropRates@entityWeight", fallback.spawnEntityWeight, report);
+        float itemWeight = getFloat(root, "spawn/dropRates@itemWeight", fallback.spawnItemWeight, report);
+        int pityEveryX = getInt(root, "spawn/pitySystem@guaranteeEntityEveryXSpawns", fallback.pityGuaranteeEntityEveryXItemSpawns, report);
+        int perTap = getInt(root, "spawn/spawnPerTap@value", fallback.tubeSpawnPerTap, report);
+
         int maxLeft = getInt(root, "conveyor/maxLeftSlots@value", fallback.maxConveyorSlotsPerSide, report);
         int maxRight = getInt(root, "conveyor/maxRightSlots@value", fallback.maxConveyorSlotsPerSide, report);
         int maxSide = Math.max(maxLeft, maxRight);
-        report.info("game_config.xml", "Loaded config: tubeMaxHp=" + tubeMaxHp + ", tubeTapCooldownSeconds=" + tubeTapCooldown + ", maxLeftSlots=" + maxLeft + ", maxRightSlots=" + maxRight);
-        return new GameConfig(fallback.saveSchemaVersion, maxSide, tubeTapCooldown, fallback.maxTubeCharges, tubeMaxHp);
+
+        float defeatCoinsMult = getFloat(root, "combat/defeatRewardMultiplier@coins", fallback.defeatCoinsMultiplier, report);
+        float defeatDnaMult = getFloat(root, "combat/defeatRewardMultiplier@dna", fallback.defeatDnaMultiplier, report);
+
+        report.info(
+                "game_config.xml",
+                "Loaded config: tubeMaxHp=" + tubeMaxHp
+                        + ", grid=" + gridCols + "x" + gridRows + " totalSlots=" + gridTotalSlots
+                        + ", tubeTapCooldownSeconds=" + tubeTapCooldown
+                        + ", spawnPerTap=" + perTap
+                        + ", dropRates(entity=" + entityWeight + ", item=" + itemWeight + ")"
+                        + ", pityEveryX=" + pityEveryX
+                        + ", maxLeftSlots=" + maxLeft + ", maxRightSlots=" + maxRight
+        );
+
+        return new GameConfig(
+                fallback.saveSchemaVersion,
+                maxSide,
+                tubeTapCooldown,
+                fallback.maxTubeCharges,
+                tubeMaxHp,
+                gridCols,
+                gridRows,
+                gridTotalSlots,
+                perTap,
+                entityWeight,
+                itemWeight,
+                pityEveryX
+                ,
+                defeatCoinsMult,
+                defeatDnaMult
+        );
     }
 
     private static int getInt(XmlReader.Element root, String path, int fallback, DataValidationReport report) {

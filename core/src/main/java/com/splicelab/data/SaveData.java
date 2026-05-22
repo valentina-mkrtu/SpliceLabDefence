@@ -21,5 +21,7 @@ public final class SaveData {
 
     public boolean musicEnabled = true;
     public boolean sfxEnabled = true;
-}
 
+    // Endless mode: best survival time (seconds).
+    public float endlessBestSurvivalSeconds = 0f;
+}

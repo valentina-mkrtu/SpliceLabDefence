@@ -7,6 +7,7 @@ import com.splicelab.model.ItemType;
 import com.splicelab.model.enemy.EnemyType;
 import com.splicelab.model.level.LevelDefinition;
 import com.splicelab.model.level.LevelRewardDefinition;
+import com.splicelab.services.TubeSpawnService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,8 @@ public final class LevelXmlParser {
             List<EntityType> entities = parseAllowedEntities(levelEl, report, number);
             List<ItemType> items = parseAllowedItems(levelEl, report, number);
             List<LevelDefinition.EnemySpawnEntry> enemyPool = parseEnemyPool(levelEl, report, number);
+            List<EnemyType> enemyWave = parseEnemyWave(levelEl, report, number);
+            List<TubeSpawnService.SpawnChoice> bag8 = parseTubeBag(levelEl, report, number);
 
             XmlReader.Element rewardsEl = levelEl.getChildByName("rewards");
             int winCoins = rewardsEl == null ? parseInt(levelEl, "baseCoins", 0, report, "levels.xml", "level " + number) : parseInt(rewardsEl, "winCoins", 0, report, "levels.xml", "level " + number);
@@ -65,9 +68,11 @@ public final class LevelXmlParser {
                     entities,
                     items,
                     enemyPool,
+                    enemyWave,
                     hpMult,
                     atkMult,
                     spawnInterval,
+                    bag8,
                     rewards,
                     levelEl.getAttribute("storyKey", ""),
                     tutorialStepId
@@ -138,6 +143,59 @@ public final class LevelXmlParser {
             }
         }
         return list;
+    }
+
+    private static List<EnemyType> parseEnemyWave(XmlReader.Element levelEl, DataValidationReport report, int number) {
+        List<EnemyType> out = new ArrayList<>();
+        XmlReader.Element waveEl = levelEl.getChildByName("enemyWave");
+        if (waveEl == null) return out;
+        for (int i = 0; i < waveEl.getChildCount(); i++) {
+            XmlReader.Element e = waveEl.getChild(i);
+            if (!"enemy".equals(e.getName())) continue;
+            EnemyType type = safeEnum(EnemyType.class, e.getAttribute("id", ""));
+            if (type == null) {
+                report.warn("levels.xml", "Level " + number + " has invalid enemyWave id");
+                continue;
+            }
+            int count = parseInt(e, "count", 1, report, "levels.xml", "level " + number);
+            for (int k = 0; k < Math.max(0, count); k++) out.add(type);
+        }
+        return out;
+    }
+
+    private static List<TubeSpawnService.SpawnChoice> parseTubeBag(XmlReader.Element levelEl, DataValidationReport report, int number) {
+        List<TubeSpawnService.SpawnChoice> out = new ArrayList<>();
+        XmlReader.Element bagEl = levelEl.getChildByName("tubeBag");
+        if (bagEl == null) return out;
+
+        XmlReader.Element bag8 = bagEl.getChildByName("bag8");
+        if (bag8 == null) return out;
+
+        for (int i = 0; i < bag8.getChildCount(); i++) {
+            XmlReader.Element child = bag8.getChild(i);
+            if ("entity".equals(child.getName())) {
+                EntityType t = safeEnum(EntityType.class, child.getAttribute("id", ""));
+                if (t == null) {
+                    report.warn("levels.xml", "Level " + number + " has invalid tube bag entity id");
+                    continue;
+                }
+                int count = parseInt(child, "count", 1, report, "levels.xml", "level " + number);
+                for (int k = 0; k < Math.max(0, count); k++) out.add(TubeSpawnService.SpawnChoice.entity(t));
+            } else if ("item".equals(child.getName())) {
+                ItemType t = safeEnum(ItemType.class, child.getAttribute("id", ""));
+                if (t == null) {
+                    report.warn("levels.xml", "Level " + number + " has invalid tube bag item id");
+                    continue;
+                }
+                int count = parseInt(child, "count", 1, report, "levels.xml", "level " + number);
+                for (int k = 0; k < Math.max(0, count); k++) out.add(TubeSpawnService.SpawnChoice.item(t));
+            }
+        }
+
+        if (out.size() != 8) {
+            report.warn("levels.xml", "Level " + number + " tube bag8 size=" + out.size() + " (expected 8)");
+        }
+        return out;
     }
 
     private static <E extends Enum<E>> E safeEnum(Class<E> clz, String raw) {

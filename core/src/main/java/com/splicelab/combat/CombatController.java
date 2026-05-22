@@ -22,6 +22,9 @@ public final class CombatController {
     private final java.util.Random rng = new java.util.Random();
 
     private static final int DEFAULT_TUBE_BAG_SIZE = 8;
+    private static final int ENDLESS_START_LEVEL = 50;
+    private static final float ENDLESS_SCALE_STEP_SECONDS = 60f;
+    private static final float ENDLESS_SCALE_STEP_AMOUNT = 0.10f;
     private final java.util.ArrayDeque<com.splicelab.services.TubeSpawnService.SpawnChoice> tubeBag = new java.util.ArrayDeque<>();
 
     public interface CombatFeedback {
@@ -56,9 +59,11 @@ public final class CombatController {
     }
 
     public CombatState startLevel(int levelNumber) {
-        LevelDefinition level = context.levels.getLevel(levelNumber).orElse(null);
+        boolean endless = levelNumber > ENDLESS_START_LEVEL;
+        int loadLevelNumber = endless ? ENDLESS_START_LEVEL : levelNumber;
+        LevelDefinition level = context.levels.getLevel(loadLevelNumber).orElse(null);
         if (level == null) {
-            CombatLog.d("Missing level " + levelNumber);
+            CombatLog.d("Missing level " + loadLevelNumber);
             state.result = CombatResult.LOSE;
             return state;
         }
@@ -78,11 +83,19 @@ public final class CombatController {
         state.tubeCooldownRemaining = 0f;
         state.tubeMaxCharges = charges;
         state.tubeCharges = charges;
+        state.consecutiveItemSpawns = 0;
         refillTubeBagIfNeeded();
         state.activeEnemy = null;
         state.enemySpawnCooldownRemaining = 0f;
+        state.enemyWaveIndex = 0;
         // Enemy attacks every 3 seconds.
         state.enemyAttackCooldownRemaining = 3f;
+
+        state.endlessMode = endless;
+        state.endlessElapsedSeconds = 0f;
+        state.endlessScalingStepsApplied = 0;
+        state.endlessHpMultiplierBonus = 0f;
+        state.endlessAtkMultiplierBonus = 0f;
         state.conveyorStepCooldownRemaining = CombatTuning.CONVEYOR_STEP_INTERVAL_SECONDS;
         for (int i = 0; i < state.fusionAttackCooldownSockets.length; i++) state.fusionAttackCooldownSockets[i] = 0f;
 
@@ -93,6 +106,7 @@ public final class CombatController {
         context.saves.save();
 
         CombatLog.d("LEVEL_START level=" + level.levelNumber);
+        if (endless) CombatLog.d("ENDLESS_MODE enabled using level=" + ENDLESS_START_LEVEL);
         CombatLog.d("allowedEntities=" + level.availableEntities);
         CombatLog.d("allowedItems=" + level.availableItems);
         CombatLog.d("enemyPool=" + level.enemyPool);
@@ -100,7 +114,9 @@ public final class CombatController {
         CombatLog.d("rewards coins=" + level.rewards.coins() + " dna=" + level.rewards.dna());
         CombatLog.d("tubeCooldownSeconds=" + cd + " maxTubeCharges=" + charges);
 
-        ensureEnemySpawned();
+        if (state.activeEnemy == null) {
+            ensureEnemySpawned();
+        }
         return state;
     }
 
@@ -111,10 +127,22 @@ public final class CombatController {
     public void update(float delta) {
         if (state.result != CombatResult.RUNNING) return;
 
+        if (state.endlessMode) {
+            state.endlessElapsedSeconds += Math.max(0f, delta);
+            int steps = (int) Math.floor(state.endlessElapsedSeconds / ENDLESS_SCALE_STEP_SECONDS);
+            if (steps > state.endlessScalingStepsApplied) {
+                int add = steps - state.endlessScalingStepsApplied;
+                state.endlessScalingStepsApplied = steps;
+                state.endlessHpMultiplierBonus += ENDLESS_SCALE_STEP_AMOUNT * add;
+                state.endlessAtkMultiplierBonus += ENDLESS_SCALE_STEP_AMOUNT * add;
+                CombatLog.d("ENDLESS_SCALE steps=" + steps + " hpBonus=" + state.endlessHpMultiplierBonus + " atkBonus=" + state.endlessAtkMultiplierBonus);
+            }
+        }
+
         if (state.remainingTimeSeconds > 0f) {
             state.remainingTimeSeconds = Math.max(0f, state.remainingTimeSeconds - delta * (com.splicelab.debug.DebugFlags.FAST_ROUND_TIMER ? 3f : 1f));
             if (state.remainingTimeSeconds <= 0f) {
-                state.result = CombatResult.WIN;
+                state.result = state.endlessMode ? CombatResult.LOSE : CombatResult.WIN;
                 return;
             }
         }
@@ -135,9 +163,7 @@ public final class CombatController {
             state.enemySpawnCooldownRemaining = Math.max(0f, state.enemySpawnCooldownRemaining - delta);
         }
 
-        if (state.activeEnemy == null) {
-            ensureEnemySpawned();
-        }
+        ensureEnemySpawned();
 
         updateConveyorPhase(delta);
         // Conveyor sockets are visual belt pockets; they don't advance occupancy.
@@ -170,10 +196,11 @@ public final class CombatController {
         }
 
         int[] empty = findRandomEmptyNonTubeCell();
-        if (empty == null) return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
+        if (empty == null) {
+            return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
+        }
 
-        refillTubeBagIfNeeded();
-        var choice = tubeBag.pollFirst();
+        var choice = chooseTubeSpawnWithPity();
         if (choice == null || choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
             return CommandResult.fail(CommandResult.Code.INVALID_LEVEL, "No spawn choices");
         }
@@ -183,9 +210,11 @@ public final class CombatController {
         if (choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.ENTITY) {
             EntityType e = choice.entityType();
             instance = SimpleIngredientInstance.ofEntity(id, e);
+            state.consecutiveItemSpawns = 0;
         } else {
             ItemType i = choice.itemType();
             instance = SimpleIngredientInstance.ofItem(id, i);
+            state.consecutiveItemSpawns++;
         }
 
         state.grid[empty[0]][empty[1]] = instance;
@@ -198,6 +227,40 @@ public final class CombatController {
         return CommandResult.ok();
     }
 
+    private com.splicelab.services.TubeSpawnService.SpawnChoice chooseTubeSpawnWithPity() {
+        int pityEveryX = Math.max(0, context.config.pityGuaranteeEntityEveryXItemSpawns);
+        boolean forceEntity = pityEveryX > 0 && state.consecutiveItemSpawns >= pityEveryX;
+
+        float wEntity = Math.max(0f, context.config.spawnEntityWeight);
+        float wItem = Math.max(0f, context.config.spawnItemWeight);
+        boolean wantEntity;
+        if (forceEntity) {
+            wantEntity = true;
+        } else {
+            float total = wEntity + wItem;
+            if (total <= 0f) {
+                wantEntity = context.random.nextFloat() < 0.5f;
+            } else {
+                wantEntity = context.random.nextFloat() * total < wEntity;
+            }
+        }
+
+        // Pull from the level's unlocked pools (not the old 50/50 bag).
+        var picked = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
+        if (picked.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) return picked;
+
+        // If picked type doesn't match desired, try a few rerolls.
+        for (int tries = 0; tries < 6; tries++) {
+            boolean isEntity = picked.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.ENTITY;
+            if (wantEntity == isEntity) return picked;
+            picked = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
+            if (picked.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) return picked;
+        }
+
+        // Fallback: return whatever we got.
+        return picked;
+    }
+
     private float getTubeCooldownSeconds() {
         float cd = state.level == null ? context.config.tubeCooldownSeconds : state.level.tubeCooldownSeconds;
         if (cd <= 0f) cd = context.config.tubeCooldownSeconds;
@@ -205,7 +268,9 @@ public final class CombatController {
     }
 
     private void refillTubeBagIfNeeded() {
+        // Legacy system: kept for compatibility if any old code path uses it.
         if (!tubeBag.isEmpty()) return;
+        if (state.level == null) return;
         int bagSize = Math.max(1, state.tubeMaxCharges > 0 ? state.tubeMaxCharges : DEFAULT_TUBE_BAG_SIZE);
         tubeBag.addAll(context.tubeSpawnService.buildSpawnBagForLevel(state.level.levelNumber, bagSize));
     }
@@ -297,6 +362,12 @@ public final class CombatController {
         state.conveyorSockets[socketId] = fusion;
         state.grid[fromCol][fromRow] = null;
         state.fusionAttackCooldownSockets[socketId] = 0f;
+
+        context.telemetry.track(
+                "fusion_deployed",
+                java.util.Map.of("fusionId", fusion.entityType.name() + "_" + fusion.itemType.name())
+        );
+
         CombatLog.d("fusion deployed socket=" + socketId);
         return CommandResult.ok();
     }
@@ -312,6 +383,12 @@ public final class CombatController {
 
         state.conveyorSockets[socketId] = fusion;
         state.grid[fromCol][fromRow] = null;
+
+        context.telemetry.track(
+                "fusion_deployed",
+                java.util.Map.of("fusionId", fusion.entityType.name() + "_" + fusion.itemType.name())
+        );
+
         return CommandResult.ok();
     }
 
@@ -375,9 +452,19 @@ public final class CombatController {
         if (state.level == null) return;
         if (state.activeEnemy != null) return;
         if (state.enemySpawnCooldownRemaining > 0f) return;
+        if (state.level.enemyWave != null && !state.level.enemyWave.isEmpty()) {
+            EnemyType chosenType = state.level.enemyWave.get(state.enemyWaveIndex % state.level.enemyWave.size());
+            state.enemyWaveIndex++;
+            spawnEnemyOfType(chosenType);
+            return;
+        }
         if (state.level.enemyPool.isEmpty()) return;
 
         EnemyType chosenType = chooseWeightedEnemyType(state.level);
+        spawnEnemyOfType(chosenType);
+    }
+
+    private void spawnEnemyOfType(EnemyType chosenType) {
         EnemyDefinition def = context.definitions.getEnemy(chosenType).orElse(null);
         if (def == null) return;
 
@@ -396,7 +483,9 @@ public final class CombatController {
         }
 
         int extra = Math.max(0, deployedFusions - 1);
-        return 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * extra;
+        float mult = 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * extra;
+        if (state.endlessMode) mult *= (1f + Math.max(0f, state.endlessHpMultiplierBonus));
+        return mult;
     }
 
     private EnemyType chooseWeightedEnemyType(LevelDefinition level) {
@@ -422,22 +511,33 @@ public final class CombatController {
             FusionInstance fusion = state.conveyorSockets[socketId];
             if (fusion == null) continue;
             state.fusionAttackCooldownSockets[socketId] = Math.max(0f, state.fusionAttackCooldownSockets[socketId] - delta);
+            if (!isSocketAtAttackCheckpoint(socketId)) continue;
             if (state.fusionAttackCooldownSockets[socketId] > 0f) continue;
             attackEnemyFromFusionSocket(socketId, fusion);
-            state.fusionAttackCooldownSockets[socketId] = fusion.stats.attackIntervalSeconds();
+            // No attack timer gameplay: cooldown is only anti-spam within the same checkpoint window.
+            state.fusionAttackCooldownSockets[socketId] = 0.25f;
         }
     }
 
     private boolean isSocketAtAttackCheckpoint(int socketId) {
-        int pathLen = feedback == null ? 0 : feedback.getConveyorPathLength();
+        int pathLen = CombatTuning.ATTACK_ZONE_INDEX <= 0 ? 0 : (feedback == null ? 0 : feedback.getConveyorPathLength());
         if (pathLen <= 0) return false;
 
+        // Match LabGameView.layoutConveyorPathForPhase(): it offsets phase by half a slot.
         float phase = state.conveyorBeltPhase;
-        float idxF = (phase * pathLen) % pathLen;
+        float shifted = (phase + (0.5f / pathLen)) % 1f;
+        float idxF = (shifted * pathLen) % pathLen;
         int beltIndex = ((int) Math.floor(idxF)) % pathLen;
+
         int socketIndex = ((socketId % pathLen) + pathLen) % pathLen;
         int checkpointIndex = ((CombatTuning.ATTACK_ZONE_INDEX % pathLen) + pathLen) % pathLen;
-        return ((socketIndex + beltIndex) % pathLen) == checkpointIndex;
+        int current = (socketIndex + beltIndex) % pathLen;
+
+        if (current != checkpointIndex) return false;
+
+        // Window so we don't skip it between frames.
+        float frac = idxF - (float) Math.floor(idxF);
+        return frac < 0.35f;
     }
 
     private void attackEnemyFromFusionSocket(int socketId, FusionInstance fusion) {
@@ -489,6 +589,7 @@ public final class CombatController {
         }
         int extra = Math.max(0, deployedFusions - 1);
         float dynamicAtkMult = 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK * extra;
+        if (state.endlessMode) dynamicAtkMult *= (1f + Math.max(0f, state.endlessAtkMultiplierBonus));
         int scaledDmg = Math.max(
                 CombatTuning.MIN_DAMAGE,
                 Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult)

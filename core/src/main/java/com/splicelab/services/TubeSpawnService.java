@@ -47,6 +47,20 @@ public final class TubeSpawnService {
         LevelDefinition level = levels.getLevel(levelNumber).orElse(null);
         if (level == null) return List.of();
 
+        // If level defines an explicit 8-bag composition, repeat it.
+        if (level.tubeSpawnBag8 != null && !level.tubeSpawnBag8.isEmpty()) {
+            List<SpawnChoice> base = filterLocked(level.tubeSpawnBag8);
+            if (!base.isEmpty()) {
+                int size = Math.max(1, bagSize);
+                List<SpawnChoice> out = new ArrayList<>(size);
+                for (int i = 0; i < size; i++) {
+                    out.add(base.get(i % base.size()));
+                }
+                shuffle(out);
+                return out;
+            }
+        }
+
         List<EntityType> entities = new ArrayList<>();
         for (EntityType e : level.availableEntities) {
             if (saves.get().unlockedEntities.contains(e.name()) && definitions.getEntity(e).isPresent()) {
@@ -80,6 +94,22 @@ public final class TubeSpawnService {
         out.addAll(pickWithRepeatLimitEntities(entities, entityCount));
         out.addAll(pickWithRepeatLimitItems(items, itemCount));
         shuffle(out);
+        return out;
+    }
+
+    private List<SpawnChoice> filterLocked(List<SpawnChoice> in) {
+        List<SpawnChoice> out = new ArrayList<>();
+        if (in == null) return out;
+        for (SpawnChoice c : in) {
+            if (c == null) continue;
+            if (c.type() == SpawnChoice.Type.ENTITY) {
+                EntityType e = c.entityType();
+                if (e != null && saves.get().unlockedEntities.contains(e.name()) && definitions.getEntity(e).isPresent()) out.add(c);
+            } else if (c.type() == SpawnChoice.Type.ITEM) {
+                ItemType it = c.itemType();
+                if (it != null && saves.get().unlockedItems.contains(it.name()) && definitions.getItem(it).isPresent()) out.add(c);
+            }
+        }
         return out;
     }
 

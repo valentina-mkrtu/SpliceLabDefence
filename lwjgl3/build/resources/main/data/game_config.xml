@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<gameConfig version="1">
+<gameConfig version="3">
     <tube maxHp="300" />
+
+    <grid columns="4" rows="4" totalSlots="16" />
 
     <spawn>
         <tubeTapCooldownSeconds value="2.5" />
+        <dropRates entityWeight="0.35" itemWeight="0.65" />
+        <pitySystem guaranteeEntityEveryXSpawns="3" />
     </spawn>
 
     <combat>
-        <fusionMaxOnField value="6" />
+        <fusionMaxOnField value="12" />
+        <defeatRewardMultiplier coins="0.25" dna="0.0" />
     </combat>
 
     <conveyor>
-        <maxLeftSlots value="3" />
-        <maxRightSlots value="3" />
+        <maxLeftSlots value="6" />
+        <maxRightSlots value="6" />
     </conveyor>
 </gameConfig>

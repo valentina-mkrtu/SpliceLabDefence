@@ -121,6 +121,7 @@ public final class LabGameScreen extends BaseScreen {
     @Override
     protected void update(float delta) {
         combatController.update(delta);
+        context.telemetry.flush();
         view.update(delta);
         view.syncFromState(combatController.getState());
 
@@ -143,7 +144,25 @@ public final class LabGameScreen extends BaseScreen {
                 context.saves.save();
                 game.setScreen(new LevelCompleteScreen(game, context));
             }
-            case LOSE -> game.setScreen(new DefeatScreen(game, context));
+            case LOSE -> {
+                if (combatController.getState().level != null) {
+                    context.telemetry.track(
+                            "level_failed",
+                            java.util.Map.of(
+                                    "level", combatController.getState().level.levelNumber,
+                                    "timeDiedSeconds", combatController.getState().endlessMode ? combatController.getState().endlessElapsedSeconds : 0f
+                            )
+                    );
+                }
+                // Persist endless survival time for defeat screen.
+                context.saves.get().endlessBestSurvivalSeconds = Math.max(
+                        context.saves.get().endlessBestSurvivalSeconds,
+                        combatController.getState().endlessMode ? combatController.getState().endlessElapsedSeconds : 0f
+                );
+                context.saves.save();
+                context.telemetry.flush();
+                game.setScreen(new DefeatScreen(game, context));
+            }
             default -> {
             }
         }

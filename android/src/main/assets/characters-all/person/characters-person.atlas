@@ -1,0 +1,16 @@
+characters-person.png
+size:1150,780
+filter:Linear,Linear
+pma:true
+boss1
+bounds:400,396,373,383
+offsets:0,0,373,385
+boss2
+bounds:775,404,374,375
+offsets:0,1,374,376
+reg1
+bounds:505,17,391,377
+reg2
+bounds:1,370,397,409
+reg3
+bounds:1,1,502,367
