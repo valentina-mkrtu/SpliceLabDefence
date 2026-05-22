@@ -321,4 +321,25 @@
     <string key="LEVEL_49_OBJECTIVE" value="Prepare for the boss." />
     <string key="LEVEL_50_STORY" value="Day 3: The Smuggler Captain steps out." />
     <string key="LEVEL_50_OBJECTIVE" value="Defeat the boss by surviving the timer." />
+
+    <string key="LEVEL_51_STORY" value="Day 4: New shift. Same trouble." />
+    <string key="LEVEL_51_OBJECTIVE" value="Survive the pressure." />
+    <string key="LEVEL_52_STORY" value="Day 4: The belt speeds up again." />
+    <string key="LEVEL_52_OBJECTIVE" value="Stay efficient." />
+    <string key="LEVEL_53_STORY" value="Day 4: More charges. More choices." />
+    <string key="LEVEL_53_OBJECTIVE" value="Keep lanes covered." />
+    <string key="LEVEL_54_STORY" value="Day 4: They bring shields and gas." />
+    <string key="LEVEL_54_OBJECTIVE" value="Hold the line." />
+    <string key="LEVEL_55_STORY" value="Day 4: Drones want your best parts." />
+    <string key="LEVEL_55_OBJECTIVE" value="Protect your carry." />
+    <string key="LEVEL_56_STORY" value="Day 4: Hunter eyes in the dark." />
+    <string key="LEVEL_56_OBJECTIVE" value="Don’t fall behind." />
+    <string key="LEVEL_57_STORY" value="Day 4: Ten charges. No excuses." />
+    <string key="LEVEL_57_OBJECTIVE" value="Survive." />
+    <string key="LEVEL_58_STORY" value="Day 4: Brutes hit harder now." />
+    <string key="LEVEL_58_OBJECTIVE" value="Keep the Tube alive." />
+    <string key="LEVEL_59_STORY" value="Day 4: Last warmup before boss." />
+    <string key="LEVEL_59_OBJECTIVE" value="Get ready." />
+    <string key="LEVEL_60_STORY" value="Day 4: Captain returns with backup." />
+    <string key="LEVEL_60_OBJECTIVE" value="Beat the boss wave." />
 </localization>

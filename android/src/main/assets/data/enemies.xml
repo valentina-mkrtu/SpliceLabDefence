@@ -34,7 +34,7 @@
            displayNameKey="ENEMY_GAS_BOMBER_NAME"
            shortDescriptionKey="ENEMY_GAS_BOMBER_SHORT"
            baseHp="20"
-           baseAtk="7"
+           baseAtk="6"
            attackIntervalSeconds="2.1"
            moveSpeed="0.90"
            threat="2"
@@ -55,7 +55,7 @@
            shortDescriptionKey="ENEMY_DRONE_THIEF_SHORT"
            baseHp="16"
            baseAtk="4"
-           attackIntervalSeconds="1.0"
+           attackIntervalSeconds="1.1"
            moveSpeed="1.30"
            threat="2"
            silhouette="enemy_drone" />

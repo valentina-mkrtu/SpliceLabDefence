@@ -68,6 +68,7 @@ public final class LabGameView {
     private final HpBarWidget enemyHpBar;
     private final Table enemyVisual;
     private final Texture shaftBgTexture;
+    private final Table shaftBg;
     private final Texture enemyReg1Texture;
     private final Texture enemyReg2Texture;
     private final Texture enemyReg3Texture;
@@ -94,7 +95,7 @@ public final class LabGameView {
 
     private static final float FUSION_FRAME_NATIVE_W = 339f;
     private static final float FUSION_FRAME_NATIVE_H = 344f;
-    private static final float FUSION_FRAME_SCALE = 1.3167f;
+    private static final float FUSION_FRAME_SCALE = 1.18f;
     private static final float FUSION_FRAME_W = FUSION_FRAME_NATIVE_W * FUSION_FRAME_SCALE;
     private static final float FUSION_FRAME_H = FUSION_FRAME_NATIVE_H * FUSION_FRAME_SCALE;
 
@@ -146,18 +147,26 @@ public final class LabGameView {
         enemyPanel.add(enemyLabel).pad(0).row();
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
         enemyHpBar.setSize(180, 10);
-        enemyPanel.add(enemyHpBar).pad(4);
+        enemyPanel.add(enemyHpBar).pad(4).row();
 
         shaftBgTexture = new Texture(SHAFT_BG_TEXTURE_PATH);
 
         enemyVisual = new Table();
-        enemyVisual.setBackground(new TextureRegionDrawable(new TextureRegion(shaftBgTexture)));
         enemyIcon = new Image();
         enemyIcon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-        enemyVisual.add(enemyIcon).grow();
         enemyVisual.setSize(140, 90);
-        enemyPanel.row();
-        enemyPanel.add(enemyVisual).size(140, 90).pad(6);
+
+        shaftBg = new Table();
+        shaftBg.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        shaftBg.setBackground(new TextureRegionDrawable(new TextureRegion(shaftBgTexture)));
+        shaftBg.setFillParent(false);
+        shaftBg.getColor().a = 1f;
+        root.addActor(shaftBg);
+
+        enemyIcon.setSize(160, 120);
+        enemyIcon.setPosition(-20f, 20f);
+        enemyVisual.addActor(enemyIcon);
+        enemyPanel.add(enemyVisual).size(160, 140).pad(6).padBottom(20);
 
         conveyor.add(enemyPanel).pad(6);
 
@@ -170,6 +179,8 @@ public final class LabGameView {
         // Lower section: fusion station background behind the grid.
         // Scale the frame up uniformly to better align with top section composition.
         gridPanel = new Table();
+        gridPanel.setTransform(true);
+        gridPanel.setPosition(0f, 200f);
         var gridBg = PlaceholderSkinFactory.getDrawableIfPresent(skin, "fusion_station_bg");
         if (gridBg != null) {
             gridPanel.setBackground(gridBg);
@@ -200,9 +211,9 @@ public final class LabGameView {
         gridPanel.add(grid).padLeft(22).padRight(36).padTop(4);
 
         root.add(top).growX().height(60).row();
-        root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).row();
+        root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).padBottom(-18).row();
         // Don't stretch the fusion station frame; center it at native size.
-        root.add(gridPanel).pad(UiConstants.PAD + 2).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
+        root.add(gridPanel).pad(UiConstants.PAD + 2).padTop(10).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
 
         // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();
@@ -266,7 +277,7 @@ public final class LabGameView {
     private Table makeSocket(int index) {
         Table t = new Table();
         // Make the drop target larger so it's easy to hit.
-        t.setSize(46, 46);
+        t.setSize(64, 64);
         t.setBackground((Drawable) null);
         t.setVisible(false);
         return t;
@@ -275,6 +286,7 @@ public final class LabGameView {
     private void layoutConveyorPath() {
         // Fixed 12-point loop in beltLayer coordinates.
         // Keep it stable: do not depend on child actor layout/initialization.
+        layoutShaftBackground();
         float margin = 52f;
         // Make the conveyor segment a bit larger.
         float combatTopY = root.getHeight() - 89f;
@@ -319,6 +331,7 @@ public final class LabGameView {
     }
 
     private void layoutConveyorPathForPhase(float beltPhase) {
+        layoutShaftBackground();
         float margin = 70f;
         float combatTopY = root.getHeight() - 150f;
         float combatBottomY = root.getHeight() - 430f;
@@ -373,6 +386,7 @@ public final class LabGameView {
 
     private void positionAttackZoneMarker() {
         // Marker stays fixed on the right side of the belt (no phase sync).
+        layoutShaftBackground();
         float margin = 70f;
         float combatTopY = root.getHeight() - 150f;
         float combatBottomY = root.getHeight() - 430f;
@@ -401,6 +415,30 @@ public final class LabGameView {
         float y = (trackBottom + trackTop) * 0.5f;
         Vector2 p = beltLayer.localToStageCoordinates(new Vector2(x, y));
         attackZoneMarker.setPosition(p.x - attackZoneMarker.getWidth() / 2f, p.y - attackZoneMarker.getHeight() / 2f);
+    }
+
+    private void layoutShaftBackground() {
+        if (shaftBg == null) return;
+        float margin = 70f;
+        float combatTopY = root.getHeight() - 150f;
+        float combatBottomY = root.getHeight() - 430f;
+        float leftX = margin;
+        float rightX = root.getWidth() - margin;
+
+        float loopPad = 50f;
+        float rawLoopWidth = (rightX - leftX) + loopPad * 2f;
+        float rawLoopHeight = (combatTopY - combatBottomY) + loopPad * 2f;
+        float rawLoopX = leftX - loopPad;
+        float rawLoopY = combatBottomY - loopPad;
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
+        float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
+
+        float shaftW = loopSize * 0.00064f;
+        float shaftH = loopSize * 0.00076f;
+        float shaftX = loopX + loopSize * 0.005f;
+        float shaftY = loopY + loopSize * 0.005f;
+        shaftBg.setBounds(shaftX, shaftY, shaftW, shaftH);
     }
 
     private float getPathDirectionDegrees(int pathIndex) {
@@ -495,7 +533,7 @@ public final class LabGameView {
                 if (iconPath != null) {
                     Image icon = new Image(new TextureRegionDrawable(new TextureRegion(new Texture(iconPath))));
                     icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                    conveyorSockets[i].add(icon).grow();
+                    conveyorSockets[i].add(icon).size(60, 60);
                 }
             }
         }
