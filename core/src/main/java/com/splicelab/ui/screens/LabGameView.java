@@ -46,6 +46,7 @@ public final class LabGameView {
     private static final float BELT_TRACK_CORNER_RADIUS_RATIO = 0.17f;
     // Positive value shifts the whole belt-line segment upward.
     private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.01f;
+    private static final float BELT_SCALE = 0.8f;
 
     // Marker is a fixed warning pointer on the left side.
     private static final int ATTACK_MARKER_PATH_INDEX = 10;
@@ -100,11 +101,14 @@ public final class LabGameView {
 
     private final Table background;
 
-    private static final float FUSION_FRAME_NATIVE_W = 339f;
-    private static final float FUSION_FRAME_NATIVE_H = 344f;
-    private static final float FUSION_FRAME_SCALE = 1.18f;
+    private static final float FUSION_FRAME_NATIVE_W = 399f;
+    private static final float FUSION_FRAME_NATIVE_H = 496;
+    private static final float FUSION_FRAME_SCALE = 1f;
     private static final float FUSION_FRAME_W = FUSION_FRAME_NATIVE_W * FUSION_FRAME_SCALE;
     private static final float FUSION_FRAME_H = FUSION_FRAME_NATIVE_H * FUSION_FRAME_SCALE;
+    private static final float MERGE_CELL_SIZE = 85f;
+    private static final float MERGE_CELL_PAD_X = 4.6f;
+    private static final float MERGE_CELL_PAD_Y = 4.8f;
 
     private final Table gridPanel;
 
@@ -155,7 +159,7 @@ public final class LabGameView {
         enemyVisual = new Table();
         enemyIcon = new Image();
         enemyIcon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-        enemyVisual.setSize(140, 90);
+        enemyVisual.setSize(128, 82);
 
         shaftBg = new Table();
         shaftBg.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
@@ -164,14 +168,14 @@ public final class LabGameView {
         shaftBg.getColor().a = 1f;
         root.addActor(shaftBg);
 
-        enemyIcon.setSize(225, 168);
-        enemyIcon.setPosition(-21f, 55f);
+        enemyIcon.setSize(190, 142);
+        enemyIcon.setPosition(-12f, 40f);
         enemyVisual.addActor(enemyIcon);
 
         // Keep enemy HP bar above the enemy image.
         enemyHpBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 6f);
         enemyVisual.addActor(enemyHpBar);
-        enemyPanel.add(enemyVisual).size(160, 140).pad(6).padTop(30).padBottom(70);
+        enemyPanel.add(enemyVisual).size(140, 118).pad(4).padTop(12).padBottom(34);
 
         conveyor.add(enemyPanel).pad(6);
 
@@ -184,9 +188,6 @@ public final class LabGameView {
         // Lower section: fusion station background behind the grid.
         // Scale the frame up uniformly to better align with top section composition.
         gridPanel = new Table();
-        gridPanel.setTransform(true);
-        // Grid is placed later by Table layout; don't pin it here.
-        gridPanel.setPosition(0f, 0f);
         var gridBg = PlaceholderSkinFactory.getDrawableIfPresent(skin, "fusion_station_bg");
         if (gridBg != null) {
             gridPanel.setBackground(gridBg);
@@ -198,7 +199,7 @@ public final class LabGameView {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 GridCellWidget cell = new GridCellWidget(skin, ui, c, r);
                 cells[c][r] = cell;
-                grid.add(cell).size(82, 82).pad(7).padBottom(-2);
+                grid.add(cell).size(MERGE_CELL_SIZE, MERGE_CELL_SIZE).pad(MERGE_CELL_PAD_Y, MERGE_CELL_PAD_X, MERGE_CELL_PAD_Y, MERGE_CELL_PAD_X);
             }
             grid.row();
         }
@@ -213,14 +214,14 @@ public final class LabGameView {
             }
         });
 
-        // Center the grid inside the fixed frame (slightly down+left for visual balance).
-        gridPanel.add(grid).padLeft(22).padRight(36).padTop(4);
+        // Keep all 12 cells centered in the 12 dark pockets.
+        gridPanel.add(grid).padTop(-20);
 
         root.add(top).growX().height(60).row();
-        root.add(conveyor).growX().expandY().height(300).pad(UiConstants.PAD + 2).padBottom(-18).row();
+        root.add(conveyor).growX().expandY().height(238).pad(UiConstants.PAD + 2).padBottom(10).row();
         // Don't stretch the fusion station frame; center it at native size.
         // Push grid up closer to conveyor.
-        root.add(gridPanel).pad(UiConstants.PAD + 2).padTop(-20).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
+        root.add(gridPanel).pad(UiConstants.PAD + 2).padTop(10).center().size(FUSION_FRAME_W, FUSION_FRAME_H);
 
         // Conveyor belt layer: path anchors + moving sockets.
         beltLayer = new Table();
@@ -298,8 +299,8 @@ public final class LabGameView {
         layoutShaftBackground();
         float margin = 52f;
         // Make the conveyor segment a bit larger.
-        float combatTopY = root.getHeight() - 89f;
-        float combatBottomY = root.getHeight() - 439f;
+        float combatTopY = root.getHeight() - 70f;
+        float combatBottomY = root.getHeight() - 448f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -312,7 +313,7 @@ public final class LabGameView {
         float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
         float rawLoopX = leftX - loopPad;
         float rawLoopY = bottomY - loopPad;
-        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight) * BELT_SCALE;
         float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
         float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
         beltLoop.setSize(loopSize, loopSize);
@@ -342,8 +343,8 @@ public final class LabGameView {
     private void layoutConveyorPathForPhase(float beltPhase) {
         layoutShaftBackground();
         float margin = 70f;
-        float combatTopY = root.getHeight() - 150f;
-        float combatBottomY = root.getHeight() - 430f;
+        float combatTopY = root.getHeight() - 70f;
+        float combatBottomY = root.getHeight() - 448f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -355,7 +356,7 @@ public final class LabGameView {
         float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
         float rawLoopX = leftX - loopPad;
         float rawLoopY = bottomY - loopPad;
-        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight) * BELT_SCALE;
         float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
         float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
 
@@ -397,8 +398,8 @@ public final class LabGameView {
         // Marker stays fixed on the right side of the belt (no phase sync).
         layoutShaftBackground();
         float margin = 70f;
-        float combatTopY = root.getHeight() - 150f;
-        float combatBottomY = root.getHeight() - 430f;
+        float combatTopY = root.getHeight() - 70f;
+        float combatBottomY = root.getHeight() - 448f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -410,7 +411,7 @@ public final class LabGameView {
         float rawLoopHeight = (topY - bottomY) + loopPad * 2f;
         float rawLoopX = leftX - loopPad;
         float rawLoopY = bottomY - loopPad;
-        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight) * BELT_SCALE;
         float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
         float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
 
@@ -472,8 +473,8 @@ public final class LabGameView {
     private void layoutShaftBackground() {
         if (shaftBg == null) return;
         float margin = 70f;
-        float combatTopY = root.getHeight() - 150f;
-        float combatBottomY = root.getHeight() - 430f;
+        float combatTopY = root.getHeight() - 70f;
+        float combatBottomY = root.getHeight() - 448f;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -482,7 +483,7 @@ public final class LabGameView {
         float rawLoopHeight = (combatTopY - combatBottomY) + loopPad * 2f;
         float rawLoopX = leftX - loopPad;
         float rawLoopY = combatBottomY - loopPad;
-        float loopSize = Math.min(rawLoopWidth, rawLoopHeight);
+        float loopSize = Math.min(rawLoopWidth, rawLoopHeight) * BELT_SCALE;
         float loopX = rawLoopX + (rawLoopWidth - loopSize) * 0.5f;
         float loopY = rawLoopY + (rawLoopHeight - loopSize) * 0.5f;
 
