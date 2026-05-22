@@ -859,19 +859,35 @@ public final class LabGameView {
         public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
             DragAndDrop.Payload payload = new DragAndDrop.Payload();
             payload.setObject(cell);
+            cell.setIconVisible(false);
 
+            // Move only a drag visual; hide source icon so it looks truly moved.
             var iconDrawable = cell.getIconDrawable();
             if (iconDrawable != null) {
+                Table dragActor = new Table();
+                dragActor.setSize(cell.getWidth(), cell.getHeight());
                 Image dragImage = new Image(iconDrawable);
-                dragImage.setSize(64, 64);
-                payload.setDragActor(dragImage);
+                dragImage.setScaling(com.badlogic.gdx.utils.Scaling.fit);
+                float iconSize = 58f;
+                dragActor.add(dragImage).size(iconSize, iconSize).center();
+                payload.setDragActor(dragActor);
+
+                float iconLeft = (cell.getWidth() - iconSize) * 0.5f;
+                float iconBottom = (cell.getHeight() - iconSize) * 0.5f;
+                dragAndDrop.setDragActorPosition(x, -y/2);
             } else {
                 Table dragActor = new Table();
-                dragActor.setBackground(skin.newDrawable("white", new Color(1f, 1f, 1f, 0.25f)));
-                dragActor.setSize(64, 64);
+                dragActor.setSize(cell.getWidth(), cell.getHeight());
+                dragActor.setBackground(skin.newDrawable("white", new Color(1f, 1f, 1f, 0.2f)));
                 payload.setDragActor(dragActor);
+                dragAndDrop.setDragActorPosition(x, -y/2);
             }
             return payload;
+        }
+
+        @Override
+        public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
+            cell.setIconVisible(true);
         }
     }
 

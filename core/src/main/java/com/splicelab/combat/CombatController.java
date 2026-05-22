@@ -243,7 +243,7 @@ public final class CombatController {
 
         CommandResult fuse = requestFuse(fromCol, fromRow, toCol, toRow);
         if (fuse.success) {
-            CombatLog.d("fusion created at=" + fromCol + "," + fromRow);
+            CombatLog.d("fusion created at=" + toCol + "," + toRow);
             return fuse;
         }
         return CommandResult.fail(CommandResult.Code.CELL_OCCUPIED, "Target occupied");
@@ -277,8 +277,8 @@ public final class CombatController {
         FusionInstance fusion = context.fusionService.createFusion(nextInstanceId(), entity.entityType(), item.itemType()).orElse(null);
         if (fusion == null) return CommandResult.fail(CommandResult.Code.INVALID_FUSION, "Fusion creation failed");
 
-        state.grid[colA][rowA] = fusion;
-        state.grid[colB][rowB] = null;
+        state.grid[colB][rowB] = fusion;
+        state.grid[colA][rowA] = null;
         return CommandResult.ok();
     }
 

@@ -20,6 +20,7 @@ public final class GridCellWidget extends Group {
     private final Image icon;
     private final Texture slotTexture;
     private Texture iconTexture;
+    private String iconTexturePath;
 
     public GridCellWidget(Skin skin, UiFactory ui, int col, int row) {
         this.col = col;
@@ -43,12 +44,19 @@ public final class GridCellWidget extends Group {
     }
 
     public void setIcon(String texturePath) {
+        if (texturePath != null && texturePath.isBlank()) texturePath = null;
+        if ((iconTexturePath == null && texturePath == null)
+                || (iconTexturePath != null && iconTexturePath.equals(texturePath))) {
+            return;
+        }
+
         if (iconTexture != null) {
             iconTexture.dispose();
             iconTexture = null;
         }
+        iconTexturePath = texturePath;
 
-        if (texturePath == null || texturePath.isBlank()) {
+        if (texturePath == null) {
             icon.setDrawable(null);
             return;
         }
@@ -61,6 +69,28 @@ public final class GridCellWidget extends Group {
         var drawable = icon.getDrawable();
         if (drawable instanceof TextureRegionDrawable trd) return trd;
         return null;
+    }
+
+    public float getIconLocalX(float actorLocalX) {
+        bg.validate();
+        return actorLocalX - icon.getX();
+    }
+
+    public float getIconLocalY(float actorLocalY) {
+        bg.validate();
+        return actorLocalY - icon.getY();
+    }
+
+    public float getIconWidth() {
+        return icon.getWidth();
+    }
+
+    public float getIconHeight() {
+        return icon.getHeight();
+    }
+
+    public void setIconVisible(boolean visible) {
+        icon.setVisible(visible);
     }
 
     public String getLabelText() {
