@@ -337,7 +337,7 @@ public final class CombatController {
         if (state.activeEnemy.hp <= 0) {
             CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
             state.activeEnemy = null;
-            state.enemySpawnCooldownRemaining = state.level.spawnIntervalSeconds;
+            state.enemySpawnCooldownRemaining = getDynamicSpawnIntervalSeconds();
         }
     }
 
@@ -381,10 +381,22 @@ public final class CombatController {
         EnemyDefinition def = context.definitions.getEnemy(chosenType).orElse(null);
         if (def == null) return;
 
-        int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier));
+        float dynamicMult = computeDynamicEnemyMultiplier();
+        int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier * dynamicMult));
         state.activeEnemy = new EnemyInstance(nextInstanceId(), chosenType, scaledHp);
         state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
         CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp);
+    }
+
+    private float computeDynamicEnemyMultiplier() {
+        int deployedFusions = 0;
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f != null && f.hp > 0) deployedFusions++;
+        }
+
+        int extra = Math.max(0, deployedFusions - 1);
+        return 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * extra;
     }
 
     private EnemyType chooseWeightedEnemyType(LevelDefinition level) {
@@ -455,7 +467,7 @@ public final class CombatController {
             CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
             if (feedback != null) feedback.onEnemyDefeated();
             state.activeEnemy = null;
-            state.enemySpawnCooldownRemaining = state.level.spawnIntervalSeconds + CombatTuning.ENEMY_SPAWN_DELAY_AFTER_DEATH_SECONDS;
+            state.enemySpawnCooldownRemaining = getDynamicSpawnIntervalSeconds() + CombatTuning.ENEMY_SPAWN_DELAY_AFTER_DEATH_SECONDS;
         }
     }
 
@@ -470,7 +482,17 @@ public final class CombatController {
         if (state.enemyAttackCooldownRemaining > 0f) return;
         state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
 
-        int scaledDmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(def.attack.damage() * state.level.enemyAtkMultiplier));
+        int deployedFusions = 0;
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f != null && f.hp > 0) deployedFusions++;
+        }
+        int extra = Math.max(0, deployedFusions - 1);
+        float dynamicAtkMult = 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK * extra;
+        int scaledDmg = Math.max(
+                CombatTuning.MIN_DAMAGE,
+                Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult)
+        );
 
         int targetSocket = findRandomOccupiedSocket();
         FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
@@ -513,6 +535,19 @@ public final class CombatController {
             pick--;
         }
         return -1;
+    }
+
+    private float getDynamicSpawnIntervalSeconds() {
+        int deployedFusions = 0;
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f != null && f.hp > 0) deployedFusions++;
+        }
+        int extra = Math.max(0, deployedFusions - 1);
+        float mult = 1f - CombatTuning.DYNAMIC_DIFFICULTY_SPAWN_INTERVAL_MULT_PER_FUSION * extra;
+        mult = Math.max(CombatTuning.DYNAMIC_DIFFICULTY_MIN_SPAWN_INTERVAL_MULT, mult);
+        mult = Math.min(CombatTuning.DYNAMIC_DIFFICULTY_MAX_SPAWN_INTERVAL_MULT, mult);
+        return state.level.spawnIntervalSeconds * mult;
     }
 
     private void clearGrid() {
