@@ -32,7 +32,7 @@ public final class TubeWidget extends Group {
         cooldownBar = new Table();
         cooldownBar.setBackground(skin.newDrawable("white", new Color(1f, 1f, 0.2f, 0.85f)));
         addActor(cooldownBar);
-        setSize(110, 110);
+        setSize(66, 66);
     }
 
     public void dispose() {

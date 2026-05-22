@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -16,8 +17,9 @@ public final class GridCellWidget extends Group {
     public final int col;
     public final int row;
     private final Table bg;
-    private final Label text;
+    private final Image icon;
     private final Texture slotTexture;
+    private Texture iconTexture;
 
     public GridCellWidget(Skin skin, UiFactory ui, int col, int row) {
         this.col = col;
@@ -28,21 +30,40 @@ public final class GridCellWidget extends Group {
         bg.getColor().a = 0.9f;
         bg.setFillParent(true);
 
-        text = ui.label("");
-        bg.add(text).pad(2);
+        icon = new Image();
+        icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
+        bg.add(icon).size(58f, 58f).center();
         addActor(bg);
         setSize(110, 110);
     }
 
     public void dispose() {
         slotTexture.dispose();
+        if (iconTexture != null) iconTexture.dispose();
     }
 
-    public void setLabel(String label) {
-        text.setText(label == null ? "" : label);
+    public void setIcon(String texturePath) {
+        if (iconTexture != null) {
+            iconTexture.dispose();
+            iconTexture = null;
+        }
+
+        if (texturePath == null || texturePath.isBlank()) {
+            icon.setDrawable(null);
+            return;
+        }
+
+        iconTexture = new Texture(texturePath);
+        icon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
+    }
+
+    public TextureRegionDrawable getIconDrawable() {
+        var drawable = icon.getDrawable();
+        if (drawable instanceof TextureRegionDrawable trd) return trd;
+        return null;
     }
 
     public String getLabelText() {
-        return text.getText().toString();
+        return "";
     }
 }

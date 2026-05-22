@@ -14,6 +14,9 @@
         </allowedItems>
         <enemyPool>
             <enemy id="SMUGGLER_GRUNT" />
+            <enemy id="NET_THROWER" />
+            <enemy id="TOOL_RAIDER" />
+            <enemy id="BOSS_SMUGGLER_CAPTAIN" />
         </enemyPool>
         <rewards winCoins="40" winDna="2" firstWinBonusCoins="60" firstWinBonusDna="3" />
     </level>

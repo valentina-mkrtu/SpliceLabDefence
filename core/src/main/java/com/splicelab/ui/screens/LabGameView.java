@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -37,6 +38,7 @@ import com.splicelab.ui.widgets.TubeWidget;
 public final class LabGameView {
     private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
     private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
+    private static final String SHAFT_BG_TEXTURE_PATH = "art/backgrounds/shaft.png";
     // Centerline of the dark belt lane (kept away from yellow frame).
     private static final float BELT_TRACK_INSET_X_RATIO = 0.1f;
     private static final float BELT_TRACK_INSET_Y_RATIO = 0.078f;
@@ -65,6 +67,13 @@ public final class LabGameView {
     private final Label enemyLabel;
     private final HpBarWidget enemyHpBar;
     private final Table enemyVisual;
+    private final Texture shaftBgTexture;
+    private final Texture enemyReg1Texture;
+    private final Texture enemyReg2Texture;
+    private final Texture enemyReg3Texture;
+    private final Texture enemyBoss1Texture;
+    private final Texture enemyBoss2Texture;
+    private final Image enemyIcon;
 
     private final Table attackZoneMarker;
 
@@ -133,19 +142,30 @@ public final class LabGameView {
         Table enemyPanel = new Table();
         enemyPanel.add(ui.label("ENEMY")).row();
         enemyLabel = ui.label("-");
-        enemyPanel.add(enemyLabel).pad(4).row();
+        enemyLabel.setVisible(false);
+        enemyPanel.add(enemyLabel).pad(0).row();
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
         enemyHpBar.setSize(180, 10);
         enemyPanel.add(enemyHpBar).pad(4);
 
+        shaftBgTexture = new Texture(SHAFT_BG_TEXTURE_PATH);
+
         enemyVisual = new Table();
-        // Don't block the gameplay background behind the enemy panel.
-        enemyVisual.setBackground(skin.newDrawable("white", new Color(0.25f, 0.25f, 0.3f, 0.0f)));
+        enemyVisual.setBackground(new TextureRegionDrawable(new TextureRegion(shaftBgTexture)));
+        enemyIcon = new Image();
+        enemyIcon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
+        enemyVisual.add(enemyIcon).grow();
         enemyVisual.setSize(140, 90);
         enemyPanel.row();
         enemyPanel.add(enemyVisual).size(140, 90).pad(6);
 
         conveyor.add(enemyPanel).pad(6);
+
+        enemyReg1Texture = new Texture("art/enemies/reg1.png");
+        enemyReg2Texture = new Texture("art/enemies/reg2.png");
+        enemyReg3Texture = new Texture("art/enemies/reg3.png");
+        enemyBoss1Texture = new Texture("art/enemies/boss1.png");
+        enemyBoss2Texture = new Texture("art/enemies/boss2.png");
 
         // Lower section: fusion station background behind the grid.
         // Scale the frame up uniformly to better align with top section composition.
@@ -161,13 +181,14 @@ public final class LabGameView {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 GridCellWidget cell = new GridCellWidget(skin, ui, c, r);
                 cells[c][r] = cell;
-                grid.add(cell).size(80, 80).pad(8);
+                grid.add(cell).size(82, 82).pad(7).padBottom(-2);
             }
             grid.row();
         }
 
         tube = new TubeWidget(skin, ui);
         cells[AppConstants.TUBE_COL][AppConstants.TUBE_ROW].addActor(tube);
+        tube.setPosition(9f, 10f);
         tube.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -176,7 +197,7 @@ public final class LabGameView {
         });
 
         // Center the grid inside the fixed frame (slightly down+left for visual balance).
-        gridPanel.add(grid).padTop(36).padLeft(28).padRight(44).padBottom(40);
+        gridPanel.add(grid).padLeft(22).padRight(36).padTop(4);
 
         root.add(top).growX().height(60).row();
         root.add(conveyor).growX().expandY().height(360).pad(UiConstants.PAD + 2).row();
@@ -394,6 +415,12 @@ public final class LabGameView {
     public void dispose() {
         beltLoopLineTexture.dispose();
         beltLoopBaseTexture.dispose();
+        shaftBgTexture.dispose();
+        enemyReg1Texture.dispose();
+        enemyReg2Texture.dispose();
+        enemyReg3Texture.dispose();
+        enemyBoss1Texture.dispose();
+        enemyBoss2Texture.dispose();
         tube.dispose();
 
         for (int c = 0; c < AppConstants.GRID_COLS; c++) {
@@ -441,11 +468,10 @@ public final class LabGameView {
             for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
                 GridCellWidget cell = cells[c][r];
                 if (c == AppConstants.TUBE_COL && r == AppConstants.TUBE_ROW) {
-                    cell.setLabel("TUBE");
                     continue;
                 }
                 IngredientInstance inst = state.grid[c][r];
-                cell.setLabel(labelFor(inst));
+                cell.setIcon(iconFor(inst));
             }
         }
 
@@ -465,23 +491,36 @@ public final class LabGameView {
             } else {
                 conveyorSockets[i].setVisible(true);
                 conveyorSockets[i].getColor().a = 1f;
-                Label lbl = ui.label("F\n" + socketFusion[i].displayName);
-                lbl.setAlignment(com.badlogic.gdx.utils.Align.center);
-                lbl.setColor(Color.WHITE);
-                conveyorSockets[i].add(lbl).grow();
+                String iconPath = iconFor(socketFusion[i]);
+                if (iconPath != null) {
+                    Image icon = new Image(new TextureRegionDrawable(new TextureRegion(new Texture(iconPath))));
+                    icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
+                    conveyorSockets[i].add(icon).grow();
+                }
             }
         }
 
         if (state.activeEnemy == null) {
-            enemyLabel.setText("-");
             enemyHpBar.setPercent(0f);
             enemyVisual.setVisible(false);
         } else {
             EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
-            enemyLabel.setText(def == null ? state.activeEnemy.enemyType.name() : def.displayName);
             int maxHp = def == null ? Math.max(1, state.activeEnemy.hp) : Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier));
             enemyHpBar.setPercent(state.activeEnemy.hp / (float) maxHp);
             enemyVisual.setVisible(true);
+
+            Texture iconTexture = switch (state.activeEnemy.enemyType) {
+                case SMUGGLER_GRUNT -> enemyReg1Texture;
+                case NET_THROWER -> enemyReg2Texture;
+                case TOOL_RAIDER -> enemyReg3Texture;
+                case GAS_BOMBER -> enemyReg1Texture;
+                case SHIELD_SMUGGLER -> enemyReg2Texture;
+                case DRONE_THIEF -> enemyReg3Texture;
+                case MUTATION_HUNTER -> enemyReg1Texture;
+                case BLACKMARKET_BRUTE -> enemyReg2Texture;
+                case BOSS_SMUGGLER_CAPTAIN -> enemyBoss1Texture;
+            };
+            enemyIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
         }
     }
 
@@ -567,6 +606,26 @@ public final class LabGameView {
         return inst.kind().name();
     }
 
+    private static String iconFor(IngredientInstance inst) {
+        if (inst == null) return null;
+        if (inst instanceof FusionInstance f) {
+            if (f.entityType != null && f.itemType != null
+                    && f.entityType.name().equalsIgnoreCase("SLIME")
+                    && f.itemType.name().equalsIgnoreCase("BATTERY")) {
+                return "art/fusions/electroslime.png";
+            }
+        }
+        if (inst instanceof SimpleIngredientInstance s) {
+            if (s.kind() == IngredientKind.ENTITY && s.entityType().name().equalsIgnoreCase("SLIME")) {
+                return "art/entities/slime.png";
+            }
+            if (s.kind() == IngredientKind.ITEM && s.itemType().name().equalsIgnoreCase("BATTERY")) {
+                return "art/items/battery.png";
+            }
+        }
+        return null;
+    }
+
     private static final class MovingBeltLineActor extends Actor {
         private static final int PIECE_COUNT = SOCKET_COUNT;
         // Increased by 20% to slow the belt down.
@@ -601,7 +660,7 @@ public final class LabGameView {
             float startOffset = (float) (cornerRadius * Math.PI / 4f);
             return (startOffset + getSlotCenterPhase() * perimeter) % perimeter;
         }
-    
+
         @Override
         public void draw(Batch batch, float parentAlpha) {
             if (!isVisible() || getWidth() <= 0f || getHeight() <= 0f) return;
@@ -800,8 +859,18 @@ public final class LabGameView {
         public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
             DragAndDrop.Payload payload = new DragAndDrop.Payload();
             payload.setObject(cell);
-            Label dragLabel = ui.label(cell.getLabelText());
-            payload.setDragActor(dragLabel);
+
+            var iconDrawable = cell.getIconDrawable();
+            if (iconDrawable != null) {
+                Image dragImage = new Image(iconDrawable);
+                dragImage.setSize(64, 64);
+                payload.setDragActor(dragImage);
+            } else {
+                Table dragActor = new Table();
+                dragActor.setBackground(skin.newDrawable("white", new Color(1f, 1f, 1f, 0.25f)));
+                dragActor.setSize(64, 64);
+                payload.setDragActor(dragActor);
+            }
             return payload;
         }
     }
