@@ -47,7 +47,10 @@ public final class LabGameView {
     // Positive value shifts the whole belt-line segment upward.
     private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.01f;
 
-    private static final int ATTACK_MARKER_PATH_INDEX = com.splicelab.combat.CombatTuning.ATTACK_ZONE_INDEX;
+    // Marker is a fixed warning pointer on the left side.
+    private static final int ATTACK_MARKER_PATH_INDEX = 10;
+    // Combat attack checkpoint should match marker location.
+    private static final int ATTACK_ZONE_PATH_INDEX = ATTACK_MARKER_PATH_INDEX;
 
     private final GameContext context;
     private final Skin skin;
@@ -258,7 +261,7 @@ public final class LabGameView {
         attackZoneMarker.setSize(22, 22);
         root.addActor(attackZoneMarker);
 
-        attackZoneMarkerActor = new AttackZoneMarkerActor(new Color(1f, 1f, 0.2f, 0.85f));
+        attackZoneMarkerActor = new AttackZoneMarkerActor(new Color(0.2f, 1f, 0.2f, 0.85f));
         attackZoneMarkerActor.setSize(24, 18);
         root.addActor(attackZoneMarkerActor);
         positionAttackZoneMarker();
@@ -423,12 +426,12 @@ public final class LabGameView {
         int pathLen = SOCKET_COUNT;
         float idx01 = ((ATTACK_MARKER_PATH_INDEX % pathLen) + pathLen) % pathLen;
         float perimeter = roundedTrackPerimeter(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
-        float slotPhaseOffset = beltLoopLineActor.getSlotCenterOffset(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius);
-        float d = (slotPhaseOffset + perimeter * (idx01 / (float) pathLen)) % perimeter;
+        // Fixed marker: do NOT sync to belt animation phase.
+        float d = (perimeter * (idx01 / (float) pathLen)) % perimeter;
         PathSample sample = sampleRoundedTrack(trackLeft, trackRight, trackBottom, trackTop, trackCornerRadius, d);
 
-        // Nudge outward (to the right) so it hugs the belt edge.
-        float x = sample.x() + 18f;
+        // Nudge outward (to the left) so it hugs the belt edge.
+        float x = sample.x() - 18f;
         float y = sample.y();
         Vector2 p = beltLayer.localToStageCoordinates(new Vector2(x, y));
         attackZoneMarker.setVisible(false);
@@ -455,8 +458,8 @@ public final class LabGameView {
             float y = getY();
             float w = getWidth();
             float h = getHeight();
-            // Triangle points left toward belt.
-            shapes.triangle(x + w, y, x + w, y + h, x, y + h * 0.5f);
+            // Triangle points right toward belt.
+            shapes.triangle(x, y, x, y + h, x + w, y + h * 0.5f);
             shapes.end();
             batch.begin();
         }

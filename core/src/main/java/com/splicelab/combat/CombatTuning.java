@@ -14,6 +14,6 @@ public final class CombatTuning {
     public static final float CONVEYOR_STEP_INTERVAL_SECONDS = CONVEYOR_LOOP_SECONDS / 12f;
     public static final float CONVEYOR_MOVE_DURATION_SECONDS = 0.18f;
     // Checkpoint on the belt loop where fusions auto-attack.
-    // Must match the UI marker index in LabGameView.
-    public static final int ATTACK_ZONE_INDEX = 4;
+    // Must match the UI marker index (LabGameView.ATTACK_MARKER_PATH_INDEX).
+    public static final int ATTACK_ZONE_INDEX = 10;
 }
