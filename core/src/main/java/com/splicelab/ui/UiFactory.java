@@ -5,20 +5,39 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.splicelab.audio.AudioService;
 
 public final class UiFactory {
     private final Skin skin;
+    private final AudioService audio;
 
     public UiFactory(Skin skin) {
+        this(skin, null);
+    }
+
+    public UiFactory(Skin skin, AudioService audio) {
         this.skin = skin;
+        this.audio = audio;
     }
 
     public TextButton textButton(String text) {
-        return new TextButton(text, skin);
+        TextButton b = new TextButton(text, skin);
+        b.addListener(new ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                if (audio != null) audio.playButtonClick();
+            }
+        });
+        return b;
     }
 
     public Label label(String text) {
         return new Label(text, new Label.LabelStyle(skin.getFont("default-font"), Color.WHITE));
+    }
+
+    public Label smallLabel(String text) {
+        return new Label(text, new Label.LabelStyle(skin.getFont("default-font"), new Color(1f, 1f, 1f, 0.75f)));
     }
 
     public Table panel() {
@@ -27,4 +46,3 @@ public final class UiFactory {
         return t;
     }
 }
-

@@ -1,5 +1,6 @@
 package com.splicelab.screens;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -7,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.splicelab.app.GameContext;
 import com.splicelab.app.SpliceLabGame;
 import com.splicelab.assets.PlaceholderSkinFactory;
+import com.splicelab.ui.Scene2dPlaceholders;
+import com.badlogic.gdx.graphics.Color;
 
 public final class LoadingScreen extends BaseScreen {
     private Skin skin;
@@ -24,6 +27,10 @@ public final class LoadingScreen extends BaseScreen {
         Table root = new Table();
         root.setFillParent(true);
 
+        Image bg = Scene2dPlaceholders.coloredSquare(skin, new Color(0.06f, 0.06f, 0.08f, 1f));
+        bg.setFillParent(true);
+        stage.addActor(bg);
+
         Label label = new Label("Loading...", new Label.LabelStyle(skin.getFont("default-font"), null));
         bar = new ProgressBar(0f, 1f, 0.01f, false, skin);
         bar.setAnimateDuration(0.1f);
@@ -40,7 +47,7 @@ public final class LoadingScreen extends BaseScreen {
             bar.setValue(context.assets.getProgress());
         }
         if (done) {
-            game.setScreen(new MainMenuScreen(game, context));
+            game.setScreen(new MainLobbyScreen(game, context));
         }
     }
 
@@ -50,4 +57,3 @@ public final class LoadingScreen extends BaseScreen {
         if (skin != null) skin.dispose();
     }
 }
-

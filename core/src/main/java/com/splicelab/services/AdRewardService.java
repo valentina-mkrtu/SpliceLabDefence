@@ -28,4 +28,10 @@ public final class AdRewardService {
     public boolean grantDoubleReward() {
         return true;
     }
+
+    // UI-only stub: immediately grants reward.
+    public void showRewardedAd(Runnable onReward) {
+        onPlacementViewed("rewarded_double");
+        if (onReward != null) onReward.run();
+    }
 }

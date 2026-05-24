@@ -6,6 +6,8 @@ import com.splicelab.app.GameConfig;
 import com.splicelab.model.EntityType;
 import com.splicelab.model.ItemType;
 
+import java.util.UUID;
+
 import java.util.Iterator;
 
 public final class SaveValidator {
@@ -40,6 +42,7 @@ public final class SaveValidator {
         removeInvalidEnumNames(data.unlockedItems, ItemType.class);
 
         ensureStarterUnlocks(data);
+        ensureIdentity(data);
         return data;
     }
 
@@ -53,12 +56,39 @@ public final class SaveValidator {
         data.unlockedConveyorSlotsLeft = 1;
         data.unlockedConveyorSlotsRight = 1;
         ensureStarterUnlocks(data);
+        ensureIdentity(data);
         return data;
+    }
+
+    private void ensureIdentity(SaveData data) {
+        if (data.playerId == null || data.playerId.isBlank()) {
+            data.playerId = UUID.randomUUID().toString();
+        }
+        if (data.playerName == null || data.playerName.isBlank()) {
+            data.playerName = generateRandomPlayerName(data.playerId);
+        }
+    }
+
+    private String generateRandomPlayerName(String seed) {
+        String[] adj = {"Fuzzy", "Brave", "Wired", "Neon", "Mossy", "Toxic", "Icy", "Crystal", "Nano", "Rusty"};
+        String[] noun = {"Tech", "Lab", "Splicer", "Gizmo", "Slime", "Mech", "Fungus", "Runner", "Maker", "Hunter"};
+        int h = seed == null ? 0 : seed.hashCode();
+        int a = Math.floorMod(h, adj.length);
+        int b = Math.floorMod(h / 31, noun.length);
+        int num = Math.floorMod(h / 131, 900) + 100;
+        return adj[a] + noun[b] + num;
     }
 
     private void ensureStarterUnlocks(SaveData data) {
         data.unlockedEntities.add(EntityType.SLIME.name());
+        data.unlockedEntities.add(EntityType.MECH.name());
+        data.unlockedEntities.add(EntityType.FUNGUS.name());
         data.unlockedItems.add(ItemType.BATTERY.name());
+        data.unlockedItems.add(ItemType.TOXIC_WASTE.name());
+        data.unlockedItems.add(ItemType.CRYOGEL.name());
+        data.unlockedItems.add(ItemType.CRYSTAL_SHARD.name());
+        data.unlockedItems.add(ItemType.RADIOACTIVE_GOO.name());
+        data.unlockedItems.add(ItemType.NANOBOTS.name());
     }
 
     private static int clamp(int v, int min, int max) {

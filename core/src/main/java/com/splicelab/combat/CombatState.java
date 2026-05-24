@@ -8,6 +8,7 @@ import com.splicelab.model.level.LevelDefinition;
 
 
 public final class CombatState {
+    public int levelNumber;
     public LevelDefinition level;
     public float remainingTimeSeconds;
     public int tubeHp;

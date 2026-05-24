@@ -8,6 +8,7 @@ import com.splicelab.data.SaveRepository;
 import com.splicelab.services.AdRewardService;
 import com.splicelab.services.EconomyService;
 import com.splicelab.services.FusionService;
+import com.splicelab.services.FusionUnlockService;
 import com.splicelab.services.LevelService;
 import com.splicelab.services.RandomService;
 import com.splicelab.services.RewardService;
@@ -25,6 +26,7 @@ public final class GameContext {
     public final UnlockService unlocks;
     public final RewardService rewards;
     public final FusionService fusionService;
+    public final FusionUnlockService fusionUnlocks;
     public final TubeSpawnService tubeSpawnService;
     public final LevelService levelService;
     public final RandomService random;
@@ -42,6 +44,7 @@ public final class GameContext {
             UnlockService unlocks,
             RewardService rewards,
             FusionService fusionService,
+            FusionUnlockService fusionUnlocks,
             TubeSpawnService tubeSpawnService,
             LevelService levelService,
             RandomService random,
@@ -58,6 +61,7 @@ public final class GameContext {
         this.unlocks = unlocks;
         this.rewards = rewards;
         this.fusionService = fusionService;
+        this.fusionUnlocks = fusionUnlocks;
         this.tubeSpawnService = tubeSpawnService;
         this.levelService = levelService;
         this.random = random;

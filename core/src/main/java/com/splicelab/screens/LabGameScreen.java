@@ -24,6 +24,7 @@ public final class LabGameScreen extends BaseScreen {
 
     @Override
     protected void buildUi() {
+        context.audio.startBeltLoop();
         view = new LabGameView(context);
         stage.addActor(view.getRoot());
 
@@ -130,19 +131,16 @@ public final class LabGameScreen extends BaseScreen {
                 int lvl = combatController.getState().level.levelNumber;
                 boolean firstWin = context.saves.get().completedLevels.add(lvl);
                 CombatLog.d("win reward applied firstWin=" + firstWin);
-                context.rewards.apply(combatController.getState().level.rewards, false);
+                int coinsEarned = combatController.getState().level.rewards.coins();
+                int dnaEarned = combatController.getState().level.rewards.dna();
                 if (firstWin) {
-                    context.rewards.apply(new com.splicelab.model.level.LevelRewardDefinition(
-                            combatController.getState().level.rewards.firstWinBonusCoins(),
-                            combatController.getState().level.rewards.firstWinBonusDna(),
-                            0,
-                            0
-                    ), false);
+                    coinsEarned += combatController.getState().level.rewards.firstWinBonusCoins();
+                    dnaEarned += combatController.getState().level.rewards.firstWinBonusDna();
                 }
                 context.saves.get().currentLevel = Math.max(context.saves.get().currentLevel, lvl + 1);
                 CombatLog.d("level advanced currentLevel=" + context.saves.get().currentLevel);
                 context.saves.save();
-                game.setScreen(new LevelCompleteScreen(game, context));
+                game.setScreen(new LevelCompleteScreen(game, context, new com.splicelab.model.level.LevelRewardSummary(coinsEarned, dnaEarned)));
             }
             case LOSE -> {
                 if (combatController.getState().level != null) {
@@ -171,6 +169,7 @@ public final class LabGameScreen extends BaseScreen {
     @Override
     public void dispose() {
         if (view != null) view.dispose();
+        context.audio.stopBeltLoop();
         super.dispose();
     }
 }

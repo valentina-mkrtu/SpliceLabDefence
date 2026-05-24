@@ -26,6 +26,7 @@ public final class EconomyService {
         switch (currency) {
             case COINS -> saves.get().coins = Math.max(0, saves.get().coins + amount);
             case DNA -> saves.get().dna = Math.max(0, saves.get().dna + amount);
+            case CRYSTALS -> saves.get().crystals = Math.max(0, saves.get().crystals + amount);
         }
         saves.save();
     }
@@ -35,7 +36,7 @@ public final class EconomyService {
         return switch (currency) {
             case COINS -> saves.get().coins;
             case DNA -> saves.get().dna;
+            case CRYSTALS -> saves.get().crystals;
         };
     }
 }
-

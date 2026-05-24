@@ -108,6 +108,8 @@ public final class LabGameView {
 
     private final Table background;
 
+    private boolean dragSfxPlayed;
+
     private static final float FUSION_FRAME_NATIVE_W = 399f;
     private static final float FUSION_FRAME_NATIVE_H = 496;
     private static final float FUSION_FRAME_SCALE = 1f;
@@ -122,7 +124,7 @@ public final class LabGameView {
     public LabGameView(GameContext context) {
         this.context = context;
         this.skin = PlaceholderSkinFactory.create();
-        this.ui = new UiFactory(skin);
+        this.ui = new UiFactory(skin, context.audio);
 
         PlaceholderSkinFactory.addTextureIfPresent(skin, "lab_game_bg", "art/backgrounds/lab_game_bg.png");
         PlaceholderSkinFactory.addTextureIfPresent(skin, "fusion_station_bg", "art/backgrounds/fusion_station.png");
@@ -217,6 +219,7 @@ public final class LabGameView {
         tube.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                context.audio.playTubeClick();
                 if (onTubeTapped != null) onTubeTapped.run();
             }
         });
@@ -1039,6 +1042,10 @@ public final class LabGameView {
 
         @Override
         public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
+            if (!dragSfxPlayed) {
+                dragSfxPlayed = true;
+                context.audio.playDrag();
+            }
             DragAndDrop.Payload payload = new DragAndDrop.Payload();
             payload.setObject(cell);
             cell.setIconVisible(false);
@@ -1070,6 +1077,7 @@ public final class LabGameView {
         @Override
         public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
             cell.setIconVisible(true);
+            dragSfxPlayed = false;
         }
     }
 
@@ -1092,6 +1100,7 @@ public final class LabGameView {
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
             controller.requestMoveOrFuse(from.col, from.row, target.col, target.row);
+            context.audio.playDrop();
         }
     }
 
@@ -1114,6 +1123,7 @@ public final class LabGameView {
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
             controller.requestDeployFusionToSocket(from.col, from.row, socketIndex);
+            context.audio.playDrop();
         }
     }
 

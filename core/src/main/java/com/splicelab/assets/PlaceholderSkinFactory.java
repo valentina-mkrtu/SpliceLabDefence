@@ -8,7 +8,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 public final class PlaceholderSkinFactory {
@@ -30,11 +32,20 @@ public final class PlaceholderSkinFactory {
         textButtonStyle.down = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.85f, 0.85f, 0.85f, 1f))));
         skin.add("default", textButtonStyle);
 
+        Window.WindowStyle windowStyle = new Window.WindowStyle();
+        windowStyle.titleFont = font;
+        windowStyle.background = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.12f, 0.12f, 0.16f, 0.98f))));
+        skin.add("default", windowStyle);
+
         ProgressBar.ProgressBarStyle progressStyle = new ProgressBar.ProgressBarStyle();
         progressStyle.background = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.2f, 0.2f, 0.25f, 1f))));
         progressStyle.knob = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.25f, 0.8f, 0.5f, 1f))));
         progressStyle.knobBefore = progressStyle.knob;
         skin.add("default-horizontal", progressStyle);
+
+        ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle();
+        scrollStyle.background = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.08f, 0.08f, 0.1f, 0.8f))));
+        skin.add("default", scrollStyle);
 
         Gdx.app.log("SpliceLab", "Created placeholder Skin");
         return skin;

@@ -18,6 +18,7 @@ import com.splicelab.screens.LoadingScreen;
 import com.splicelab.services.AdRewardService;
 import com.splicelab.services.EconomyService;
 import com.splicelab.services.FusionService;
+import com.splicelab.services.FusionUnlockService;
 import com.splicelab.services.LevelService;
 import com.splicelab.services.RandomService;
 import com.splicelab.services.RewardService;
@@ -56,6 +57,7 @@ public final class SpliceLabGame extends Game {
         UnlockService unlockService = new UnlockService(saveRepository, config);
         RewardService rewardService = new RewardService(saveRepository);
         FusionService fusionService = new FusionService(definitionRepository);
+        FusionUnlockService fusionUnlockService = new FusionUnlockService(saveRepository);
         TubeSpawnService tubeSpawnService = new TubeSpawnService(definitionRepository, levelRepository, saveRepository, randomService);
         LevelService levelService = new LevelService(levelRepository);
         AdRewardService adRewardService = new AdRewardService();
@@ -71,6 +73,7 @@ public final class SpliceLabGame extends Game {
                 unlockService,
                 rewardService,
                 fusionService,
+                fusionUnlockService,
                 tubeSpawnService,
                 levelService,
                 randomService,

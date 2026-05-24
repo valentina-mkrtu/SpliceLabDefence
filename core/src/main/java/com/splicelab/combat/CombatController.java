@@ -71,6 +71,7 @@ public final class CombatController {
         clearGrid();
         clearConveyor();
 
+        state.levelNumber = levelNumber;
         state.level = level;
         state.remainingTimeSeconds = level.durationSeconds;
         state.tubeHp = level.tubeHp > 0 ? level.tubeHp : context.config.tubeMaxHp;
@@ -337,7 +338,7 @@ public final class CombatController {
             return CommandResult.fail(CommandResult.Code.INVALID_FUSION, "No fusion for pair");
         }
 
-        FusionInstance fusion = context.fusionService.createFusion(nextInstanceId(), entity.entityType(), item.itemType()).orElse(null);
+        FusionInstance fusion = context.fusionService.createFusion(nextInstanceId(), entity.entityType(), item.itemType(), state.levelNumber).orElse(null);
         if (fusion == null) return CommandResult.fail(CommandResult.Code.INVALID_FUSION, "Fusion creation failed");
 
         state.grid[colB][rowB] = fusion;

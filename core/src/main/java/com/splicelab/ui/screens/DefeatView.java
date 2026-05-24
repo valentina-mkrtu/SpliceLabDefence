@@ -14,7 +14,7 @@ public final class DefeatView {
 
     public DefeatView(GameContext context) {
         Skin skin = PlaceholderSkinFactory.create();
-        UiFactory ui = new UiFactory(skin);
+        UiFactory ui = new UiFactory(skin, context.audio);
 
         root = ui.panel();
         root.setFillParent(true);
@@ -37,4 +37,3 @@ public final class DefeatView {
         this.retryListener = retryListener;
     }
 }
-

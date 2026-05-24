@@ -18,6 +18,11 @@ import java.util.Optional;
 public final class FusionService {
     private final DefinitionRepository definitions;
 
+    // Early game pacing: keep fusions a bit more fragile so belts don't fill
+    // with long-living units and the player keeps merging/deploying.
+    private static final int EARLY_GAME_FUSION_HP_CAP = 75;
+    private static final int EARLY_GAME_FUSION_HP_CAP_LEVEL = 7;
+
     public FusionService(DefinitionRepository definitions) {
         this.definitions = definitions;
     }
@@ -28,6 +33,10 @@ public final class FusionService {
     }
 
     public Optional<FusionInstance> createFusion(String instanceId, EntityType entityType, ItemType itemType) {
+        return createFusion(instanceId, entityType, itemType, 1);
+    }
+
+    public Optional<FusionInstance> createFusion(String instanceId, EntityType entityType, ItemType itemType, int levelNumber) {
         if (instanceId == null || instanceId.isBlank() || entityType == null || itemType == null) {
             return Optional.empty();
         }
@@ -44,6 +53,9 @@ public final class FusionService {
         ItemDefinition item = i.get();
 
         int maxHp = Math.max(1, base.maxHp() + item.statModifiers.hp());
+        if (levelNumber > 0 && levelNumber <= EARLY_GAME_FUSION_HP_CAP_LEVEL) {
+            maxHp = Math.min(maxHp, EARLY_GAME_FUSION_HP_CAP);
+        }
         int atk = Math.max(0, base.atk() + item.statModifiers.atk());
         float specialChance = clamp01(base.specialChance() + item.specialChanceBonus);
         float variance = clamp(base.variance() + item.varianceModifier, 0f, 2f);
