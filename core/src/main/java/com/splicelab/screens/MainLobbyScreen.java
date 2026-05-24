@@ -39,10 +39,10 @@ public final class MainLobbyScreen extends BaseScreen {
                 DialogType.MAP
         ));
 
-        view.setAccountListener(() -> showSingletonDialog(new AccountDialog(view.getSkin(), context), DialogType.ACCOUNT));
-        view.setCollectionsListener(() -> showSingletonDialog(new CollectionsDialog(view.getSkin(), context), DialogType.COLLECTIONS));
-        view.setEntitiesListener(() -> showSingletonDialog(new EntitiesDialog(view.getSkin(), context), DialogType.ENTITIES));
-        view.setShopListener(() -> showSingletonDialog(new ShopDialog(view.getSkin(), context, this::onShopPurchase), DialogType.SHOP));
+        view.setAccountListener(this::showAccount);
+        view.setCollectionsListener(this::showCollections);
+        view.setEntitiesListener(this::showEntities);
+        view.setShopListener(this::showShop);
 
         stage.addActor(view.getRoot());
     }
@@ -67,6 +67,26 @@ public final class MainLobbyScreen extends BaseScreen {
             case MAP -> mapDialog = dialog;
         }
         dialog.show(stage);
+    }
+
+    private void showAccount() {
+        if (accountDialog == null) accountDialog = new AccountDialog(view.getSkin(), context);
+        showSingletonDialog(accountDialog, DialogType.ACCOUNT);
+    }
+
+    private void showCollections() {
+        if (collectionsDialog == null) collectionsDialog = new CollectionsDialog(view.getSkin(), context);
+        showSingletonDialog(collectionsDialog, DialogType.COLLECTIONS);
+    }
+
+    private void showEntities() {
+        if (entitiesDialog == null) entitiesDialog = new EntitiesDialog(view.getSkin(), context);
+        showSingletonDialog(entitiesDialog, DialogType.ENTITIES);
+    }
+
+    private void showShop() {
+        if (shopDialog == null) shopDialog = new ShopDialog(view.getSkin(), context, this::onShopPurchase);
+        showSingletonDialog(shopDialog, DialogType.SHOP);
     }
 
     private void hideAllDialogs() {

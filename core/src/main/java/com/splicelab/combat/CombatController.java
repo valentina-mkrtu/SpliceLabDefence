@@ -187,13 +187,16 @@ public final class CombatController {
         if (state.result != CombatResult.RUNNING) {
             return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
         }
-        if (!com.splicelab.debug.DebugFlags.FREE_TUBE_SPAWN && state.tubeCooldownRemaining > 0f) {
-            return CommandResult.fail(CommandResult.Code.TUBE_ON_COOLDOWN, "Tube on cooldown");
-        }
+
+        // Prevent over-spawning (double taps / duplicated UI events).
+        // Charges are the authoritative cap per round.
         if (state.tubeCharges <= 0) {
-            // Start cooldown when empty.
             if (state.tubeCooldownRemaining <= 0f) state.tubeCooldownRemaining = getTubeCooldownSeconds();
             return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "No tube charges");
+        }
+
+        if (!com.splicelab.debug.DebugFlags.FREE_TUBE_SPAWN && state.tubeCooldownRemaining > 0f) {
+            return CommandResult.fail(CommandResult.Code.TUBE_ON_COOLDOWN, "Tube on cooldown");
         }
 
         int[] empty = findRandomEmptyNonTubeCell();
@@ -470,7 +473,8 @@ public final class CombatController {
         if (def == null) return;
 
         float dynamicMult = computeDynamicEnemyMultiplier();
-        int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier * dynamicMult));
+        float bossMult = chosenType == EnemyType.BOSS_SMUGGLER_CAPTAIN ? CombatTuning.BOSS_BASE_HP_MULT : 1f;
+        int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier * dynamicMult * bossMult));
         state.activeEnemy = new EnemyInstance(nextInstanceId(), chosenType, scaledHp);
         state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
         CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp);
@@ -484,9 +488,33 @@ public final class CombatController {
         }
 
         int extra = Math.max(0, deployedFusions - 1);
-        float mult = 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * extra;
+        float tier = getDifficultyTierFactor();
+        float mult = 1f + (CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * tier) * extra;
+        mult *= computeFusionSpikeMultiplier(deployedFusions);
         if (state.endlessMode) mult *= (1f + Math.max(0f, state.endlessHpMultiplierBonus));
         return mult;
+    }
+
+    private float computeFusionSpikeMultiplier(int deployedFusions) {
+        if (deployedFusions < CombatTuning.FUSION_SPIKE_START) return 1f;
+        int extraPairs = Math.max(0, (deployedFusions - CombatTuning.FUSION_SPIKE_START) / 2);
+        return CombatTuning.FUSION_SPIKE_BASE_MULT + CombatTuning.FUSION_SPIKE_PER_2_FUSIONS_EXTRA * extraPairs;
+    }
+
+    private float getDifficultyTierFactor() {
+        // Smooth ramp with noticeable bumps at 11, 15, 20, ...
+        // L1-10: keep dynamic scaling gentle.
+        int level = Math.max(1, state.levelNumber);
+        if (level <= 10) return 0.35f;
+
+        // Every 5 levels starting at 11 adds a bump.
+        // 11-14 => 1 bump, 15-19 => 2, 20-24 => 3, ...
+        int bumps = 1 + Math.max(0, (level - 11) / 5);
+
+        // Inside a 5-level band, add a small smooth ramp 0..1.
+        float withinBand = ((level - 11) % 5) / 4f;
+        float tier = 0.55f + 0.15f * bumps + 0.20f * withinBand;
+        return Math.max(0.35f, Math.min(1.35f, tier));
     }
 
     private EnemyType chooseWeightedEnemyType(LevelDefinition level) {
@@ -512,11 +540,19 @@ public final class CombatController {
             FusionInstance fusion = state.conveyorSockets[socketId];
             if (fusion == null) continue;
             state.fusionAttackCooldownSockets[socketId] = Math.max(0f, state.fusionAttackCooldownSockets[socketId] - delta);
-            if (!isSocketAtAttackCheckpoint(socketId)) continue;
+
+            // Gameplay: each fusion has an attack interval.
+            // Visual: only fire when the belt reaches the attack checkpoint.
             if (state.fusionAttackCooldownSockets[socketId] > 0f) continue;
+            if (!isSocketAtAttackCheckpoint(socketId)) continue;
+
             attackEnemyFromFusionSocket(socketId, fusion);
-            // No attack timer gameplay: cooldown is only anti-spam within the same checkpoint window.
-            state.fusionAttackCooldownSockets[socketId] = 0.25f;
+
+            float interval = fusion.stats == null ? 1f : fusion.stats.attackIntervalSeconds();
+            interval = Math.max(CombatTuning.MIN_ATTACK_INTERVAL_SECONDS, interval);
+            // Slight jitter so stacks feel less robotic.
+            interval *= 0.90f + rng.nextFloat() * 0.20f;
+            state.fusionAttackCooldownSockets[socketId] = interval;
         }
     }
 
@@ -589,14 +625,17 @@ public final class CombatController {
             if (f != null && f.hp > 0) deployedFusions++;
         }
         int extra = Math.max(0, deployedFusions - 1);
-        float dynamicAtkMult = 1f + CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK * extra;
+        float tier = getDifficultyTierFactor();
+        float dynamicAtkMult = 1f + (CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK * tier) * extra;
+        dynamicAtkMult *= computeFusionSpikeMultiplier(deployedFusions);
+        if (state.activeEnemy.enemyType == EnemyType.BOSS_SMUGGLER_CAPTAIN) dynamicAtkMult *= CombatTuning.BOSS_BASE_ATK_MULT;
         if (state.endlessMode) dynamicAtkMult *= (1f + Math.max(0f, state.endlessAtkMultiplierBonus));
         int scaledDmg = Math.max(
                 CombatTuning.MIN_DAMAGE,
                 Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult)
         );
 
-        int targetSocket = findRandomOccupiedSocket();
+        int targetSocket = findEnemyTargetSocket();
         FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
         if (target == null) {
             state.tubeHp = Math.max(0, state.tubeHp - scaledDmg);
@@ -619,6 +658,37 @@ public final class CombatController {
             CombatLog.d("fusion destroyed");
             if (feedback != null) feedback.onFusionDestroyed(true, targetSocket);
         }
+    }
+
+    private int findEnemyTargetSocket() {
+        // Fairness: prefer the weakest fusion so the player can react,
+        // but add randomness so it doesn't feel scripted.
+        // If no fusions, return -1 so the tube takes the hit.
+        int count = 0;
+        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+            FusionInstance f = state.conveyorSockets[socketId];
+            if (f != null && f.hp > 0) count++;
+        }
+        if (count == 0) return -1;
+
+        // 70%: target the lowest HP% fusion.
+        if (rng.nextFloat() < 0.70f) {
+            int bestSocket = -1;
+            float bestHpPct = Float.POSITIVE_INFINITY;
+            for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
+                FusionInstance f = state.conveyorSockets[socketId];
+                if (f == null || f.hp <= 0) continue;
+                float pct = f.maxHp <= 0 ? 1f : ((float) f.hp / (float) f.maxHp);
+                if (pct < bestHpPct) {
+                    bestHpPct = pct;
+                    bestSocket = socketId;
+                }
+            }
+            if (bestSocket >= 0) return bestSocket;
+        }
+
+        // 30%: random target.
+        return findRandomOccupiedSocket();
     }
 
     private int findRandomOccupiedSocket() {
@@ -646,7 +716,8 @@ public final class CombatController {
             if (f != null && f.hp > 0) deployedFusions++;
         }
         int extra = Math.max(0, deployedFusions - 1);
-        float mult = 1f - CombatTuning.DYNAMIC_DIFFICULTY_SPAWN_INTERVAL_MULT_PER_FUSION * extra;
+        float tier = getDifficultyTierFactor();
+        float mult = 1f - (CombatTuning.DYNAMIC_DIFFICULTY_SPAWN_INTERVAL_MULT_PER_FUSION * tier) * extra;
         mult = Math.max(CombatTuning.DYNAMIC_DIFFICULTY_MIN_SPAWN_INTERVAL_MULT, mult);
         mult = Math.min(CombatTuning.DYNAMIC_DIFFICULTY_MAX_SPAWN_INTERVAL_MULT, mult);
         return state.level.spawnIntervalSeconds * mult;

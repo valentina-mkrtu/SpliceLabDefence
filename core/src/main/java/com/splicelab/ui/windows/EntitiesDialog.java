@@ -11,8 +11,20 @@ import com.splicelab.ui.Scene2dPlaceholders;
 import com.splicelab.ui.UiFactory;
 
 public final class EntitiesDialog extends Dialog {
+    private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
+
+    private com.badlogic.gdx.graphics.Texture bgTex;
+
     public EntitiesDialog(Skin skin, GameContext context) {
         super("Entities", skin);
+
+        if (com.badlogic.gdx.Gdx.files.internal(BG_PATH).exists()) {
+            bgTex = new com.badlogic.gdx.graphics.Texture(com.badlogic.gdx.Gdx.files.internal(BG_PATH));
+            bgTex.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+            var bg = new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex));
+            getContentTable().setBackground(bg);
+            getButtonTable().setBackground(bg);
+        }
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -35,12 +47,30 @@ public final class EntitiesDialog extends Dialog {
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
 
-        getContentTable().add(scroll).width(460).height(540).pad(10);
-        button("Close");
+        getContentTable().add(scroll).width(440).height(520).pad(10);
+        var close = ui.textButton("Close");
+        close.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                hide();
+            }
+        });
+        getButtonTable().add(close);
 
-        setModal(true);
+        // Non-modal so bottom nav buttons stay clickable.
+        setModal(false);
         setMovable(false);
         pad(12);
+
+        setSize(480, 650);
+    }
+
+    @Override
+    public void hide() {
+        super.hide();
+        if (bgTex != null) bgTex.dispose();
+        bgTex = null;
     }
 
     private Table makeCard(Skin skin, UiFactory ui, String name, int hp, int atk, String ability) {

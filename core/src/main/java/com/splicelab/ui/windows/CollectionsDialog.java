@@ -15,14 +15,26 @@ import com.splicelab.ui.Scene2dPlaceholders;
 import com.splicelab.ui.UiFactory;
 
 public final class CollectionsDialog extends Dialog {
+    private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
     private static final String FRAME_PATH = "art/icons/iconbg.png";
+    private static final String LOCK_PATH = "art/icons/slot.png";
     private static final String FUSION_ELECTROSLIME_PATH = "art/fusions/electroslime.png";
 
+    private Texture bgTex;
     private Texture frameTex;
+    private Texture lockTex;
     private Texture electroSlimeTex;
 
     public CollectionsDialog(Skin skin, GameContext context) {
         super("Collections", skin);
+
+        if (com.badlogic.gdx.Gdx.files.internal(BG_PATH).exists()) {
+            bgTex = new Texture(com.badlogic.gdx.Gdx.files.internal(BG_PATH));
+            bgTex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            var bg = new TextureRegionDrawable(new TextureRegion(bgTex));
+            getContentTable().setBackground(bg);
+            getButtonTable().setBackground(bg);
+        }
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -42,11 +54,22 @@ public final class CollectionsDialog extends Dialog {
         scroll.setScrollingDisabled(true, false);
 
         getContentTable().add(scroll).width(440).height(520).pad(10);
-        button("Close");
+        var close = ui.textButton("Close");
+        close.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                hide();
+            }
+        });
+        getButtonTable().add(close);
 
-        setModal(true);
+        // Non-modal so bottom nav buttons stay clickable.
+        setModal(false);
         setMovable(false);
         pad(12);
+
+        setSize(480, 650);
     }
 
     @Override
@@ -56,9 +79,13 @@ public final class CollectionsDialog extends Dialog {
     }
 
     private void disposeTextures() {
+        if (bgTex != null) bgTex.dispose();
         if (frameTex != null) frameTex.dispose();
+        if (lockTex != null) lockTex.dispose();
         if (electroSlimeTex != null) electroSlimeTex.dispose();
+        bgTex = null;
         frameTex = null;
+        lockTex = null;
         electroSlimeTex = null;
     }
 
@@ -83,7 +110,13 @@ public final class CollectionsDialog extends Dialog {
                 icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.65f, 0.5f, 1f));
             }
         } else {
-            icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.35f, 0.35f, 1f));
+            Drawable lockDrawable = loadDrawable(LOCK_PATH, () -> lockTex, t -> lockTex = t);
+            if (lockDrawable != null) {
+                icon = new Image(lockDrawable);
+                icon.setColor(0.55f, 0.55f, 0.55f, 1f);
+            } else {
+                icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.35f, 0.35f, 1f));
+            }
         }
 
         frame.add(icon).size(92).pad(10);

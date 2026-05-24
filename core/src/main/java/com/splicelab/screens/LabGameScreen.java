@@ -128,6 +128,7 @@ public final class LabGameScreen extends BaseScreen {
 
         switch (combatController.getState().result) {
             case WIN -> {
+                context.audio.stopBeltLoop();
                 int lvl = combatController.getState().level.levelNumber;
                 boolean firstWin = context.saves.get().completedLevels.add(lvl);
                 CombatLog.d("win reward applied firstWin=" + firstWin);
@@ -143,6 +144,7 @@ public final class LabGameScreen extends BaseScreen {
                 game.setScreen(new LevelCompleteScreen(game, context, new com.splicelab.model.level.LevelRewardSummary(coinsEarned, dnaEarned)));
             }
             case LOSE -> {
+                context.audio.stopBeltLoop();
                 if (combatController.getState().level != null) {
                     context.telemetry.track(
                             "level_failed",

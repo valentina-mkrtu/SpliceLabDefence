@@ -38,10 +38,9 @@
         </allowedItems>
         <tubeBag>
             <bag8>
-                <entity id="SLIME" count="5" />
+                <entity id="SLIME" count="6" />
                 <item id="BATTERY" count="1" />
                 <item id="TOXIC_WASTE" count="1" />
-                <item id="CRYOGEL" count="1" />
             </bag8>
         </tubeBag>
         <enemyPool>

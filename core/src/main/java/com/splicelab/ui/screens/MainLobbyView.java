@@ -20,6 +20,7 @@ import com.splicelab.services.NameGenerator;
 import com.splicelab.ui.Scene2dPlaceholders;
 import com.splicelab.ui.UiConstants;
 import com.splicelab.ui.UiFactory;
+import com.splicelab.ui.widgets.CurrencyPillWidget;
 
 public final class MainLobbyView {
     private static final String ICON_BG_PATH = "art/icons/iconbg.png";
@@ -32,6 +33,8 @@ public final class MainLobbyView {
     private static final String BG_LAB_PATH = "art/backgrounds/thelab.png";
     private static final String BG_MAP_PATH = "art/backgrounds/themap.png";
     private static final String BG_MAIN_PATH = "art/backgrounds/mainbg.png";
+    private static final String BG_MENU_PATH = "art/backgrounds/menubg.png";
+    private static final String BG_CURR_PATH = "art/backgrounds/currbg.png";
     private static final String ICON_DNA_PATH = "art/icons/dna.png";
     private static final String ICON_CRY_PATH = "art/icons/cry.png";
 
@@ -41,8 +44,10 @@ public final class MainLobbyView {
 
     private final Label usernameLabel;
     private final Label levelLabel;
-    private final Label dnaLabel;
-    private final Label crystalsLabel;
+    // Amount labels live inside CurrencyPillWidget.
+
+    private CurrencyPillWidget dnaPill;
+    private CurrencyPillWidget cryPill;
 
     private Runnable labListener;
     private Runnable mapListener;
@@ -62,6 +67,8 @@ public final class MainLobbyView {
     private Texture labBgTex;
     private Texture mapBgTex;
     private Texture mainBgTex;
+    private Texture menuBgTex;
+    private Texture currBgTex;
     private Texture dnaTex;
     private Texture cryTex;
 
@@ -99,20 +106,36 @@ public final class MainLobbyView {
 
         Table currencies = new Table();
         currencies.defaults().right();
-        Table dnaRow = new Table();
+        Drawable currBg = tryLoadIcon(BG_CURR_PATH, () -> currBgTex, t -> currBgTex = t);
         Drawable dnaIcon = tryLoadIcon(ICON_DNA_PATH, () -> dnaTex, t -> dnaTex = t);
-        if (dnaIcon != null) dnaRow.add(new Image(dnaIcon)).size(18).padRight(6);
-        else dnaRow.add(Scene2dPlaceholders.iconLabel(skin, "DNA")).padRight(6);
-        dnaLabel = ui.label(String.valueOf(context.economy.getBalance(CurrencyType.DNA)));
-        dnaRow.add(dnaLabel);
-        Table crystalRow = new Table();
         Drawable cryIcon = tryLoadIcon(ICON_CRY_PATH, () -> cryTex, t -> cryTex = t);
-        if (cryIcon != null) crystalRow.add(new Image(cryIcon)).size(18).padRight(6);
-        else crystalRow.add(Scene2dPlaceholders.iconLabel(skin, "CRY")).padRight(6);
-        crystalsLabel = ui.label(String.valueOf(context.economy.getBalance(CurrencyType.CRYSTALS)));
-        crystalRow.add(crystalsLabel);
-        currencies.add(dnaRow).row();
-        currencies.add(crystalRow).padTop(4);
+
+        dnaPill = new CurrencyPillWidget(
+                skin,
+                ui,
+                currBg,
+                dnaIcon,
+                context.economy.getBalance(CurrencyType.DNA)
+        );
+        cryPill = new CurrencyPillWidget(
+                skin,
+                ui,
+                currBg,
+                cryIcon,
+                context.economy.getBalance(CurrencyType.CRYSTALS)
+        );
+
+        // Shrink pills without shrinking the whole currency group.
+        dnaPill.setTransform(true);
+        cryPill.setTransform(true);
+        dnaPill.setScale(0.5f);
+        cryPill.setScale(0.5f);
+
+        currencies.add(dnaPill).padRight(6);
+        currencies.add(cryPill);
+        currencies.padBottom(50);
+
+
 
         levelLabel = ui.label("Level " + save.playerLevel);
 
@@ -122,7 +145,7 @@ public final class MainLobbyView {
 
         Table center = new Table();
         center.defaults().pad(12);
-        center.padTop(200);
+        center.padTop(50);
         TextButton labBtn = ui.textButton("");
         TextButton mapBtn = ui.textButton("");
 
@@ -140,6 +163,58 @@ public final class MainLobbyView {
             s.down = mapBg;
             mapBtn.setStyle(s);
         }
+
+        // Make press feel physical: slight scale down while pressed.
+        labBtn.setTransform(true);
+        mapBtn.setTransform(true);
+        labBtn.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                labBtn.clearActions();
+                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        0.985f,
+                        0.985f,
+                        0.04f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                return false;
+            }
+
+            @Override
+            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                labBtn.clearActions();
+                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1f,
+                        1f,
+                        0.08f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+            }
+        });
+        mapBtn.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                mapBtn.clearActions();
+                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        0.985f,
+                        0.985f,
+                        0.04f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                return false;
+            }
+
+            @Override
+            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                mapBtn.clearActions();
+                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1f,
+                        1f,
+                        0.08f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+            }
+        });
         labBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
@@ -152,11 +227,15 @@ public final class MainLobbyView {
                 if (mapListener != null) mapListener.run();
             }
         });
-        center.add(labBtn).width(480).height(220).row();
-        center.add(mapBtn).width(480).height(220);
+        float btnW = 450f;
+        float btnH = 210f;
+        center.add(labBtn).width(btnW).height(btnH).row();
+        center.add(mapBtn).width(btnW).height(btnH);
 
         Table bottom = new Table();
-        bottom.setBackground(skin.newDrawable("white", UiConstants.PANEL_DARK));
+        Drawable menuBg = tryLoadIcon(BG_MENU_PATH, () -> menuBgTex, t -> menuBgTex = t);
+        if (menuBg != null) bottom.setBackground(menuBg);
+        else bottom.setBackground(skin.newDrawable("white", UiConstants.PANEL_DARK));
         bottom.defaults().pad(10).expandX();
 
         ImageButton accountBtn = makeNavButton(ICON_ACCOUNT_PATH, () -> accountTex, t -> accountTex = t);
@@ -167,30 +246,34 @@ public final class MainLobbyView {
         accountBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
                 if (accountListener != null) accountListener.run();
             }
         });
         collectionsBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
                 if (collectionsListener != null) collectionsListener.run();
             }
         });
         entitiesBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
                 if (entitiesListener != null) entitiesListener.run();
             }
         });
         shopBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
                 if (shopListener != null) shopListener.run();
             }
         });
 
-        float navSize = 64f * 1.2f;
-        bottom.padBottom(18);
+        float navSize = 64f * 1.2f * 1.1f;
+        bottom.padBottom(8);
         bottom.add(accountBtn).size(navSize);
         bottom.add(collectionsBtn).size(navSize);
         bottom.add(entitiesBtn).size(navSize);
@@ -198,7 +281,7 @@ public final class MainLobbyView {
 
         root.add(top).expandX().fillX().top().row();
         root.add(center).expand().fill().row();
-        root.add(bottom).expandX().fillX().bottom().height(110);
+        root.add(bottom).expandX().fillX().bottom().height(130);
     }
 
     public Actor getRoot() {
@@ -213,8 +296,8 @@ public final class MainLobbyView {
         SaveData save = context.saves.get();
         usernameLabel.setText(save.playerName);
         levelLabel.setText("Level " + save.playerLevel);
-        dnaLabel.setText(String.valueOf(context.economy.getBalance(CurrencyType.DNA)));
-        crystalsLabel.setText(String.valueOf(context.economy.getBalance(CurrencyType.CRYSTALS)));
+        if (dnaPill != null) dnaPill.setAmount(context.economy.getBalance(CurrencyType.DNA));
+        if (cryPill != null) cryPill.setAmount(context.economy.getBalance(CurrencyType.CRYSTALS));
     }
 
     public void setLabListener(Runnable labListener) {
@@ -252,6 +335,8 @@ public final class MainLobbyView {
         if (labBgTex != null) labBgTex.dispose();
         if (mapBgTex != null) mapBgTex.dispose();
         if (mainBgTex != null) mainBgTex.dispose();
+        if (menuBgTex != null) menuBgTex.dispose();
+        if (currBgTex != null) currBgTex.dispose();
         if (dnaTex != null) dnaTex.dispose();
         if (cryTex != null) cryTex.dispose();
         skin.dispose();

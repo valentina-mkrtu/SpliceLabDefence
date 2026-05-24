@@ -161,7 +161,7 @@ public final class LabGameView {
         enemyLabel.setVisible(false);
         enemyPanel.add(enemyLabel).pad(0).row();
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
-        enemyHpBar.setSize(180, 10);
+        enemyHpBar.setSize(150, 10);
 
         shaftBgTexture = new Texture(SHAFT_BG_TEXTURE_PATH);
 
@@ -178,11 +178,11 @@ public final class LabGameView {
         root.addActor(shaftBg);
 
         enemyIcon.setSize(190, 142);
-        enemyIcon.setPosition(-12f, 40f);
+        enemyIcon.setPosition(-12f, 10f);
         enemyVisual.addActor(enemyIcon);
 
         // Keep enemy HP bar above the enemy image.
-        enemyHpBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 6f);
+        enemyHpBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 66f);
         enemyVisual.addActor(enemyHpBar);
         enemyPanel.add(enemyVisual).size(140, 118).pad(4).padTop(12).padBottom(34);
 
@@ -560,6 +560,7 @@ public final class LabGameView {
         if (state == null) return;
         layoutConveyorPath();
         positionAttackZoneMarker();
+        timer.setTotalSeconds(state.level == null ? 0f : state.level.durationSeconds);
         timer.setSeconds(state.remainingTimeSeconds);
         String tubeTxt = "Tube " + state.tubeCharges + "/" + Math.max(1, state.tubeMaxCharges);
         if (state.tubeCooldownRemaining > 0f) tubeTxt += " | CD " + String.format("%.1f", state.tubeCooldownRemaining);
@@ -607,8 +608,8 @@ public final class LabGameView {
                     if (tex != null) {
                         Image icon = new Image(new TextureRegionDrawable(new TextureRegion(tex)));
                         icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                        // Make fusion icons 50% bigger on the belt.
-                        conveyorSockets[i].add(icon).size(90, 90);
+                        // Make fusions 20% smaller.
+                        conveyorSockets[i].add(icon).size(72, 72);
                     }
                 }
 

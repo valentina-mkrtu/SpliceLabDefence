@@ -20,8 +20,9 @@ public final class FusionService {
 
     // Early game pacing: keep fusions a bit more fragile so belts don't fill
     // with long-living units and the player keeps merging/deploying.
-    private static final int EARLY_GAME_FUSION_HP_CAP = 75;
-    private static final int EARLY_GAME_FUSION_HP_CAP_LEVEL = 7;
+    private static final int EARLY_GAME_FUSION_HP_CAP = 55;
+    private static final int EARLY_GAME_FUSION_HP_CAP_LEVEL = 10;
+    private static final float EARLY_GAME_FUSION_ATK_MULT = 0.78f;
 
     public FusionService(DefinitionRepository definitions) {
         this.definitions = definitions;
@@ -57,6 +58,9 @@ public final class FusionService {
             maxHp = Math.min(maxHp, EARLY_GAME_FUSION_HP_CAP);
         }
         int atk = Math.max(0, base.atk() + item.statModifiers.atk());
+        if (levelNumber > 0 && levelNumber <= EARLY_GAME_FUSION_HP_CAP_LEVEL) {
+            atk = Math.round(atk * EARLY_GAME_FUSION_ATK_MULT);
+        }
         float specialChance = clamp01(base.specialChance() + item.specialChanceBonus);
         float variance = clamp(base.variance() + item.varianceModifier, 0f, 2f);
 
