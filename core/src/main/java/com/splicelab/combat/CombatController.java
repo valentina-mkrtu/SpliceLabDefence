@@ -25,7 +25,10 @@ public final class CombatController {
     private static final int ENDLESS_START_LEVEL = 50;
     private static final float ENDLESS_SCALE_STEP_SECONDS = 60f;
     private static final float ENDLESS_SCALE_STEP_AMOUNT = 0.10f;
+    private static final float TIMEOUT_WARNING_SECONDS = 4f;
     private final java.util.ArrayDeque<com.splicelab.services.TubeSpawnService.SpawnChoice> tubeBag = new java.util.ArrayDeque<>();
+
+    private boolean timeoutWarningFired;
 
     public interface CombatFeedback {
         int getConveyorPathLength();
@@ -40,11 +43,15 @@ public final class CombatController {
 
         void onEnemyDefeated();
 
+        void onEnemySpawned();
+
         void onFusionDamaged(boolean leftSide, int slotIndex, int damage);
 
         void onFusionDestroyed(boolean leftSide, int slotIndex);
 
         void onTubeDamaged(int damage);
+
+        void onTimeoutWarning();
     }
 
     private CombatFeedback feedback;
@@ -74,6 +81,7 @@ public final class CombatController {
         state.levelNumber = levelNumber;
         state.level = level;
         state.remainingTimeSeconds = level.durationSeconds;
+        timeoutWarningFired = false;
         state.tubeHp = level.tubeHp > 0 ? level.tubeHp : context.config.tubeMaxHp;
 
         float cd = level.tubeCooldownSeconds <= 0f ? context.config.tubeCooldownSeconds : level.tubeCooldownSeconds;
@@ -142,6 +150,12 @@ public final class CombatController {
 
         if (state.remainingTimeSeconds > 0f) {
             state.remainingTimeSeconds = Math.max(0f, state.remainingTimeSeconds - delta * (com.splicelab.debug.DebugFlags.FAST_ROUND_TIMER ? 3f : 1f));
+
+            if (!timeoutWarningFired && state.remainingTimeSeconds > 0f && state.remainingTimeSeconds <= TIMEOUT_WARNING_SECONDS) {
+                timeoutWarningFired = true;
+                if (feedback != null) feedback.onTimeoutWarning();
+            }
+
             if (state.remainingTimeSeconds <= 0f) {
                 state.result = state.endlessMode ? CombatResult.LOSE : CombatResult.WIN;
                 return;
@@ -232,13 +246,27 @@ public final class CombatController {
     }
 
     private com.splicelab.services.TubeSpawnService.SpawnChoice chooseTubeSpawnWithPity() {
+        // Grid safety: if grid is getting full, bias toward entities.
+        // Items without entities create deadlocks where the player can't fuse.
+        int filled = 0;
+        int empty = 0;
+        for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
+            for (int c = 0; c < AppConstants.GRID_COLS; c++) {
+                if (isTubeCell(c, r)) continue;
+                if (state.grid[c][r] == null) empty++; else filled++;
+            }
+        }
+        boolean gridCrowded = empty <= 2;
+
         int pityEveryX = Math.max(0, context.config.pityGuaranteeEntityEveryXItemSpawns);
         boolean forceEntity = pityEveryX > 0 && state.consecutiveItemSpawns >= pityEveryX;
 
         float wEntity = Math.max(0f, context.config.spawnEntityWeight);
         float wItem = Math.max(0f, context.config.spawnItemWeight);
         boolean wantEntity;
-        if (forceEntity) {
+        if (gridCrowded) {
+            wantEntity = true;
+        } else if (forceEntity) {
             wantEntity = true;
         } else {
             float total = wEntity + wItem;
@@ -254,7 +282,8 @@ public final class CombatController {
         if (picked.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) return picked;
 
         // If picked type doesn't match desired, try a few rerolls.
-        for (int tries = 0; tries < 6; tries++) {
+        int maxRerolls = gridCrowded ? 12 : 6;
+        for (int tries = 0; tries < maxRerolls; tries++) {
             boolean isEntity = picked.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.ENTITY;
             if (wantEntity == isEntity) return picked;
             picked = context.tubeSpawnService.chooseSpawnForLevel(state.level.levelNumber);
@@ -478,6 +507,7 @@ public final class CombatController {
         state.activeEnemy = new EnemyInstance(nextInstanceId(), chosenType, scaledHp);
         state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
         CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp);
+        if (feedback != null) feedback.onEnemySpawned();
     }
 
     private float computeDynamicEnemyMultiplier() {
@@ -715,7 +745,9 @@ public final class CombatController {
             FusionInstance f = state.conveyorSockets[socketId];
             if (f != null && f.hp > 0) deployedFusions++;
         }
+        // Keep spawns readable: don't scale spawn interval too hard from fusions.
         int extra = Math.max(0, deployedFusions - 1);
+        extra = Math.min(extra, 3);
         float tier = getDifficultyTierFactor();
         float mult = 1f - (CombatTuning.DYNAMIC_DIFFICULTY_SPAWN_INTERVAL_MULT_PER_FUSION * tier) * extra;
         mult = Math.max(CombatTuning.DYNAMIC_DIFFICULTY_MIN_SPAWN_INTERVAL_MULT, mult);

@@ -12,10 +12,12 @@ import com.splicelab.ui.UiFactory;
 
 public final class PlaceholderSimpleScreenView {
     private static final String PFP_ICON_PATH = "art/icons/pfp.png";
+    private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
 
     private final Table root;
     private final Skin skin;
     private Texture pfpTexture;
+    private Texture bgTexture;
 
     public PlaceholderSimpleScreenView(GameContext context, String title, String subtitle) {
         this.skin = PlaceholderSkinFactory.create();
@@ -23,7 +25,9 @@ public final class PlaceholderSimpleScreenView {
 
         root = new Table();
         root.setFillParent(true);
-        root.setBackground(skin.newDrawable("white", UiConstants.PANEL_BG));
+        bgTexture = new Texture(BG_PATH);
+        bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        root.setBackground(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTexture)));
 
         Table header = new Table();
         header.setBackground(skin.newDrawable("white", UiConstants.PANEL_DARK));
@@ -51,5 +55,6 @@ public final class PlaceholderSimpleScreenView {
     public void dispose() {
         skin.dispose();
         if (pfpTexture != null) pfpTexture.dispose();
+        if (bgTexture != null) bgTexture.dispose();
     }
 }

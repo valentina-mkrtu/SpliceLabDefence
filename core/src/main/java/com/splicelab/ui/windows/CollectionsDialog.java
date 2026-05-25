@@ -3,6 +3,7 @@ package com.splicelab.ui.windows;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.graphics.Texture;
@@ -21,22 +22,54 @@ public final class CollectionsDialog extends Dialog {
     private static final String FUSION_ELECTROSLIME_PATH = "art/fusions/electroslime.png";
 
     private Texture bgTex;
+    private Image bgImage;
     private Texture frameTex;
     private Texture lockTex;
     private Texture electroSlimeTex;
+    private DialogCloseButtonFactory.CloseButton closeButton;
 
     public CollectionsDialog(Skin skin, GameContext context) {
         super("Collections", skin);
 
-        if (com.badlogic.gdx.Gdx.files.internal(BG_PATH).exists()) {
-            bgTex = new Texture(com.badlogic.gdx.Gdx.files.internal(BG_PATH));
+        // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
+        setBackground((Drawable) null);
+        getContentTable().setBackground((Drawable) null);
+        getButtonTable().setBackground((Drawable) null);
+
+        // Use our PNG as the window background.
+        if (getStyle() != null) getStyle().background = null;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
+        if (bgFile.exists()) {
+            bgTex = new Texture(bgFile);
             bgTex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            var bg = new TextureRegionDrawable(new TextureRegion(bgTex));
-            getContentTable().setBackground(bg);
-            getButtonTable().setBackground(bg);
+            bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
+            // Put the image behind content only (not full stage), sized to the dialog.
+            bgImage.setFillParent(false);
+            bgImage.setColor(1f, 1f, 1f, 1f);
+            addActor(bgImage);
+            bgImage.toBack();
+            setColor(1f, 1f, 1f, 1f);
+        } else {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
         }
 
         UiFactory ui = new UiFactory(skin, context.audio);
+
+        Table topRight = new Table();
+        topRight.setFillParent(true);
+        closeButton = DialogCloseButtonFactory.create(skin);
+        ImageButton closeBtn = closeButton.button;
+        closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                hide();
+            }
+        });
+        topRight.top().right();
+        topRight.add(closeBtn).size(56).pad(8);
+        addActor(topRight);
 
         Table grid = new Table();
         grid.defaults().pad(8);
@@ -53,32 +86,64 @@ public final class CollectionsDialog extends Dialog {
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
 
-        getContentTable().add(scroll).width(440).height(520).pad(10);
-        var close = ui.textButton("Close");
-        close.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
-            @Override
-            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
-                context.audio.playButtonClick();
-                hide();
-            }
-        });
-        getButtonTable().add(close);
+        // Leave margin so background frame is visible.
+        getContentTable().add(scroll).width(420).height(500).pad(22);
+        getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.
         setModal(false);
         setMovable(false);
-        pad(12);
+        pad(18);
 
-        setSize(480, 650);
+        setColor(1f, 1f, 1f, 1f);
+
+        normalizeWindowSize();
+
+        if (bgImage != null) {
+            bgImage.setSize(getWidth(), getHeight());
+            bgImage.setPosition(0f, 0f);
+        }
+
+        // Keep style background transparent; we render bg via bgImage actor.
+        if (getStyle() != null) getStyle().background = skin.newDrawable("white", new Color(0f, 0f, 0f, 0f));
+
+        // Keep default dialog style background.
+    }
+
+    private void normalizeWindowSize() {
+        float vw = 540f;
+        float vh = 960f;
+        float w = vw * 0.90f;
+        float h = vh * 0.76f;
+        setSize(w, h);
+    }
+
+    public void syncBackground() {
+        if (bgImage == null) return;
+        bgImage.setSize(getWidth(), getHeight());
+        bgImage.setPosition(0f, 0f);
+    }
+
+    public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
+        if (stage == null || bgImage == null) return;
+        if (bgImage.getStage() != stage) stage.addActor(bgImage);
+        bgImage.toBack();
+        bgImage.setColor(1f, 0f, 0f, 0.35f);
+        syncBackground();
     }
 
     @Override
     public void hide() {
         super.hide();
+        if (bgImage != null) bgImage.remove();
         disposeTextures();
+        if (closeButton != null) closeButton.dispose();
+        closeButton = null;
     }
 
     private void disposeTextures() {
+        if (bgImage != null) bgImage.remove();
+        bgImage = null;
         if (bgTex != null) bgTex.dispose();
         if (frameTex != null) frameTex.dispose();
         if (lockTex != null) lockTex.dispose();

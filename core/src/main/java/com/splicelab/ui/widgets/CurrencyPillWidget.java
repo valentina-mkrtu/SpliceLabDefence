@@ -19,8 +19,9 @@ public final class CurrencyPillWidget extends Table {
         if (background != null) setBackground(background);
         defaults().pad(4);
 
-        if (icon != null) add(new Image(icon)).size(18).padRight(6);
+        if (icon != null) add(new Image(icon)).size(22).padRight(6);
         amountLabel = ui.label(String.valueOf(amount));
+        amountLabel.setFontScale(1.2f);
         add(amountLabel);
     }
 

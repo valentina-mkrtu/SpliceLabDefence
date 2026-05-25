@@ -11,6 +11,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 public final class PlaceholderSkinFactory {
@@ -22,6 +25,11 @@ public final class PlaceholderSkinFactory {
 
         BitmapFont font = new BitmapFont();
         skin.add("default-font", font);
+
+        Label.LabelStyle labelStyle = new Label.LabelStyle();
+        labelStyle.font = font;
+        labelStyle.fontColor = Color.WHITE;
+        skin.add("default", labelStyle);
 
         Texture white = makeTexture(Color.WHITE);
         skin.add("white", white);
@@ -43,9 +51,20 @@ public final class PlaceholderSkinFactory {
         progressStyle.knobBefore = progressStyle.knob;
         skin.add("default-horizontal", progressStyle);
 
+        Slider.SliderStyle sliderStyle = new Slider.SliderStyle();
+        sliderStyle.background = progressStyle.background;
+        sliderStyle.knob = progressStyle.knob;
+        skin.add("default-horizontal", sliderStyle);
+
         ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle();
         scrollStyle.background = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.08f, 0.08f, 0.1f, 0.8f))));
         skin.add("default", scrollStyle);
+
+        CheckBox.CheckBoxStyle checkBoxStyle = new CheckBox.CheckBoxStyle();
+        checkBoxStyle.font = font;
+        checkBoxStyle.checkboxOff = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.2f, 0.2f, 0.25f, 1f))));
+        checkBoxStyle.checkboxOn = new TextureRegionDrawable(new TextureRegion(makeTexture(new Color(0.25f, 0.8f, 0.5f, 1f))));
+        skin.add("default", checkBoxStyle);
 
         Gdx.app.log("SpliceLab", "Created placeholder Skin");
         return skin;

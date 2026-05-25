@@ -24,6 +24,7 @@ public final class LabGameScreen extends BaseScreen {
 
     @Override
     protected void buildUi() {
+        context.audio.startLabLoop();
         context.audio.startBeltLoop();
         view = new LabGameView(context);
         stage.addActor(view.getRoot());
@@ -52,6 +53,7 @@ public final class LabGameScreen extends BaseScreen {
                 // Projectiles originate from the attacking socket's current position.
                 var from = view.getSocketActor(slotIndex);
                 var to = view.getEnemyAnchor();
+                context.audio.playHeroThrow();
                 if (from != null && to != null) view.spawnProjectile(from, to, com.badlogic.gdx.graphics.Color.GREEN, null);
                 if (special && from != null) view.floatTextNear(from, "SPECIAL!", com.badlogic.gdx.graphics.Color.GOLD);
             }
@@ -62,14 +64,21 @@ public final class LabGameScreen extends BaseScreen {
                 if (anchor != null) {
                     view.floatTextNear(anchor, "-" + damage, special ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.WHITE);
                 }
+                view.playHitJuice(special ? 0.85f : 0.45f, special ? 6f : 3.5f);
             }
 
             @Override
             public void onEnemyDefeated() {
+                context.audio.playEnemyDies();
                 var anchor = view.getEnemyAnchor();
                 if (anchor != null) {
                     view.floatTextNear(anchor, "DEFEATED!", com.badlogic.gdx.graphics.Color.ORANGE);
                 }
+            }
+
+            @Override
+            public void onEnemySpawned() {
+                context.audio.playEnemyAppears();
             }
 
             @Override
@@ -79,10 +88,13 @@ public final class LabGameScreen extends BaseScreen {
                     view.floatTextNear(anchor, "-" + damage, com.badlogic.gdx.graphics.Color.SCARLET);
                     view.spawnProjectile(view.getEnemyAnchor(), anchor, com.badlogic.gdx.graphics.Color.RED, null);
                 }
+                context.audio.playEnemyThrow();
+                view.playHitJuice(0.35f, 4.5f);
             }
 
             @Override
             public void onFusionDestroyed(boolean leftSide, int slotIndex) {
+                context.audio.playHeroDies();
                 var anchor = view.getSocketActor(slotIndex);
                 if (anchor != null) {
                     view.floatTextNear(anchor, "KO", com.badlogic.gdx.graphics.Color.SCARLET);
@@ -91,6 +103,7 @@ public final class LabGameScreen extends BaseScreen {
 
             @Override
             public void onTubeDamaged(int damage) {
+                context.audio.playCrack();
                 var anchor = view.getTubeAnchor();
                 if (anchor != null) {
                     view.floatTextNear(anchor, "-" + damage, com.badlogic.gdx.graphics.Color.SCARLET);
@@ -98,6 +111,13 @@ public final class LabGameScreen extends BaseScreen {
                     var from = view.getEnemyAnchor();
                     if (from != null) view.spawnProjectile(from, anchor, com.badlogic.gdx.graphics.Color.RED, null);
                 }
+                context.audio.playEnemyThrow();
+                view.playHitJuice(0.25f, 5.5f);
+            }
+
+            @Override
+            public void onTimeoutWarning() {
+                context.audio.playTimeoutWarning();
             }
         });
         combatState = combatController.startLevel(levelNumber);
@@ -129,6 +149,8 @@ public final class LabGameScreen extends BaseScreen {
         switch (combatController.getState().result) {
             case WIN -> {
                 context.audio.stopBeltLoop();
+                context.audio.stopLabLoop();
+                context.audio.playWin();
                 int lvl = combatController.getState().level.levelNumber;
                 boolean firstWin = context.saves.get().completedLevels.add(lvl);
                 CombatLog.d("win reward applied firstWin=" + firstWin);
@@ -145,6 +167,8 @@ public final class LabGameScreen extends BaseScreen {
             }
             case LOSE -> {
                 context.audio.stopBeltLoop();
+                context.audio.stopLabLoop();
+                context.audio.playLose();
                 if (combatController.getState().level != null) {
                     context.telemetry.track(
                             "level_failed",
@@ -172,6 +196,7 @@ public final class LabGameScreen extends BaseScreen {
     public void dispose() {
         if (view != null) view.dispose();
         context.audio.stopBeltLoop();
+        context.audio.stopLabLoop();
         super.dispose();
     }
 }

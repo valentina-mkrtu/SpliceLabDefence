@@ -30,6 +30,7 @@ public final class MainLobbyView {
     private static final String ICON_SHOP_PATH = "art/icons/shop.png";
     private static final String ICON_PFP_PATH = "art/icons/pfp.png";
     private static final String ICON_LAB_PATH = "art/icons/thelab.png";
+    private static final String ICON_SETTINGS_PATH = "art/icons/settings.png";
     private static final String BG_LAB_PATH = "art/backgrounds/thelab.png";
     private static final String BG_MAP_PATH = "art/backgrounds/themap.png";
     private static final String BG_MAIN_PATH = "art/backgrounds/mainbg.png";
@@ -56,6 +57,7 @@ public final class MainLobbyView {
     private Runnable collectionsListener;
     private Runnable entitiesListener;
     private Runnable shopListener;
+    private Runnable settingsListener;
 
     private Texture iconBgTex;
     private Texture accountTex;
@@ -64,6 +66,7 @@ public final class MainLobbyView {
     private Texture shopTex;
     private Texture pfpTex;
     private Texture labTex;
+    private Texture settingsTex;
     private Texture labBgTex;
     private Texture mapBgTex;
     private Texture mainBgTex;
@@ -100,7 +103,7 @@ public final class MainLobbyView {
                 () -> pfpTex,
                 t -> pfpTex = t
         );
-        profile.add(pfp).size(64).row();
+        profile.add(pfp).size(52).row();
         usernameLabel = ui.label(save.playerName);
         profile.add(usernameLabel).padTop(6);
 
@@ -125,27 +128,43 @@ public final class MainLobbyView {
                 context.economy.getBalance(CurrencyType.CRYSTALS)
         );
 
-        // Shrink pills without shrinking the whole currency group.
+        // Make pills match navbar height.
+        float pillScale = 0.62f;
         dnaPill.setTransform(true);
         cryPill.setTransform(true);
-        dnaPill.setScale(0.5f);
-        cryPill.setScale(0.5f);
+        dnaPill.setScale(pillScale);
+        cryPill.setScale(pillScale);
+        dnaPill.setRotation(0f);
+        cryPill.setRotation(0f);
 
-        currencies.add(dnaPill).padRight(6);
-        currencies.add(cryPill);
-        currencies.padBottom(50);
+        currencies.add(dnaPill).padRight(10).top();
+        currencies.add(cryPill).top();
+
+        ImageButton settingsBtn = makeNavButton(ICON_SETTINGS_PATH, () -> settingsTex, t -> settingsTex = t);
+        settingsBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                if (settingsListener != null) settingsListener.run();
+            }
+        });
 
 
 
         levelLabel = ui.label("Level " + save.playerLevel);
 
-        top.add(profile).expandX().left();
-        top.add(levelLabel).expandX().center();
-        top.add(currencies).expandX().right();
+        // Navbar: pfp left, currencies middle-right, settings right.
+        // Keep all elements on the same horizontal baseline.
+        float navIconSize = 52f;
+        top.add(profile).left().top().padRight(10);
+        top.add(levelLabel).expandX().left().top().padTop(12);
+        top.add(currencies).right().top().padTop(-50).padRight(10);
+        top.add(settingsBtn).size(navIconSize).right().top();
 
         Table center = new Table();
         center.defaults().pad(12);
         center.padTop(50);
+
         TextButton labBtn = ui.textButton("");
         TextButton mapBtn = ui.textButton("");
 
@@ -167,13 +186,15 @@ public final class MainLobbyView {
         // Make press feel physical: slight scale down while pressed.
         labBtn.setTransform(true);
         mapBtn.setTransform(true);
+
+        // Hover: slightly scale up (desktop), no-op on touch.
         labBtn.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
                 labBtn.clearActions();
                 labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        0.985f,
-                        0.985f,
+                        1.05f,
+                        1.05f,
                         0.04f,
                         com.badlogic.gdx.math.Interpolation.sineOut
                 ));
@@ -196,8 +217,8 @@ public final class MainLobbyView {
             public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
                 mapBtn.clearActions();
                 mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        0.985f,
-                        0.985f,
+                        1.05f,
+                        1.05f,
                         0.04f,
                         com.badlogic.gdx.math.Interpolation.sineOut
                 ));
@@ -324,6 +345,10 @@ public final class MainLobbyView {
         this.shopListener = shopListener;
     }
 
+    public void setSettingsListener(Runnable settingsListener) {
+        this.settingsListener = settingsListener;
+    }
+
     public void dispose() {
         if (iconBgTex != null) iconBgTex.dispose();
         if (accountTex != null) accountTex.dispose();
@@ -332,6 +357,7 @@ public final class MainLobbyView {
         if (shopTex != null) shopTex.dispose();
         if (pfpTex != null) pfpTex.dispose();
         if (labTex != null) labTex.dispose();
+        if (settingsTex != null) settingsTex.dispose();
         if (labBgTex != null) labBgTex.dispose();
         if (mapBgTex != null) mapBgTex.dispose();
         if (mainBgTex != null) mainBgTex.dispose();
@@ -339,6 +365,7 @@ public final class MainLobbyView {
         if (currBgTex != null) currBgTex.dispose();
         if (dnaTex != null) dnaTex.dispose();
         if (cryTex != null) cryTex.dispose();
+
         skin.dispose();
     }
 

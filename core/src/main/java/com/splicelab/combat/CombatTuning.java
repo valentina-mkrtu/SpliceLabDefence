@@ -14,8 +14,8 @@ public final class CombatTuning {
 
     // Dynamic difficulty: scale enemies up when player has many fusions deployed.
     // Keeps early game readable (few fusions) while preventing late snowball.
-    public static final float DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP = 0.45f;
-    public static final float DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK = 0.18f;
+    public static final float DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP = 0.30f;
+    public static final float DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK = 0.12f;
     public static final float DYNAMIC_DIFFICULTY_SPAWN_INTERVAL_MULT_PER_FUSION = 0.06f;
     public static final float DYNAMIC_DIFFICULTY_MIN_SPAWN_INTERVAL_MULT = 0.45f;
     public static final float DYNAMIC_DIFFICULTY_MAX_SPAWN_INTERVAL_MULT = 1.00f;
@@ -23,8 +23,8 @@ public final class CombatTuning {
     // Spike scaling: additional enemy strength once player has 4+ fusions deployed.
     // 4 fusions => +20% HP/ATK. Every +2 fusions after 4 => +10% more.
     public static final int FUSION_SPIKE_START = 4;
-    public static final float FUSION_SPIKE_BASE_MULT = 1.20f;
-    public static final float FUSION_SPIKE_PER_2_FUSIONS_EXTRA = 0.10f;
+    public static final float FUSION_SPIKE_BASE_MULT = 1.12f;
+    public static final float FUSION_SPIKE_PER_2_FUSIONS_EXTRA = 0.08f;
 
     // Extra boss punch so final boss feels like a boss.
     public static final float BOSS_BASE_HP_MULT = 2.50f;

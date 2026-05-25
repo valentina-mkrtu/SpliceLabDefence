@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
 import com.splicelab.model.EntityType;
@@ -45,6 +46,7 @@ public final class LabGameView {
     private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
     private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
     private static final String SHAFT_BG_TEXTURE_PATH = "art/backgrounds/shaft.png";
+    private static final String ATTACK_MARKER_TEXTURE_PATH = "art/icons/triangle.png";
     // Centerline of the dark belt lane (kept away from yellow frame).
     private static final float BELT_TRACK_INSET_X_RATIO = 0.1f;
     private static final float BELT_TRACK_INSET_Y_RATIO = 0.078f;
@@ -87,11 +89,19 @@ public final class LabGameView {
     private final Texture enemyBoss1Texture;
     private final Texture enemyBoss2Texture;
 
+    private float hitFlashRemainingSeconds;
+    private float hitFlashIntensity;
+    private float screenShakeRemainingSeconds;
+    private float screenShakeStrengthPx;
+    private float screenShakeSeedSeconds;
+
     private final Map<String, Texture> textureCache = new HashMap<>();
     private final Image enemyIcon;
 
     private final Table attackZoneMarker;
     private final AttackZoneMarkerActor attackZoneMarkerActor;
+    private final Image attackZoneMarkerImage;
+    private final Texture attackMarkerTexture;
 
     private float beltPhase;
 
@@ -272,15 +282,32 @@ public final class LabGameView {
         attackZoneMarker.setSize(22, 22);
         root.addActor(attackZoneMarker);
 
-        attackZoneMarkerActor = new AttackZoneMarkerActor(new Color(0.2f, 1f, 0.2f, 0.85f));
-        attackZoneMarkerActor.setSize(24, 18);
-        root.addActor(attackZoneMarkerActor);
+        attackMarkerTexture = new Texture(ATTACK_MARKER_TEXTURE_PATH);
+        attackMarkerTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        attackZoneMarkerImage = new Image(new TextureRegionDrawable(new TextureRegion(attackMarkerTexture)));
+        attackZoneMarkerImage.setSize(34 * 1.2f, 34 * 1.2f);
+        attackZoneMarkerImage.setOrigin(Align.center);
+        attackZoneMarkerImage.setRotation(-90f);
+        attackZoneMarkerImage.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        root.addActor(attackZoneMarkerImage);
+
+        attackZoneMarkerActor = null;
         positionAttackZoneMarker();
     }
 
     public void update(float delta) {
         beltPhase += delta / Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
         if (beltPhase >= 1f) beltPhase -= (float) Math.floor(beltPhase);
+
+        hitFlashRemainingSeconds = Math.max(0f, hitFlashRemainingSeconds - Math.max(0f, delta));
+        if (hitFlashRemainingSeconds <= 0f) hitFlashIntensity = 0f;
+
+        screenShakeRemainingSeconds = Math.max(0f, screenShakeRemainingSeconds - Math.max(0f, delta));
+        if (screenShakeRemainingSeconds <= 0f) screenShakeStrengthPx = 0f;
+        screenShakeSeedSeconds += Math.max(0f, delta);
+
+        // Screen shake disabled (too disruptive for the whole lab page).
+        root.setPosition(0f, 0f);
 
         // Keep sockets moving even before the first state sync.
         layoutConveyorPath();
@@ -446,7 +473,12 @@ public final class LabGameView {
         float y = sample.y();
         Vector2 p = beltLayer.localToStageCoordinates(new Vector2(x, y));
         attackZoneMarker.setVisible(false);
-        attackZoneMarkerActor.setPosition(p.x - attackZoneMarkerActor.getWidth() / 2f, p.y - attackZoneMarkerActor.getHeight() / 2f);
+        if (attackZoneMarkerImage != null) {
+            attackZoneMarkerImage.setPosition(
+                    p.x - attackZoneMarkerImage.getWidth() / 2f,
+                    p.y - attackZoneMarkerImage.getHeight() / 2f
+            );
+        }
     }
 
     private static final class AttackZoneMarkerActor extends Actor {
@@ -515,6 +547,7 @@ public final class LabGameView {
 
     public void dispose() {
         if (attackZoneMarkerActor != null) attackZoneMarkerActor.dispose();
+        if (attackMarkerTexture != null) attackMarkerTexture.dispose();
         beltLoopLineTexture.dispose();
         beltLoopBaseTexture.dispose();
         shaftBgTexture.dispose();
@@ -674,6 +707,14 @@ public final class LabGameView {
                 }),
                 Actions.removeActor()
         ));
+    }
+
+    public void playHitJuice(float flashIntensity, float shakeStrengthPx) {
+        hitFlashRemainingSeconds = Math.max(hitFlashRemainingSeconds, CombatTuning.HIT_FLASH_DURATION_SECONDS);
+        hitFlashIntensity = Math.max(hitFlashIntensity, Math.max(0f, flashIntensity));
+        // Shake disabled.
+        screenShakeRemainingSeconds = 0f;
+        screenShakeStrengthPx = 0f;
     }
 
     public void floatTextNear(Actor anchor, String text, Color color) {

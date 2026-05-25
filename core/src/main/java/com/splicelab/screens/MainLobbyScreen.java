@@ -9,6 +9,7 @@ import com.splicelab.ui.windows.AccountDialog;
 import com.splicelab.ui.windows.CollectionsDialog;
 import com.splicelab.ui.windows.EntitiesDialog;
 import com.splicelab.ui.windows.LevelMapDialog;
+import com.splicelab.ui.windows.SettingsDialog;
 import com.splicelab.ui.windows.ShopDialog;
 
 public final class MainLobbyScreen extends BaseScreen {
@@ -19,13 +20,25 @@ public final class MainLobbyScreen extends BaseScreen {
     private Dialog entitiesDialog;
     private Dialog shopDialog;
     private Dialog mapDialog;
+    private Dialog settingsDialog;
 
     public MainLobbyScreen(SpliceLabGame game, GameContext context) {
         super(game, context);
     }
 
     @Override
+    protected void onResumeScreen() {
+        context.audio.startMainpageLoop();
+    }
+
+    @Override
+    protected void onPauseScreen() {
+        context.audio.stopMainpageLoop();
+    }
+
+    @Override
     public void dispose() {
+        context.audio.stopMainpageLoop();
         super.dispose();
         if (view != null) view.dispose();
     }
@@ -43,6 +56,7 @@ public final class MainLobbyScreen extends BaseScreen {
         view.setCollectionsListener(this::showCollections);
         view.setEntitiesListener(this::showEntities);
         view.setShopListener(this::showShop);
+        view.setSettingsListener(this::showSettings);
 
         stage.addActor(view.getRoot());
     }
@@ -52,21 +66,44 @@ public final class MainLobbyScreen extends BaseScreen {
         COLLECTIONS,
         ENTITIES,
         SHOP,
-        MAP
+        MAP,
+        SETTINGS
     }
 
     private void showSingletonDialog(Dialog dialog, DialogType type) {
         if (dialog == null) return;
 
         hideAllDialogs();
+
+        // Ensure dialog background is visible under the dialog.
+        if (dialog instanceof AccountDialog d) d.showBackground(stage);
+        if (dialog instanceof CollectionsDialog d) d.showBackground(stage);
+        if (dialog instanceof EntitiesDialog d) d.showBackground(stage);
+        if (dialog instanceof ShopDialog d) d.showBackground(stage);
+
         switch (type) {
             case ACCOUNT -> accountDialog = dialog;
             case COLLECTIONS -> collectionsDialog = dialog;
             case ENTITIES -> entitiesDialog = dialog;
             case SHOP -> shopDialog = dialog;
             case MAP -> mapDialog = dialog;
+            case SETTINGS -> settingsDialog = dialog;
         }
         dialog.show(stage);
+
+        // Size dialogs relative to the current viewport so they don't appear huge on desktop.
+        float w = stage.getViewport().getWorldWidth();
+        float h = stage.getViewport().getWorldHeight();
+        float dw = Math.min(dialog.getWidth(), w * 0.92f);
+        float dh = Math.min(dialog.getHeight(), h * 0.82f);
+        dialog.setSize(dw, dh);
+        dialog.setPosition((w - dw) * 0.5f, (h - dh) * 0.5f);
+
+        // If the dialog uses a background Image actor, keep it in sync.
+        if (dialog instanceof AccountDialog d) d.syncBackground();
+        if (dialog instanceof CollectionsDialog d) d.syncBackground();
+        if (dialog instanceof EntitiesDialog d) d.syncBackground();
+        if (dialog instanceof ShopDialog d) d.syncBackground();
     }
 
     private void showAccount() {
@@ -89,17 +126,25 @@ public final class MainLobbyScreen extends BaseScreen {
         showSingletonDialog(shopDialog, DialogType.SHOP);
     }
 
+    private void showSettings() {
+        if (settingsDialog == null) settingsDialog = new SettingsDialog(view.getSkin(), context);
+        showSingletonDialog(settingsDialog, DialogType.SETTINGS);
+    }
+
     private void hideAllDialogs() {
         if (accountDialog != null) accountDialog.hide();
         if (collectionsDialog != null) collectionsDialog.hide();
         if (entitiesDialog != null) entitiesDialog.hide();
         if (shopDialog != null) shopDialog.hide();
         if (mapDialog != null) mapDialog.hide();
+        if (settingsDialog != null) settingsDialog.hide();
     }
 
-    private void onShopPurchase(int dnaCost) {
+    private void onShopPurchase(ShopDialog.PurchaseType type, int dnaCost) {
         if (dnaCost <= 0) return;
         if (context.economy.spend(CurrencyType.DNA, dnaCost)) {
+            // Purchases are currently only supported in-combat.
+            // In lobby, just spend + refresh currency.
             view.refresh(context);
         }
     }
