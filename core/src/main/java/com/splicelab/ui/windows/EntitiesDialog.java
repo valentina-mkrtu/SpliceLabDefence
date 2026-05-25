@@ -16,7 +16,7 @@ public final class EntitiesDialog extends Dialog {
 
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
-    private DialogCloseButtonFactory.CloseButton closeButton;
+    private DialogCloseImageFactory.CloseImage closeButton;
 
     public EntitiesDialog(Skin skin, GameContext context) {
         super("Entities", skin);
@@ -35,8 +35,8 @@ public final class EntitiesDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseButtonFactory.create(skin);
-        ImageButton closeBtn = closeButton.button;
+        closeButton = DialogCloseImageFactory.create();
+        Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
@@ -49,7 +49,10 @@ public final class EntitiesDialog extends Dialog {
         addActor(topRight);
 
         Table list = new Table();
-        list.defaults().pad(8).expandX().fillX();
+        // Pull cards inward so they never touch the frame.
+        list.defaults().pad(10).expandX().fillX();
+        // Force a fixed card width (prevents full-bleed rows).
+        list.defaults().width(330f);
 
         list.add(makeCard(skin, ui, "Slime", 20, 4, "Splits on hit")).row();
         list.add(makeCard(skin, ui, "Mech", 35, 6, "Armor: reduces damage")).row();
@@ -69,8 +72,9 @@ public final class EntitiesDialog extends Dialog {
         scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
         if (scroll.getStyle() != null) scroll.getStyle().background = null;
 
-        // Leave margin so background frame is visible.
-        getContentTable().add(scroll).width(340).height(410).pad(46).padLeft(64);
+        // Match Account window sizing so all windows align.
+        // Slightly more vertical padding so first/last card never spill.
+        getContentTable().add(scroll).width(420).height(470).pad(30);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.

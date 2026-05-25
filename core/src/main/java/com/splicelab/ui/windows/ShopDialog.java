@@ -2,6 +2,7 @@ package com.splicelab.ui.windows;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -16,7 +17,7 @@ public final class ShopDialog extends Dialog {
 
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
-    private DialogCloseButtonFactory.CloseButton closeButton;
+    private DialogCloseImageFactory.CloseImage closeButton;
 
     public enum PurchaseType {
         TIME_FREEZE,
@@ -51,8 +52,8 @@ public final class ShopDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseButtonFactory.create(skin);
-        ImageButton closeBtn = closeButton.button;
+        closeButton = DialogCloseImageFactory.create();
+        Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
@@ -66,6 +67,8 @@ public final class ShopDialog extends Dialog {
 
         Table content = new Table();
         content.defaults().pad(8).expandX().fillX();
+        // Keep rows inside the fixed window content area.
+        content.defaults().maxWidth(380f);
 
         content.add(ui.label("Spend DNA on boosts")).row();
         content.add(ui.smallLabel("Owned: " + ownedCount)).row();
@@ -78,8 +81,8 @@ public final class ShopDialog extends Dialog {
 
         content.add(ui.smallLabel("Note: boosts work in combat")).row();
 
-        // Leave margin so background frame is visible.
-        getContentTable().add(content).width(340).height(410).pad(46).padLeft(64);
+        // Match Account window sizing so all windows align.
+        getContentTable().add(content).width(420).height(500).pad(22);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.

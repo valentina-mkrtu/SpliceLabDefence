@@ -3,7 +3,6 @@ package com.splicelab.ui.windows;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -19,7 +18,7 @@ public final class AccountDialog extends Dialog {
 
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
-    private DialogCloseButtonFactory.CloseButton closeButton;
+    private DialogCloseImageFactory.CloseImage closeButton;
 
     public AccountDialog(Skin skin, GameContext context) {
         super("Account", skin);
@@ -39,8 +38,8 @@ public final class AccountDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseButtonFactory.create(skin);
-        ImageButton closeBtn = closeButton.button;
+        closeButton = DialogCloseImageFactory.create();
+        Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {

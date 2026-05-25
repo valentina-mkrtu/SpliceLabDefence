@@ -123,6 +123,13 @@ public final class LabGameScreen extends BaseScreen {
         combatState = combatController.startLevel(levelNumber);
 
         view.setOnTubeTapped(() -> combatController.requestTubeSpawn());
+        view.setBoostListeners(
+                () -> combatController.activateTimeFreeze(15f),
+                () -> combatController.activateImmediateCooldown(),
+                () -> combatController.activateAtkX2(15f),
+                () -> combatController.activateTubeHpRecovery(),
+                () -> combatController.armRemoveOneItem()
+        );
         view.bindDragDrop(combatController);
 
         if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
@@ -133,6 +140,11 @@ public final class LabGameScreen extends BaseScreen {
                     if (keycode == Input.Keys.L) combatController.debugForceLose();
                     if (keycode == Input.Keys.S) combatController.requestTubeSpawn();
                     if (keycode == Input.Keys.E) combatController.debugDamageEnemy(9999);
+                    if (keycode == Input.Keys.NUM_1) combatController.activateTimeFreeze(15f);
+                    if (keycode == Input.Keys.NUM_2) combatController.activateImmediateCooldown();
+                    if (keycode == Input.Keys.NUM_3) combatController.activateAtkX2(15f);
+                    if (keycode == Input.Keys.NUM_4) combatController.activateTubeHpRecovery();
+                    if (keycode == Input.Keys.NUM_5) combatController.armRemoveOneItem();
                     return false;
                 }
             }));

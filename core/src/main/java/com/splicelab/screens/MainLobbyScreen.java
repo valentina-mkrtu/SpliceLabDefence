@@ -85,12 +85,6 @@ public final class MainLobbyScreen extends BaseScreen {
         }
         dialog.show(stage);
 
-        // Ensure dialog background is visible under the dialog (after show).
-        if (dialog instanceof AccountDialog d) d.showBackground(stage);
-        if (dialog instanceof CollectionsDialog d) d.showBackground(stage);
-        if (dialog instanceof EntitiesDialog d) d.showBackground(stage);
-        if (dialog instanceof ShopDialog d) d.showBackground(stage);
-
         // Size dialogs relative to the current viewport so they don't appear huge on desktop.
         float w = stage.getViewport().getWorldWidth();
         float h = stage.getViewport().getWorldHeight();
@@ -99,11 +93,27 @@ public final class MainLobbyScreen extends BaseScreen {
         dialog.setSize(dw, dh);
         dialog.setPosition((w - dw) * 0.5f, (h - dh) * 0.5f);
 
-        // If the dialog uses a background Image actor, keep it in sync.
-        if (dialog instanceof AccountDialog d) d.syncBackground();
-        if (dialog instanceof CollectionsDialog d) d.syncBackground();
-        if (dialog instanceof EntitiesDialog d) d.syncBackground();
-        if (dialog instanceof ShopDialog d) d.syncBackground();
+        // Ensure dialog background is visible under the dialog (after final size/position).
+        if (dialog instanceof AccountDialog d) {
+            d.showBackground(stage);
+            d.syncBackground();
+        }
+        if (dialog instanceof CollectionsDialog d) {
+            d.showBackground(stage);
+            d.syncBackground();
+        }
+        if (dialog instanceof EntitiesDialog d) {
+            d.showBackground(stage);
+            d.syncBackground();
+        }
+        if (dialog instanceof ShopDialog d) {
+            d.showBackground(stage);
+            d.syncBackground();
+        }
+        if (dialog instanceof LevelMapDialog d) {
+            d.showBackground(stage);
+            d.syncBackground();
+        }
     }
 
     private void showAccount() {

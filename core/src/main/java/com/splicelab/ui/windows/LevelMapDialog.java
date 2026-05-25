@@ -5,11 +5,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.splicelab.app.GameContext;
@@ -20,20 +22,22 @@ public final class LevelMapDialog extends Dialog {
         void onSelectLevel(int levelNumber);
     }
 
-    // Debug flag: keep OFF for now.
-    // When enabled, only cleared levels + next available level are selectable.
     private static final boolean ENABLE_LEVEL_LOCK = false;
 
     private static final String LEVEL_BG_TEXTURE_PATH = "art/backgrounds/levels.png";
     private static final String WINDOW_BG_TEXTURE_PATH = "art/backgrounds/levelsbg.png";
     private static final Color LEVEL_TEXT_COLOR = new Color(0.07f, 0.16f, 0.45f, 1f);
+
     private static final float LEVEL_WIDGET_SCALE = 0.70f;
     private static final int LEVEL_COLUMNS = 2;
 
-    private static final float CONTENT_PAD = 10f;
+    private static final float CONTENT_PAD = 22f;
+
+    private Texture bgTex;
+    private Image bgImage;
+    private DialogCloseImageFactory.CloseImage closeButton;
 
     private Texture levelBgTexture;
-    private Texture windowBgTexture;
     private BitmapFont levelFont;
 
     public LevelMapDialog(Skin skin, GameContext context, LevelSelectListener listener) {
@@ -41,19 +45,34 @@ public final class LevelMapDialog extends Dialog {
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
-        levelBgTexture = null;
-        windowBgTexture = null;
+        // Take layout + background strategy from CollectionsDialog.
+        setBackground((Drawable) null);
+        getContentTable().setBackground((Drawable) null);
+        getButtonTable().setBackground((Drawable) null);
+        if (getStyle() != null) getStyle().background = null;
+
+        createBackgroundIfNeeded();
+
+        Table topRight = new Table();
+        topRight.setFillParent(true);
+        closeButton = DialogCloseImageFactory.create();
+        Image closeBtn = closeButton.image;
+        closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                hide();
+            }
+        });
+        topRight.top().right();
+        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        addActor(topRight);
+
         TextureRegionDrawable levelBgDrawable = null;
         if (com.badlogic.gdx.Gdx.files.internal(LEVEL_BG_TEXTURE_PATH).exists()) {
             levelBgTexture = new Texture(com.badlogic.gdx.Gdx.files.internal(LEVEL_BG_TEXTURE_PATH));
             levelBgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
             levelBgDrawable = new TextureRegionDrawable(new TextureRegion(levelBgTexture));
-        }
-
-        if (com.badlogic.gdx.Gdx.files.internal(WINDOW_BG_TEXTURE_PATH).exists()) {
-            windowBgTexture = new Texture(com.badlogic.gdx.Gdx.files.internal(WINDOW_BG_TEXTURE_PATH));
-            windowBgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            setBackground(new TextureRegionDrawable(new TextureRegion(windowBgTexture)));
         }
 
         BitmapFont baseFont = skin.getFont("default-font");
@@ -62,8 +81,11 @@ public final class LevelMapDialog extends Dialog {
         Label.LabelStyle levelLabelStyle = new Label.LabelStyle(levelFont, LEVEL_TEXT_COLOR);
 
         Table list = new Table();
-        list.setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
-        list.defaults().pad(8 * LEVEL_WIDGET_SCALE).expand().fill();
+        list.setBackground((Drawable) null);
+        // Reduce horizontal gap between columns.
+        float padV = 8f * LEVEL_WIDGET_SCALE;
+        float padH = padV * 0.5f;
+        list.defaults().pad(padV, padH, padV, padH).expand().fill();
 
         int totalLevels = 50;
         for (int level = 1; level <= totalLevels; level++) {
@@ -71,7 +93,6 @@ public final class LevelMapDialog extends Dialog {
 
             boolean unlocked = true;
             if (ENABLE_LEVEL_LOCK) {
-                // Allow replay of cleared levels, plus the next uncleared level.
                 unlocked = cleared || context.saves.get().completedLevels.contains(level - 1) || level == 1;
             }
 
@@ -117,45 +138,84 @@ public final class LevelMapDialog extends Dialog {
         }
 
         ScrollPane scroll = new ScrollPane(list, skin);
-        scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
-        if (scroll.getStyle() != null) scroll.getStyle().background = null;
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
-        scroll.setScrollbarsVisible(true);
+        scroll.setScrollbarsVisible(false);
         scroll.setOverscroll(false, false);
-        scroll.setForceScroll(false, true);
-        scroll.setFlickScroll(true);
-
-        // Do not hardcode size here.
-        // MainLobbyScreen sizes the dialog to the viewport, so we let the ScrollPane fill it.
-        getContentTable().add(scroll).grow().pad(CONTENT_PAD);
-        button("Close");
-
-        // Ensure the Close button doesn't inherit the last-used background.
-        if (getButtonTable().getCells().size > 0) {
-            if (getButtonTable().getCells().first().getActor() instanceof TextButton closeButton) {
-                closeButton.getStyle().up = skin.newDrawable("white", new Color(0.2f, 0.2f, 0.2f, 1f));
-                closeButton.getStyle().down = skin.newDrawable("white", new Color(0.16f, 0.16f, 0.16f, 1f));
-            }
+        scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
+        if (scroll.getStyle() != null) {
+            scroll.getStyle().background = null;
+            scroll.getStyle().corner = null;
+            scroll.getStyle().hScroll = null;
+            scroll.getStyle().hScrollKnob = null;
+            scroll.getStyle().vScroll = null;
+            scroll.getStyle().vScrollKnob = null;
         }
+        scroll.setScrollBarPositions(false, false);
+        scroll.setScrollbarsOnTop(false);
 
-        // Non-modal so bottom nav buttons stay clickable.
+        getContentTable().add(scroll).width(420).height(470).pad(CONTENT_PAD);
+        getButtonTable().clearChildren();
+
         setModal(false);
         setMovable(false);
-        pad(12);
+        pad(18);
+
+        normalizeWindowSize();
+
+        if (getStyle() != null) getStyle().background = skin.newDrawable("white", new Color(0f, 0f, 0f, 0f));
     }
 
-    @Override
-    public Dialog show(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        Dialog shown = super.show(stage);
-        pack();
-        return shown;
+    private void normalizeWindowSize() {
+        float vw = 540f;
+        float vh = 960f;
+        float w = vw * 0.90f;
+        float h = vh * 0.76f;
+        setSize(w, h);
+    }
+
+    public void syncBackground() {
+        if (bgImage == null) return;
+        bgImage.setSize(getWidth(), getHeight());
+        // Follow the dialog position (MainLobbyScreen centers dialogs).
+        bgImage.setPosition(getX(), getY());
+    }
+
+    public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
+        if (stage == null) return;
+        createBackgroundIfNeeded();
+        if (bgImage == null) return;
+        if (bgImage.getStage() != stage) stage.addActor(bgImage);
+        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        syncBackground();
+    }
+
+    private void createBackgroundIfNeeded() {
+        if (bgImage != null) return;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(WINDOW_BG_TEXTURE_PATH);
+        if (!bgFile.exists()) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
+            return;
+        }
+
+        Texture texture = new Texture(bgFile);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        bgTex = texture;
+        bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
+        bgImage.setFillParent(false);
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        setColor(1f, 1f, 1f, 1f);
     }
 
     @Override
     public void hide() {
         super.hide();
+        if (bgImage != null) bgImage.remove();
         disposeAssets();
+        if (closeButton != null) closeButton.dispose();
+        closeButton = null;
     }
 
     @Override
@@ -170,13 +230,13 @@ public final class LevelMapDialog extends Dialog {
             levelBgTexture.dispose();
             levelBgTexture = null;
         }
-        if (windowBgTexture != null) {
-            windowBgTexture.dispose();
-            windowBgTexture = null;
-        }
         if (levelFont != null) {
             levelFont.dispose();
             levelFont = null;
         }
+
+        // bgTex may be owned by AssetManager; don't dispose here.
+        bgTex = null;
+        bgImage = null;
     }
 }

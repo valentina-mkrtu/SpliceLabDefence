@@ -45,6 +45,11 @@ public final class CombatState {
 
     public final float[] fusionAttackCooldownSockets;
 
+    // Boosts / powerups (activated from UI).
+    public float timeFreezeSecondsRemaining;
+    public float atkX2SecondsRemaining;
+    public boolean removeItemArmed;
+
     public CombatState(int slotsPerSide) {
         // Real 12-socket conveyor.
         int sockets = 12;
@@ -55,5 +60,9 @@ public final class CombatState {
             conveyorSocketPathIndex[i] = i;
             fusionAttackCooldownSockets[i] = 0f;
         }
+
+        timeFreezeSecondsRemaining = 0f;
+        atkX2SecondsRemaining = 0f;
+        removeItemArmed = false;
     }
 }

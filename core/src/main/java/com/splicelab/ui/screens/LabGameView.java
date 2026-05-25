@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -47,6 +48,19 @@ public final class LabGameView {
     private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
     private static final String SHAFT_BG_TEXTURE_PATH = "art/backgrounds/shaft.png";
     private static final String ATTACK_MARKER_TEXTURE_PATH = "art/icons/triangle.png";
+
+    private static final String ICON_FREEZE_PATH = "art/icons/freeze.png";
+    private static final String ICON_COOLDOWN_PATH = "art/icons/cooldown.png";
+    private static final String ICON_X2_PATH = "art/icons/x2.png";
+    private static final String ICON_RECOVER_PATH = "art/icons/hp.png";
+    private static final String ICON_REMOVE_PATH = "art/icons/remove.png";
+
+    private static final float BOOST_BTN_SIZE = 72f;
+    private static final float BOOST_BTN_GAP_Y = 14f;
+    private static final float BOOST_BTN_POS_X = 12f;
+    // Y is screen-space in the Stage world units.
+    // Keep this in the middle so the full stack stays visible.
+    private static final float BOOST_BTN_CENTER_Y = 320f;
     // Centerline of the dark belt lane (kept away from yellow frame).
     private static final float BELT_TRACK_INSET_X_RATIO = 0.1f;
     private static final float BELT_TRACK_INSET_Y_RATIO = 0.078f;
@@ -107,6 +121,12 @@ public final class LabGameView {
 
     private Runnable onTubeTapped;
 
+    private Runnable onBoostFreeze;
+    private Runnable onBoostCooldown;
+    private Runnable onBoostX2;
+    private Runnable onBoostRecover;
+    private Runnable onBoostRemove;
+
     private final DragAndDrop dragAndDrop = new DragAndDrop();
 
     private final Table beltLayer;
@@ -117,6 +137,14 @@ public final class LabGameView {
     private final Table[] pathAnchors;
 
     private final Table background;
+
+    private Texture freezeTex;
+    private Texture cooldownTex;
+    private Texture x2Tex;
+    private Texture recoverTex;
+    private Texture removeTex;
+
+    private final Table boostLeft;
 
     private boolean dragSfxPlayed;
 
@@ -293,6 +321,97 @@ public final class LabGameView {
 
         attackZoneMarkerActor = null;
         positionAttackZoneMarker();
+
+        // Boost buttons overlay (left/right middle).
+        boostLeft = new Table();
+        boostLeft.setFillParent(false);
+        boostLeft.defaults().size(BOOST_BTN_SIZE).padBottom(BOOST_BTN_GAP_Y);
+        root.addActor(boostLeft);
+
+        ImageButton freezeBtn = makeBoostButton(ICON_FREEZE_PATH, () -> freezeTex, t -> freezeTex = t, () -> {
+            context.audio.playButtonClick();
+            if (onBoostFreeze != null) onBoostFreeze.run();
+        });
+        ImageButton cooldownBtn = makeBoostButton(ICON_COOLDOWN_PATH, () -> cooldownTex, t -> cooldownTex = t, () -> {
+            context.audio.playButtonClick();
+            if (onBoostCooldown != null) onBoostCooldown.run();
+        });
+        ImageButton x2Btn = makeBoostButton(ICON_X2_PATH, () -> x2Tex, t -> x2Tex = t, () -> {
+            context.audio.playButtonClick();
+            if (onBoostX2 != null) onBoostX2.run();
+        });
+        ImageButton recoverBtn = makeBoostButton(ICON_RECOVER_PATH, () -> recoverTex, t -> recoverTex = t, () -> {
+            context.audio.playButtonClick();
+            if (onBoostRecover != null) onBoostRecover.run();
+        });
+        ImageButton removeBtn = makeBoostButton(ICON_REMOVE_PATH, () -> removeTex, t -> removeTex = t, () -> {
+            context.audio.playButtonClick();
+            if (onBoostRemove != null) onBoostRemove.run();
+        });
+
+        boostLeft.add(freezeBtn).row();
+        boostLeft.add(cooldownBtn).row();
+        boostLeft.add(x2Btn).row();
+        boostLeft.add(recoverBtn).row();
+        boostLeft.add(removeBtn).row();
+
+        // Absolute positioning so you can tweak numbers fast.
+        // X = left edge, Y = center of the whole stack.
+        boostLeft.pack();
+        boostLeft.setPosition(
+                BOOST_BTN_POS_X,
+                BOOST_BTN_CENTER_Y - boostLeft.getHeight() * 0.2f
+        );
+    }
+
+    public void setBoostListeners(Runnable freeze, Runnable cooldown, Runnable x2, Runnable recover, Runnable remove) {
+        this.onBoostFreeze = freeze;
+        this.onBoostCooldown = cooldown;
+        this.onBoostX2 = x2;
+        this.onBoostRecover = recover;
+        this.onBoostRemove = remove;
+    }
+
+    private interface TexGetter {
+        Texture get();
+    }
+
+    private interface TexSetter {
+        void set(Texture texture);
+    }
+
+    private Drawable tryLoadIcon(String path, TexGetter getter, TexSetter setter) {
+        if (path == null) return null;
+        if (!com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
+        Texture existing = getter.get();
+        if (existing == null) {
+            existing = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
+            existing.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            setter.set(existing);
+        }
+        return new TextureRegionDrawable(new TextureRegion(existing));
+    }
+
+    private ImageButton makeBoostButton(String iconPath, TexGetter iconGetter, TexSetter iconSetter, Runnable onClick) {
+        Drawable icon = tryLoadIcon(iconPath, iconGetter, iconSetter);
+        ImageButton btn;
+        if (icon == null) {
+            btn = new ImageButton(skin.newDrawable("white", UiConstants.PANEL_DARK));
+        } else {
+            ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+            style.up = skin.newDrawable("white", new Color(0f, 0f, 0f, 0f));
+            style.down = skin.newDrawable("white", new Color(0f, 0f, 0f, 0f));
+            style.imageUp = icon;
+            style.imageDown = icon;
+            btn = new ImageButton(style);
+        }
+        btn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (onClick != null) onClick.run();
+            }
+        });
+        return btn;
     }
 
     public void update(float delta) {
@@ -579,6 +698,16 @@ public final class LabGameView {
             for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
                 if (c == AppConstants.TUBE_COL && r == AppConstants.TUBE_ROW) continue;
                 final GridCellWidget cell = cells[c][r];
+                final int col = c;
+                final int row = r;
+                cell.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        if (controller != null) {
+                            controller.requestRemoveAtCell(col, row);
+                        }
+                    }
+                });
                 dragAndDrop.addSource(new GridCellSource(cell));
                 dragAndDrop.addTarget(new GridCellTarget(cell, controller));
             }

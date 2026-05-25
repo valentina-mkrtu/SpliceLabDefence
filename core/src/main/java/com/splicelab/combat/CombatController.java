@@ -133,8 +133,53 @@ public final class CombatController {
         return state;
     }
 
+    public boolean activateTimeFreeze(float seconds) {
+        if (state.result != CombatResult.RUNNING) return false;
+        state.timeFreezeSecondsRemaining = Math.max(state.timeFreezeSecondsRemaining, Math.max(0f, seconds));
+        return true;
+    }
+
+    public boolean activateAtkX2(float seconds) {
+        if (state.result != CombatResult.RUNNING) return false;
+        state.atkX2SecondsRemaining = Math.max(state.atkX2SecondsRemaining, Math.max(0f, seconds));
+        return true;
+    }
+
+    public boolean activateImmediateCooldown() {
+        if (state.result != CombatResult.RUNNING) return false;
+        state.tubeCooldownRemaining = 0f;
+        if (state.tubeCharges <= 0) {
+            state.tubeCharges = state.tubeMaxCharges;
+            refillTubeBagIfNeeded();
+        }
+        // Safety: allow an immediate spit even if the UI/state got out of sync.
+        if (state.tubeCharges <= 0) state.tubeCharges = Math.max(1, state.tubeMaxCharges);
+        return true;
+    }
+
+    public boolean activateTubeHpRecovery() {
+        if (state.result != CombatResult.RUNNING) return false;
+        int maxHp = state.level != null && state.level.tubeHp > 0 ? state.level.tubeHp : context.config.tubeMaxHp;
+        state.tubeHp = Math.max(1, maxHp);
+        return true;
+    }
+
+    public boolean armRemoveOneItem() {
+        if (state.result != CombatResult.RUNNING) return false;
+        state.removeItemArmed = true;
+        return true;
+    }
+
     public void update(float delta) {
         if (state.result != CombatResult.RUNNING) return;
+
+        // Boost timers.
+        if (state.timeFreezeSecondsRemaining > 0f) {
+            state.timeFreezeSecondsRemaining = Math.max(0f, state.timeFreezeSecondsRemaining - Math.max(0f, delta));
+        }
+        if (state.atkX2SecondsRemaining > 0f) {
+            state.atkX2SecondsRemaining = Math.max(0f, state.atkX2SecondsRemaining - Math.max(0f, delta));
+        }
 
         if (state.endlessMode) {
             state.endlessElapsedSeconds += Math.max(0f, delta);
@@ -148,7 +193,9 @@ public final class CombatController {
             }
         }
 
-        if (state.remainingTimeSeconds > 0f) {
+        boolean frozen = state.timeFreezeSecondsRemaining > 0f;
+
+        if (state.remainingTimeSeconds > 0f && !frozen) {
             state.remainingTimeSeconds = Math.max(0f, state.remainingTimeSeconds - delta * (com.splicelab.debug.DebugFlags.FAST_ROUND_TIMER ? 3f : 1f));
 
             if (!timeoutWarningFired && state.remainingTimeSeconds > 0f && state.remainingTimeSeconds <= TIMEOUT_WARNING_SECONDS) {
@@ -162,7 +209,7 @@ public final class CombatController {
             }
         }
 
-        if (state.tubeCooldownRemaining > 0f) {
+        if (state.tubeCooldownRemaining > 0f && !frozen) {
             state.tubeCooldownRemaining = Math.max(0f, state.tubeCooldownRemaining - delta);
         }
 
@@ -174,17 +221,19 @@ public final class CombatController {
             }
         }
 
-        if (state.enemySpawnCooldownRemaining > 0f) {
+        if (state.enemySpawnCooldownRemaining > 0f && !frozen) {
             state.enemySpawnCooldownRemaining = Math.max(0f, state.enemySpawnCooldownRemaining - delta);
         }
 
         ensureEnemySpawned();
 
-        updateConveyorPhase(delta);
+        if (!frozen) updateConveyorPhase(delta);
         // Conveyor sockets are visual belt pockets; they don't advance occupancy.
 
-        updateFusionAutoAttack(delta);
-        updateEnemyAttack(delta);
+        if (!frozen) {
+            updateFusionAutoAttack(delta);
+            updateEnemyAttack(delta);
+        }
     }
 
     private void updateConveyorPhase(float delta) {
@@ -242,6 +291,18 @@ public final class CombatController {
         if (state.tubeCharges <= 0) state.tubeCooldownRemaining = getTubeCooldownSeconds();
 
         CombatLog.d("spawn ingredient type=" + choice.type() + " at=" + empty[0] + "," + empty[1]);
+        return CommandResult.ok();
+    }
+
+    public CommandResult requestRemoveAtCell(int col, int row) {
+        if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
+        if (!state.removeItemArmed) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Remove not armed");
+        if (!isValidCell(col, row) || isTubeCell(col, row)) return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Invalid cell");
+
+        IngredientInstance target = state.grid[col][row];
+        if (target == null) return CommandResult.fail(CommandResult.Code.CELL_EMPTY, "Cell empty");
+        state.grid[col][row] = null;
+        state.removeItemArmed = false;
         return CommandResult.ok();
     }
 
@@ -616,7 +677,8 @@ public final class CombatController {
         int base = Math.max(0, fusion.stats.atk());
         float variance = Math.max(0f, fusion.stats.variance());
         float roll = (rng.nextFloat() * 2f - 1f) * variance;
-        int dmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(base * (1f + roll)));
+        float atkMult = state.atkX2SecondsRemaining > 0f ? 2f : 1f;
+        int dmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(base * atkMult * (1f + roll)));
 
         boolean special = rng.nextFloat() < fusion.stats.specialChance();
         if (special) dmg *= 2;

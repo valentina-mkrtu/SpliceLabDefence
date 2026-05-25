@@ -3,7 +3,6 @@ package com.splicelab.ui.windows;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.graphics.Texture;
@@ -26,7 +25,7 @@ public final class CollectionsDialog extends Dialog {
     private Texture frameTex;
     private Texture lockTex;
     private Texture electroSlimeTex;
-    private DialogCloseButtonFactory.CloseButton closeButton;
+    private DialogCloseImageFactory.CloseImage closeButton;
 
     public CollectionsDialog(Skin skin, GameContext context) {
         super("Collections", skin);
@@ -45,8 +44,8 @@ public final class CollectionsDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseButtonFactory.create(skin);
-        ImageButton closeBtn = closeButton.button;
+        closeButton = DialogCloseImageFactory.create();
+        Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
@@ -91,7 +90,8 @@ public final class CollectionsDialog extends Dialog {
         scroll.setScrollBarPositions(false, false);
         scroll.setScrollbarsOnTop(false);
 
-        // Leave margin so background frame is visible.
+        // Match Account window sizing so all windows align.
+        // Reduce viewport height a bit so the last row never spills.
         getContentTable().add(scroll).width(420).height(470).pad(22);
         getButtonTable().clearChildren();
 
