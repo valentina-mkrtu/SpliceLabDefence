@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -14,6 +15,7 @@ import com.splicelab.ui.UiFactory;
 
 public final class AccountDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
+    private static final String PFP_ICON_PATH = "art/icons/pfp.png";
 
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
@@ -30,20 +32,7 @@ public final class AccountDialog extends Dialog {
         // Use our PNG as the window background.
         if (getStyle() != null) getStyle().background = null;
 
-        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
-        if (bgFile.exists()) {
-            bgTex = new com.badlogic.gdx.graphics.Texture(bgFile);
-            bgTex.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
-            bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex)));
-            // Put the image behind content only (not full stage), sized to the dialog.
-            bgImage.setFillParent(false);
-            bgImage.setColor(1f, 1f, 1f, 1f);
-            addActor(bgImage);
-            bgImage.toBack();
-            setColor(1f, 1f, 1f, 1f);
-        } else {
-            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
-        }
+        createBackgroundIfNeeded(context);
 
         UiFactory ui = new UiFactory(skin, context.audio);
         SaveData save = context.saves.get();
@@ -60,20 +49,43 @@ public final class AccountDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(56).pad(8);
+        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
         addActor(topRight);
 
         Table content = new Table();
         content.defaults().pad(8);
 
-        Image pfp = Scene2dPlaceholders.coloredSquare(skin, new Color(0.25f, 0.3f, 0.45f, 1f));
+        com.badlogic.gdx.files.FileHandle pfpFile = com.badlogic.gdx.Gdx.files.internal(PFP_ICON_PATH);
+        Image pfp;
+        if (pfpFile.exists()) {
+            var tex = new com.badlogic.gdx.graphics.Texture(pfpFile);
+            tex.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+            pfp = new Image(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(tex)));
+        } else {
+            pfp = Scene2dPlaceholders.coloredSquare(skin, new Color(0.25f, 0.3f, 0.45f, 1f));
+        }
         content.add(pfp).size(72).row();
 
-        content.add(ui.label(save.playerName)).row();
-        content.add(ui.label("Level " + save.playerLevel)).row();
+        Color darkBlue = new Color(0.05f, 0.13f, 0.28f, 1f);
+        Label nameLabel = ui.label(save.playerName);
+        nameLabel.setColor(darkBlue);
+        nameLabel.setFontScale(1.15f);
+        content.add(nameLabel).row();
 
-        content.add(ui.label("Day Streak: " + save.dayStreak)).row();
-        content.add(ui.label("Total Fusions: " + save.totalFusionsUnlocked)).row();
+        Label level = ui.label("Level " + save.playerLevel);
+        level.setColor(darkBlue);
+        level.setFontScale(1.1f);
+        content.add(level).row();
+
+        Label streak = ui.label("Day Streak: " + save.dayStreak);
+        streak.setColor(darkBlue);
+        streak.setFontScale(1.1f);
+        content.add(streak).row();
+
+        Label fusions = ui.label("Total Fusions: " + save.totalFusionsUnlocked);
+        fusions.setColor(darkBlue);
+        fusions.setFontScale(1.1f);
+        content.add(fusions).row();
 
         // Leave margin so background frame is visible.
         getContentTable().add(content).width(420).height(500).pad(22);
@@ -114,15 +126,43 @@ public final class AccountDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(0f, 0f);
+        bgImage.setPosition(20f, 200f);
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        if (stage == null || bgImage == null) return;
+        if (stage == null) return;
+        createBackgroundIfNeeded(null);
+        if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        bgImage.toBack();
-        bgImage.setColor(1f, 0f, 0f, 0.35f);
+        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
+        bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();
+    }
+
+    private void createBackgroundIfNeeded(GameContext context) {
+        if (bgImage != null) return;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
+        if (!bgFile.exists()) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
+            return;
+        }
+
+        com.badlogic.gdx.graphics.Texture texture = null;
+        if (context != null && context.assets != null) {
+            texture = context.assets.getTexture(BG_PATH);
+        }
+        if (texture == null) {
+            texture = new com.badlogic.gdx.graphics.Texture(bgFile);
+        }
+        texture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        bgTex = texture;
+        bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(
+                new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex))
+        );
+        bgImage.setFillParent(false);
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        setColor(1f, 1f, 1f, 1f);
     }
 
     @Override
@@ -130,7 +170,7 @@ public final class AccountDialog extends Dialog {
         super.hide();
         if (bgImage != null) bgImage.remove();
         bgImage = null;
-        if (bgTex != null) bgTex.dispose();
+        // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
         if (closeButton != null) closeButton.dispose();
         closeButton = null;

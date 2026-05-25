@@ -41,23 +41,13 @@ public final class ShopDialog extends Dialog {
         // Use our PNG as the window background.
         if (getStyle() != null) getStyle().background = null;
 
-        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
-        if (bgFile.exists()) {
-            bgTex = new com.badlogic.gdx.graphics.Texture(bgFile);
-            bgTex.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
-            bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex)));
-            // Put the image behind content only (not full stage), sized to the dialog.
-            bgImage.setFillParent(false);
-            bgImage.setColor(1f, 1f, 1f, 1f);
-            addActor(bgImage);
-            bgImage.toBack();
-            // Disable dialog tinting.
-            setColor(1f, 1f, 1f, 1f);
-        } else {
-            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
-        }
+        createBackgroundIfNeeded(context);
 
         UiFactory ui = new UiFactory(skin, context.audio);
+
+        int ownedCount = context == null || context.saves == null || context.saves.get() == null
+                ? 0
+                : context.saves.get().ownedShopPurchases.size();
 
         Table topRight = new Table();
         topRight.setFillParent(true);
@@ -71,13 +61,14 @@ public final class ShopDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(56).pad(8);
+        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
         addActor(topRight);
 
         Table content = new Table();
-        content.defaults().pad(10).expandX().fillX();
+        content.defaults().pad(8).expandX().fillX();
 
         content.add(ui.label("Spend DNA on boosts")).row();
+        content.add(ui.smallLabel("Owned: " + ownedCount)).row();
 
         content.add(makeItemRow(skin, ui, context, listener, PurchaseType.TIME_FREEZE, "Time Freeze", 50)).row();
         content.add(makeItemRow(skin, ui, context, listener, PurchaseType.IMMEDIATE_COOLDOWN, "Immediate Cooldown", 40)).row();
@@ -88,7 +79,7 @@ public final class ShopDialog extends Dialog {
         content.add(ui.smallLabel("Note: boosts work in combat")).row();
 
         // Leave margin so background frame is visible.
-        getContentTable().add(content).width(420).height(500).pad(22);
+        getContentTable().add(content).width(340).height(410).pad(46).padLeft(64);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.
@@ -122,15 +113,47 @@ public final class ShopDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(0f, 0f);
+        bgImage.setPosition(20f, 200f);
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        if (stage == null || bgImage == null) return;
+        if (stage == null) return;
+        createBackgroundIfNeeded(null);
+        if (bgImage == null) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "ShopDialog bgImage null");
+            return;
+        }
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        bgImage.toBack();
-        bgImage.setColor(1f, 0f, 0f, 0.35f);
+        // Put it directly under the dialog.
+        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
+        bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();
+    }
+
+    private void createBackgroundIfNeeded(GameContext context) {
+        if (bgImage != null) return;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
+        if (!bgFile.exists()) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
+            return;
+        }
+
+        com.badlogic.gdx.graphics.Texture texture = null;
+        if (context != null && context.assets != null) {
+            texture = context.assets.getTexture(BG_PATH);
+        }
+        if (texture == null) {
+            texture = new com.badlogic.gdx.graphics.Texture(bgFile);
+        }
+        texture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        bgTex = texture;
+        bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(
+                new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex))
+        );
+        bgImage.setFillParent(false);
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        setColor(1f, 1f, 1f, 1f);
     }
 
     @Override
@@ -138,7 +161,7 @@ public final class ShopDialog extends Dialog {
         super.hide();
         if (bgImage != null) bgImage.remove();
         bgImage = null;
-        if (bgTex != null) bgTex.dispose();
+        // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
         if (closeButton != null) closeButton.dispose();
         closeButton = null;
@@ -149,14 +172,27 @@ public final class ShopDialog extends Dialog {
         row.setBackground(skin.newDrawable("white", new Color(0.14f, 0.15f, 0.2f, 1f)));
         row.defaults().pad(8);
 
+        // Avoid scaling: it breaks layout sizing in Dialog/Table.
+        row.setTransform(false);
+
         row.add(ui.label(name)).expandX().left();
         row.add(ui.label(cost + " DNA")).right().padRight(8);
 
         TextButton buy = ui.textButton("Buy");
+        boolean owned = context != null
+                && context.saves != null
+                && context.saves.get() != null
+                && context.saves.get().ownedShopPurchases.contains(type.name());
+        if (owned) {
+            buy.setText("Owned");
+            buy.setDisabled(true);
+        }
         buy.addListener(e -> {
+            if (buy.isDisabled()) return true;
             if (context.economy.canSpend(CurrencyType.DNA, cost)) {
                 if (listener != null) listener.onPurchase(type, cost);
-                buy.setText("Bought");
+                buy.setText("Owned");
+                buy.setDisabled(true);
             } else {
                 buy.setText("No DNA");
             }

@@ -21,6 +21,8 @@ public final class SaveData {
 
     public final Set<String> unlockedEntities = new HashSet<>();
     public final Set<String> unlockedItems = new HashSet<>();
+    // Shop purchases / owned boosts (e.g. TIME_FREEZE).
+    public final Set<String> ownedShopPurchases = new HashSet<>();
     public int unlockedConveyorSlotsLeft = 1;
     public int unlockedConveyorSlotsRight = 1;
 

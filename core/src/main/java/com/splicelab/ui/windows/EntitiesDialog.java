@@ -29,20 +29,7 @@ public final class EntitiesDialog extends Dialog {
         // Use our PNG as the window background.
         if (getStyle() != null) getStyle().background = null;
 
-        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
-        if (bgFile.exists()) {
-            bgTex = new com.badlogic.gdx.graphics.Texture(bgFile);
-            bgTex.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
-            bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex)));
-            // Put the image behind content only (not full stage), sized to the dialog.
-            bgImage.setFillParent(false);
-            bgImage.setColor(1f, 1f, 1f, 1f);
-            addActor(bgImage);
-            bgImage.toBack();
-            setColor(1f, 1f, 1f, 1f);
-        } else {
-            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
-        }
+        createBackgroundIfNeeded(context);
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -58,11 +45,11 @@ public final class EntitiesDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(56).pad(8);
+        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
         addActor(topRight);
 
         Table list = new Table();
-        list.defaults().pad(10).expandX().fillX();
+        list.defaults().pad(8).expandX().fillX();
 
         list.add(makeCard(skin, ui, "Slime", 20, 4, "Splits on hit")).row();
         list.add(makeCard(skin, ui, "Mech", 35, 6, "Armor: reduces damage")).row();
@@ -79,9 +66,11 @@ public final class EntitiesDialog extends Dialog {
         ScrollPane scroll = new ScrollPane(list, skin);
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
+        scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
+        if (scroll.getStyle() != null) scroll.getStyle().background = null;
 
         // Leave margin so background frame is visible.
-        getContentTable().add(scroll).width(420).height(500).pad(22);
+        getContentTable().add(scroll).width(340).height(410).pad(46).padLeft(64);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.
@@ -115,15 +104,43 @@ public final class EntitiesDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(0f, 0f);
+        bgImage.setPosition(20f, 200f);
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        if (stage == null || bgImage == null) return;
+        if (stage == null) return;
+        createBackgroundIfNeeded(null);
+        if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        bgImage.toBack();
-        bgImage.setColor(1f, 0f, 0f, 0.35f);
+        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
+        bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();
+    }
+
+    private void createBackgroundIfNeeded(GameContext context) {
+        if (bgImage != null) return;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
+        if (!bgFile.exists()) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
+            return;
+        }
+
+        com.badlogic.gdx.graphics.Texture texture = null;
+        if (context != null && context.assets != null) {
+            texture = context.assets.getTexture(BG_PATH);
+        }
+        if (texture == null) {
+            texture = new com.badlogic.gdx.graphics.Texture(bgFile);
+        }
+        texture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        bgTex = texture;
+        bgImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(
+                new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTex))
+        );
+        bgImage.setFillParent(false);
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        setColor(1f, 1f, 1f, 1f);
     }
 
     @Override
@@ -131,7 +148,7 @@ public final class EntitiesDialog extends Dialog {
         super.hide();
         if (bgImage != null) bgImage.remove();
         bgImage = null;
-        if (bgTex != null) bgTex.dispose();
+        // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
         if (closeButton != null) closeButton.dispose();
         closeButton = null;
@@ -141,6 +158,12 @@ public final class EntitiesDialog extends Dialog {
         Table card = new Table();
         card.setBackground(skin.newDrawable("white", new Color(0.14f, 0.15f, 0.2f, 1f)));
         card.defaults().pad(6);
+
+        card.setClip(true);
+
+        // Avoid scaling: it breaks layout sizing in ScrollPane,
+        // causing the whole list to collapse into a single block.
+        card.setTransform(false);
 
         Image icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.3f, 0.45f, 0.7f, 1f));
         Table left = new Table();

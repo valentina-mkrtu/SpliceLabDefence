@@ -10,6 +10,11 @@ public final class AssetService {
         // Keep LoadingScreen visible long enough to feel real.
         // Add any other small/critical UI assets here.
         assetManager.load("art/backgrounds/loading.png", Texture.class);
+        assetManager.load("art/backgrounds/menuwindowbg.png", Texture.class);
+    }
+
+    public void loadUi() {
+        assetManager.load("art/backgrounds/menuwindowbg.png", Texture.class);
     }
 
     public boolean update() {
@@ -22,6 +27,12 @@ public final class AssetService {
 
     public void finishLoading() {
         assetManager.finishLoading();
+    }
+
+    public Texture getTexture(String path) {
+        if (path == null || path.isBlank()) return null;
+        if (!assetManager.isLoaded(path, Texture.class)) return null;
+        return assetManager.get(path, Texture.class);
     }
 
     public void dispose() {

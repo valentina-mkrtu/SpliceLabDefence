@@ -40,6 +40,7 @@ public final class SaveValidator {
 
         removeInvalidEnumNames(data.unlockedEntities, EntityType.class);
         removeInvalidEnumNames(data.unlockedItems, ItemType.class);
+        sanitizeStringSet(data.ownedShopPurchases);
 
         ensureStarterUnlocks(data);
         ensureIdentity(data);
@@ -107,6 +108,17 @@ public final class SaveValidator {
             try {
                 Enum.valueOf(enumClass, str);
             } catch (Exception ex) {
+                it.remove();
+            }
+        }
+    }
+
+    private static void sanitizeStringSet(Iterable<String> set) {
+        if (!(set instanceof java.util.Set<?> s)) return;
+        Iterator<?> it = s.iterator();
+        while (it.hasNext()) {
+            Object v = it.next();
+            if (!(v instanceof String str) || str.isBlank()) {
                 it.remove();
             }
         }

@@ -39,20 +39,7 @@ public final class CollectionsDialog extends Dialog {
         // Use our PNG as the window background.
         if (getStyle() != null) getStyle().background = null;
 
-        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
-        if (bgFile.exists()) {
-            bgTex = new Texture(bgFile);
-            bgTex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
-            // Put the image behind content only (not full stage), sized to the dialog.
-            bgImage.setFillParent(false);
-            bgImage.setColor(1f, 1f, 1f, 1f);
-            addActor(bgImage);
-            bgImage.toBack();
-            setColor(1f, 1f, 1f, 1f);
-        } else {
-            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
-        }
+        createBackgroundIfNeeded(context);
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -68,26 +55,44 @@ public final class CollectionsDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(56).pad(8);
+        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
         addActor(topRight);
 
         Table grid = new Table();
-        grid.defaults().pad(8);
+        grid.defaults().pad(14);
 
-        int columns = 3;
+        int columns = 2;
         for (int i = 0; i < 18; i++) {
             String fusionId = "FUSION_" + (i + 1);
             boolean unlocked = context.fusionUnlocks.isUnlocked(fusionId);
-            grid.add(makeFusionCell(skin, ui, unlocked, fusionId)).width(140).height(170);
+            // Slightly smaller cards so they stay inside the window frame.
+            grid.add(makeFusionCell(skin, ui, unlocked, fusionId)).width(130);
             if ((i + 1) % columns == 0) grid.row();
         }
 
         ScrollPane scroll = new ScrollPane(grid, skin);
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
+        scroll.setScrollbarsVisible(false);
+        scroll.setOverscroll(false, false);
+        scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
+        if (scroll.getStyle() != null) {
+            scroll.getStyle().background = null;
+            scroll.getStyle().corner = null;
+        }
+        if (scroll.getStyle() != null) {
+            scroll.getStyle().hScroll = null;
+            scroll.getStyle().hScrollKnob = null;
+            scroll.getStyle().vScroll = null;
+            scroll.getStyle().vScrollKnob = null;
+        }
+
+        // Hard-kill any scrollbar rendering regardless of skin.
+        scroll.setScrollBarPositions(false, false);
+        scroll.setScrollbarsOnTop(false);
 
         // Leave margin so background frame is visible.
-        getContentTable().add(scroll).width(420).height(500).pad(22);
+        getContentTable().add(scroll).width(420).height(470).pad(22);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.
@@ -121,15 +126,41 @@ public final class CollectionsDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(0f, 0f);
+        bgImage.setPosition(20f, 200f);
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        if (stage == null || bgImage == null) return;
+        if (stage == null) return;
+        createBackgroundIfNeeded(null);
+        if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        bgImage.toBack();
-        bgImage.setColor(1f, 0f, 0f, 0.35f);
+        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
+        bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();
+    }
+
+    private void createBackgroundIfNeeded(GameContext context) {
+        if (bgImage != null) return;
+
+        com.badlogic.gdx.files.FileHandle bgFile = com.badlogic.gdx.Gdx.files.internal(BG_PATH);
+        if (!bgFile.exists()) {
+            com.badlogic.gdx.Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
+            return;
+        }
+
+        Texture texture = null;
+        if (context != null && context.assets != null) {
+            texture = context.assets.getTexture(BG_PATH);
+        }
+        if (texture == null) {
+            texture = new Texture(bgFile);
+        }
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        bgTex = texture;
+        bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
+        bgImage.setFillParent(false);
+        bgImage.setColor(1f, 1f, 1f, 1f);
+        setColor(1f, 1f, 1f, 1f);
     }
 
     @Override
@@ -144,7 +175,7 @@ public final class CollectionsDialog extends Dialog {
     private void disposeTextures() {
         if (bgImage != null) bgImage.remove();
         bgImage = null;
-        if (bgTex != null) bgTex.dispose();
+        // bgTex may be owned by AssetManager; don't dispose here.
         if (frameTex != null) frameTex.dispose();
         if (lockTex != null) lockTex.dispose();
         if (electroSlimeTex != null) electroSlimeTex.dispose();
@@ -184,9 +215,10 @@ public final class CollectionsDialog extends Dialog {
             }
         }
 
-        frame.add(icon).size(92).pad(10);
+        // Scale down the card contents ~30%.
+        frame.add(icon).size(64).pad(7);
 
-        cell.add(frame).size(120).row();
+        cell.add(frame).size(84).row();
         cell.add(ui.label(unlocked ? fusionId : "Locked")).padTop(4);
         return cell;
     }

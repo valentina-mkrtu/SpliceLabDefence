@@ -129,7 +129,7 @@ public final class MainLobbyView {
         );
 
         // Make pills match navbar height.
-        float pillScale = 0.62f;
+        float pillScale = 0.68f;
         dnaPill.setTransform(true);
         cryPill.setTransform(true);
         dnaPill.setScale(pillScale);
@@ -137,7 +137,7 @@ public final class MainLobbyView {
         dnaPill.setRotation(0f);
         cryPill.setRotation(0f);
 
-        currencies.add(dnaPill).padRight(10).top();
+        currencies.add(dnaPill).padLeft(10).padRight(4).top();
         currencies.add(cryPill).top();
 
         ImageButton settingsBtn = makeNavButton(ICON_SETTINGS_PATH, () -> settingsTex, t -> settingsTex = t);

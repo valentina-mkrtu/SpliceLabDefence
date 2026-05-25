@@ -22,6 +22,7 @@ public final class LoadingScreen extends BaseScreen {
     @Override
     protected void buildUi() {
         context.assets.loadMinimal();
+        context.assets.loadUi();
         skin = PlaceholderSkinFactory.create();
 
         Table root = new Table();

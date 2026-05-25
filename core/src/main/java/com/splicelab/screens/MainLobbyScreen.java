@@ -75,12 +75,6 @@ public final class MainLobbyScreen extends BaseScreen {
 
         hideAllDialogs();
 
-        // Ensure dialog background is visible under the dialog.
-        if (dialog instanceof AccountDialog d) d.showBackground(stage);
-        if (dialog instanceof CollectionsDialog d) d.showBackground(stage);
-        if (dialog instanceof EntitiesDialog d) d.showBackground(stage);
-        if (dialog instanceof ShopDialog d) d.showBackground(stage);
-
         switch (type) {
             case ACCOUNT -> accountDialog = dialog;
             case COLLECTIONS -> collectionsDialog = dialog;
@@ -90,6 +84,12 @@ public final class MainLobbyScreen extends BaseScreen {
             case SETTINGS -> settingsDialog = dialog;
         }
         dialog.show(stage);
+
+        // Ensure dialog background is visible under the dialog (after show).
+        if (dialog instanceof AccountDialog d) d.showBackground(stage);
+        if (dialog instanceof CollectionsDialog d) d.showBackground(stage);
+        if (dialog instanceof EntitiesDialog d) d.showBackground(stage);
+        if (dialog instanceof ShopDialog d) d.showBackground(stage);
 
         // Size dialogs relative to the current viewport so they don't appear huge on desktop.
         float w = stage.getViewport().getWorldWidth();
@@ -128,6 +128,7 @@ public final class MainLobbyScreen extends BaseScreen {
 
     private void showSettings() {
         if (settingsDialog == null) settingsDialog = new SettingsDialog(view.getSkin(), context);
+        if (settingsDialog instanceof SettingsDialog s) s.showBackground(stage);
         showSingletonDialog(settingsDialog, DialogType.SETTINGS);
     }
 
@@ -143,8 +144,10 @@ public final class MainLobbyScreen extends BaseScreen {
     private void onShopPurchase(ShopDialog.PurchaseType type, int dnaCost) {
         if (dnaCost <= 0) return;
         if (context.economy.spend(CurrencyType.DNA, dnaCost)) {
-            // Purchases are currently only supported in-combat.
-            // In lobby, just spend + refresh currency.
+            if (type != null) {
+                context.saves.get().ownedShopPurchases.add(type.name());
+                context.saves.save();
+            }
             view.refresh(context);
         }
     }
