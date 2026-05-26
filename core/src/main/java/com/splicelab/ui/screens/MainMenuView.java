@@ -11,13 +11,14 @@ import com.splicelab.ui.UiFactory;
 
 public final class MainMenuView {
     private final Table root;
+    private final Skin skin;
     private Runnable playListener;
     private Runnable accountListener;
     private Runnable entitiesListener;
     private Runnable collectionsListener;
 
     public MainMenuView(GameContext context) {
-        Skin skin = PlaceholderSkinFactory.create();
+        skin = PlaceholderSkinFactory.create();
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = new Table();
@@ -90,5 +91,6 @@ public final class MainMenuView {
     }
 
     public void dispose() {
+        if (skin != null) skin.dispose();
     }
 }

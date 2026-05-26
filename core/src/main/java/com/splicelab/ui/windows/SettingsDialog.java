@@ -24,30 +24,17 @@ public final class SettingsDialog extends Dialog {
     private static final String SOUND_ICON_PATH = "art/icons/sound.png";
 
     private Texture bgTex;
-    private Image bgImage;
     private Texture soundIconTex;
 
     private Texture sliderTrackTex;
     private Texture sliderKnobTex;
 
-    public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
-        if (stage == null) return;
-        createBackgroundIfNeeded(null);
-        if (bgImage == null) return;
-        if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        bgImage.setZIndex(Math.max(0, getZIndex() - 1));
-        bgImage.setColor(1f, 1f, 1f, 1f);
-        syncBackground();
-    }
+    private final GameContext context;
 
-    public void syncBackground() {
-        if (bgImage == null) return;
-        bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(getX(), getY());
-    }
+    // Background is applied to the Dialog style directly (no extra stage actor).
 
     private void createBackgroundIfNeeded(GameContext context) {
-        if (bgImage != null) return;
+        if (bgTex != null) return;
 
         var bgFile = Gdx.files.internal(BG_PATH);
         if (!bgFile.exists()) {
@@ -61,32 +48,25 @@ public final class SettingsDialog extends Dialog {
         if (context != null && context.assets != null) {
             texture = context.assets.getTexture(BG_PATH);
         }
-        if (texture == null) {
-            texture = new Texture(bgFile);
-        }
+        if (texture == null) texture = new Texture(bgFile);
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;
 
-        bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
-        bgImage.setFillParent(false);
-        // Settings bg is authored landscape; no rotation needed.
-        bgImage.setOrigin(com.badlogic.gdx.utils.Align.center);
-        bgImage.setRotation(0f);
-        bgImage.setColor(1f, 1f, 1f, 1f);
-        setColor(1f, 1f, 1f, 1f);
+        if (getStyle() != null) {
+            getStyle().background = new TextureRegionDrawable(new TextureRegion(bgTex));
+        }
     }
 
     public SettingsDialog(Skin skin, GameContext context) {
         super("Settings", skin);
 
-        // Match other dialogs: remove skin window tint; render bg via bgImage actor.
-        setBackground((Drawable) null);
+        this.context = context;
+
+        // Match other dialogs: remove content/button backgrounds; render window bg via style.
         getContentTable().setBackground((Drawable) null);
         getButtonTable().setBackground((Drawable) null);
-        if (getStyle() != null) getStyle().background = null;
 
         createBackgroundIfNeeded(context);
-        // Background is managed via showBackground(stage) so it can sit behind the dialog.
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -131,12 +111,8 @@ public final class SettingsDialog extends Dialog {
 
         normalizeWindowSize();
 
-        showBackground(getStage());
-
-        syncBackground();
-
-        // Keep style background transparent; we render bg via bgImage actor.
-        if (getStyle() != null) getStyle().background = skin.newDrawable("white", new Color(0f, 0f, 0f, 0f));
+        // Ensure we don't tint the window.
+        setColor(1f, 1f, 1f, 1f);
     }
 
     private void normalizeWindowSize() {
@@ -274,8 +250,6 @@ public final class SettingsDialog extends Dialog {
     @Override
     public void hide() {
         super.hide();
-        if (bgImage != null) bgImage.remove();
-        bgImage = null;
         // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
 

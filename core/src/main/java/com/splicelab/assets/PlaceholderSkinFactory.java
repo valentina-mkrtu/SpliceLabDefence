@@ -20,6 +20,7 @@ public final class PlaceholderSkinFactory {
     private PlaceholderSkinFactory() {
     }
 
+
     public static Skin create() {
         Skin skin = new Skin();
 

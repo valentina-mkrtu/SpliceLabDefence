@@ -18,13 +18,32 @@ public final class CollectionsDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
     private static final String FRAME_PATH = "art/icons/iconbg.png";
     private static final String LOCK_PATH = "art/icons/slot.png";
-    private static final String FUSION_ELECTROSLIME_PATH = "art/fusions/electroslime.png";
+    private static final String[] FUSION_ICON_PATHS = new String[] {
+            "art/fusions/criofungy.png",
+            "art/fusions/criomech.png",
+            "art/fusions/crioslime.png",
+            "art/fusions/crystalfungy.png",
+            "art/fusions/crystalmech.png",
+            "art/fusions/crystalslime.png",
+            "art/fusions/electrofungy.png",
+            "art/fusions/electroslime.png",
+            "art/fusions/mechbot.png",
+            "art/fusions/nanofungy.png",
+            "art/fusions/nanomechbot.png",
+            "art/fusions/nanoslime.png",
+            "art/fusions/radioactivefungy.png",
+            "art/fusions/radioactivemech.png",
+            "art/fusions/radioactiveslime.png",
+            "art/fusions/toxicfungy.png",
+            "art/fusions/toxicmech.png",
+            "art/fusions/toxicslime.png"
+    };
 
     private Texture bgTex;
     private Image bgImage;
     private Texture frameTex;
     private Texture lockTex;
-    private Texture electroSlimeTex;
+    private Texture[] fusionTextures;
     private DialogCloseImageFactory.CloseImage closeButton;
 
     public CollectionsDialog(Skin skin, GameContext context) {
@@ -178,11 +197,38 @@ public final class CollectionsDialog extends Dialog {
         // bgTex may be owned by AssetManager; don't dispose here.
         if (frameTex != null) frameTex.dispose();
         if (lockTex != null) lockTex.dispose();
-        if (electroSlimeTex != null) electroSlimeTex.dispose();
+        if (fusionTextures != null) {
+            for (Texture t : fusionTextures) {
+                if (t != null) t.dispose();
+            }
+        }
         bgTex = null;
         frameTex = null;
         lockTex = null;
-        electroSlimeTex = null;
+        fusionTextures = null;
+    }
+
+    private Drawable loadFusionDrawable(String fusionId) {
+        if (fusionId == null || !fusionId.startsWith("FUSION_")) return null;
+        int index;
+        try {
+            index = Integer.parseInt(fusionId.substring("FUSION_".length())) - 1;
+        } catch (Exception ignored) {
+            return null;
+        }
+        if (index < 0 || index >= FUSION_ICON_PATHS.length) return null;
+
+        if (fusionTextures == null) fusionTextures = new Texture[FUSION_ICON_PATHS.length];
+        String path = FUSION_ICON_PATHS[index];
+        if (path == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
+
+        Texture t = fusionTextures[index];
+        if (t == null) {
+            t = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
+            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            fusionTextures[index] = t;
+        }
+        return new TextureRegionDrawable(new TextureRegion(t));
     }
 
     private Table makeFusionCell(Skin skin, UiFactory ui, boolean unlocked, String fusionId) {
@@ -196,15 +242,10 @@ public final class CollectionsDialog extends Dialog {
 
         Image icon;
         if (unlocked) {
-            Drawable fusionDrawable = null;
-            if ("FUSION_1".equals(fusionId)) {
-                fusionDrawable = loadDrawable(FUSION_ELECTROSLIME_PATH, () -> electroSlimeTex, t -> electroSlimeTex = t);
-            }
-            if (fusionDrawable != null) {
-                icon = new Image(fusionDrawable);
-            } else {
-                icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.65f, 0.5f, 1f));
-            }
+            Drawable fusionDrawable = loadFusionDrawable(fusionId);
+            icon = fusionDrawable != null
+                    ? new Image(fusionDrawable)
+                    : Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.65f, 0.5f, 1f));
         } else {
             Drawable lockDrawable = loadDrawable(LOCK_PATH, () -> lockTex, t -> lockTex = t);
             if (lockDrawable != null) {

@@ -138,7 +138,6 @@ public final class MainLobbyScreen extends BaseScreen {
 
     private void showSettings() {
         if (settingsDialog == null) settingsDialog = new SettingsDialog(view.getSkin(), context);
-        if (settingsDialog instanceof SettingsDialog s) s.showBackground(stage);
         showSingletonDialog(settingsDialog, DialogType.SETTINGS);
     }
 

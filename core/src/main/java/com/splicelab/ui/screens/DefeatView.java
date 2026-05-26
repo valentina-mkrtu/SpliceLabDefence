@@ -10,10 +10,11 @@ import com.splicelab.ui.UiFactory;
 
 public final class DefeatView {
     private final Table root;
+    private final Skin skin;
     private Runnable retryListener;
 
     public DefeatView(GameContext context) {
-        Skin skin = PlaceholderSkinFactory.create();
+        skin = PlaceholderSkinFactory.create();
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = ui.panel();
@@ -35,5 +36,9 @@ public final class DefeatView {
 
     public void setRetryListener(Runnable retryListener) {
         this.retryListener = retryListener;
+    }
+
+    public void dispose() {
+        if (skin != null) skin.dispose();
     }
 }

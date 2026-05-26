@@ -25,6 +25,7 @@ import com.splicelab.app.GameContext;
 import com.splicelab.model.EntityType;
 import com.splicelab.model.ItemType;
 import com.splicelab.assets.PlaceholderSkinFactory;
+import com.splicelab.assets.TextureCache;
 import com.splicelab.combat.CombatController;
 import com.splicelab.combat.CombatState;
 import com.splicelab.combat.CombatTuning;
@@ -40,7 +41,6 @@ import com.splicelab.ui.widgets.HpBarWidget;
 import com.splicelab.ui.widgets.LevelTimerWidget;
 import com.splicelab.ui.widgets.TubeWidget;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public final class LabGameView {
@@ -109,7 +109,7 @@ public final class LabGameView {
     private float screenShakeStrengthPx;
     private float screenShakeSeedSeconds;
 
-    private final Map<String, Texture> textureCache = new HashMap<>();
+    private final TextureCache textures = new TextureCache();
     private final Image enemyIcon;
 
     private final Table attackZoneMarker;
@@ -201,7 +201,7 @@ public final class LabGameView {
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
         enemyHpBar.setSize(150, 10);
 
-        shaftBgTexture = new Texture(SHAFT_BG_TEXTURE_PATH);
+        shaftBgTexture = textures.get(SHAFT_BG_TEXTURE_PATH);
 
         enemyVisual = new Table();
         enemyIcon = new Image();
@@ -226,11 +226,11 @@ public final class LabGameView {
 
         conveyor.add(enemyPanel).pad(6);
 
-        enemyReg1Texture = new Texture("art/enemies/reg1.png");
-        enemyReg2Texture = new Texture("art/enemies/reg2.png");
-        enemyReg3Texture = new Texture("art/enemies/reg3.png");
-        enemyBoss1Texture = new Texture("art/enemies/boss1.png");
-        enemyBoss2Texture = new Texture("art/enemies/boss2.png");
+        enemyReg1Texture = textures.get("art/enemies/reg1.png");
+        enemyReg2Texture = textures.get("art/enemies/reg2.png");
+        enemyReg3Texture = textures.get("art/enemies/reg3.png");
+        enemyBoss1Texture = textures.get("art/enemies/boss1.png");
+        enemyBoss2Texture = textures.get("art/enemies/boss2.png");
 
         // Lower section: fusion station background behind the grid.
         // Scale the frame up uniformly to better align with top section composition.
@@ -280,8 +280,8 @@ public final class LabGameView {
         // Conveyor loop background image from design export.
         beltLoop = new Table();
         beltLoop.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
-        beltLoopBaseTexture = new Texture(CONVEYOR_LOOP_BASE_TEXTURE_PATH);
-        beltLoopLineTexture = new Texture(CONVEYOR_LOOP_LINE_TEXTURE_PATH);
+        beltLoopBaseTexture = textures.get(CONVEYOR_LOOP_BASE_TEXTURE_PATH);
+        beltLoopLineTexture = textures.get(CONVEYOR_LOOP_LINE_TEXTURE_PATH);
         beltLoop.setBackground(new TextureRegionDrawable(new TextureRegion(beltLoopBaseTexture)));
         beltLayer.addActor(beltLoop);
         beltLoopLineActor = new MovingBeltLineActor(new TextureRegion(beltLoopLineTexture));
@@ -310,7 +310,7 @@ public final class LabGameView {
         attackZoneMarker.setSize(22, 22);
         root.addActor(attackZoneMarker);
 
-        attackMarkerTexture = new Texture(ATTACK_MARKER_TEXTURE_PATH);
+        attackMarkerTexture = textures.get(ATTACK_MARKER_TEXTURE_PATH);
         attackMarkerTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         attackZoneMarkerImage = new Image(new TextureRegionDrawable(new TextureRegion(attackMarkerTexture)));
         attackZoneMarkerImage.setSize(34 * 1.2f, 34 * 1.2f);
@@ -666,21 +666,8 @@ public final class LabGameView {
 
     public void dispose() {
         if (attackZoneMarkerActor != null) attackZoneMarkerActor.dispose();
-        if (attackMarkerTexture != null) attackMarkerTexture.dispose();
-        beltLoopLineTexture.dispose();
-        beltLoopBaseTexture.dispose();
-        shaftBgTexture.dispose();
-        enemyReg1Texture.dispose();
-        enemyReg2Texture.dispose();
-        enemyReg3Texture.dispose();
-        enemyBoss1Texture.dispose();
-        enemyBoss2Texture.dispose();
         tube.dispose();
-
-        for (Texture t : textureCache.values()) {
-            if (t != null) t.dispose();
-        }
-        textureCache.clear();
+        textures.dispose();
 
         for (int c = 0; c < AppConstants.GRID_COLS; c++) {
             for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
@@ -891,12 +878,7 @@ public final class LabGameView {
     }
 
     private Texture getTextureCached(String path) {
-        if (path == null || path.isBlank()) return null;
-        Texture existing = textureCache.get(path);
-        if (existing != null) return existing;
-        Texture created = new Texture(path);
-        textureCache.put(path, created);
-        return created;
+        return textures.get(path);
     }
 
     private static String labelFor(IngredientInstance inst) {

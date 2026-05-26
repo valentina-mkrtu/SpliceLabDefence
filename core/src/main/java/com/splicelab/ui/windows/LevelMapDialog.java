@@ -37,11 +37,15 @@ public final class LevelMapDialog extends Dialog {
     private Image bgImage;
     private DialogCloseImageFactory.CloseImage closeButton;
 
+    private final GameContext context;
+
     private Texture levelBgTexture;
     private BitmapFont levelFont;
 
     public LevelMapDialog(Skin skin, GameContext context, LevelSelectListener listener) {
         super("Map", skin);
+
+        this.context = context;
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
@@ -186,6 +190,8 @@ public final class LevelMapDialog extends Dialog {
         createBackgroundIfNeeded();
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
+        // Ensure the background sits behind this dialog even when the dialog
+        // z-index changes after being added to the stage.
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
         bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();
@@ -200,7 +206,13 @@ public final class LevelMapDialog extends Dialog {
             return;
         }
 
-        Texture texture = new Texture(bgFile);
+        Texture texture = null;
+        if (context != null && context.assets != null) {
+            texture = context.assets.getTexture(WINDOW_BG_TEXTURE_PATH);
+        }
+        if (texture == null) {
+            texture = new Texture(bgFile);
+        }
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;
         bgImage = new Image(new TextureRegionDrawable(new TextureRegion(bgTex)));
@@ -213,7 +225,10 @@ public final class LevelMapDialog extends Dialog {
     public void hide() {
         super.hide();
         if (bgImage != null) bgImage.remove();
-        disposeAssets();
+        // Keep textures alive; they are managed globally (AssetManager or per-dialog).
+        // Just drop references to allow GC and avoid stale actors.
+        bgTex = null;
+        bgImage = null;
         if (closeButton != null) closeButton.dispose();
         closeButton = null;
     }
@@ -221,22 +236,10 @@ public final class LevelMapDialog extends Dialog {
     @Override
     public boolean remove() {
         boolean removed = super.remove();
-        if (removed) disposeAssets();
+        if (removed) {
+            bgTex = null;
+            bgImage = null;
+        }
         return removed;
-    }
-
-    private void disposeAssets() {
-        if (levelBgTexture != null) {
-            levelBgTexture.dispose();
-            levelBgTexture = null;
-        }
-        if (levelFont != null) {
-            levelFont.dispose();
-            levelFont = null;
-        }
-
-        // bgTex may be owned by AssetManager; don't dispose here.
-        bgTex = null;
-        bgImage = null;
     }
 }

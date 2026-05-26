@@ -11,4 +11,28 @@ java {
 dependencies {
     api "com.badlogicgames.gdx:gdx:$gdxVersion"
     api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.register('validateGameData', Test) {
+    useJUnitPlatform()
+    description = 'Validate game XML/data files.'
+    group = 'verification'
+
+    // Only run the data validator test.
+    filter {
+        includeTestsMatching('com.splicelab.data.validation.GameDataValidationTest')
+    }
+
+    // Keep output short/CI-friendly.
+    testLogging {
+        events('failed')
+        exceptionFormat('short')
+        showStandardStreams = false
+    }
 }

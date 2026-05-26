@@ -11,11 +11,12 @@ import com.splicelab.ui.UiFactory;
 
 public final class LevelCompleteView {
     private final Table root;
+    private final Skin skin;
     private Runnable claimListener;
     private Runnable doubleListener;
 
     public LevelCompleteView(GameContext context, LevelRewardSummary rewards) {
-        Skin skin = PlaceholderSkinFactory.create();
+        skin = PlaceholderSkinFactory.create();
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = ui.panel();
@@ -61,5 +62,9 @@ public final class LevelCompleteView {
 
     public void setDoubleListener(Runnable doubleListener) {
         this.doubleListener = doubleListener;
+    }
+
+    public void dispose() {
+        if (skin != null) skin.dispose();
     }
 }

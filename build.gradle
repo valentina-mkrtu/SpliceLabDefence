@@ -24,3 +24,9 @@ allprojects {
         google()
     }
 }
+
+tasks.register('validateGameData') {
+    group = 'verification'
+    description = 'Run game XML/data validation (core only).'
+    dependsOn(':core:validateGameData')
+}

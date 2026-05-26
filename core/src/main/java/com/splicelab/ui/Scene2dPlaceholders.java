@@ -17,7 +17,23 @@ public final class Scene2dPlaceholders {
     public static Image coloredSquare(Skin skin, Color color) {
         Texture texture = new Texture(makePixmap(8, 8, color));
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        return new Image(new TextureRegionDrawable(new TextureRegion(texture)));
+        return new DisposableImage(texture);
+    }
+
+    private static final class DisposableImage extends Image {
+        private final Texture texture;
+
+        private DisposableImage(Texture texture) {
+            super(new TextureRegionDrawable(new TextureRegion(texture)));
+            this.texture = texture;
+        }
+
+        @Override
+        public boolean remove() {
+            boolean removed = super.remove();
+            if (removed) texture.dispose();
+            return removed;
+        }
     }
 
     public static Label iconLabel(Skin skin, String text) {
@@ -33,4 +49,3 @@ public final class Scene2dPlaceholders {
         return pixmap;
     }
 }
-

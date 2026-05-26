@@ -29,7 +29,7 @@ public final class MainLobbyView {
     private static final String ICON_ENTITIES_PATH = "art/icons/entities.png";
     private static final String ICON_SHOP_PATH = "art/icons/shop.png";
     private static final String ICON_PFP_PATH = "art/icons/pfp.png";
-    private static final String ICON_LAB_PATH = "art/icons/thelab.png";
+    private static final String ICON_LAB_PATH = "art/icons/lab.png";
     private static final String ICON_SETTINGS_PATH = "art/icons/settings.png";
     private static final String BG_LAB_PATH = "art/backgrounds/thelab.png";
     private static final String BG_MAP_PATH = "art/backgrounds/themap.png";
@@ -42,6 +42,8 @@ public final class MainLobbyView {
     private final Skin skin;
     private final UiFactory ui;
     private final Table root;
+
+    private final GameContext context;
 
     private final Label usernameLabel;
     private final Label levelLabel;
@@ -76,6 +78,7 @@ public final class MainLobbyView {
     private Texture cryTex;
 
     public MainLobbyView(GameContext context) {
+        this.context = context;
         skin = PlaceholderSkinFactory.create();
         ui = new UiFactory(skin, context.audio);
 
@@ -187,65 +190,83 @@ public final class MainLobbyView {
         labBtn.setTransform(true);
         mapBtn.setTransform(true);
 
-        // Hover: slightly scale up (desktop), no-op on touch.
-        labBtn.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-            @Override
-            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
-                labBtn.clearActions();
-                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        1.05f,
-                        1.05f,
-                        0.04f,
-                        com.badlogic.gdx.math.Interpolation.sineOut
-                ));
-                return false;
-            }
-
-            @Override
-            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
-                labBtn.clearActions();
-                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        1f,
-                        1f,
-                        0.08f,
-                        com.badlogic.gdx.math.Interpolation.sineOut
-                ));
-            }
-        });
-        mapBtn.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-            @Override
-            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
-                mapBtn.clearActions();
-                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        1.05f,
-                        1.05f,
-                        0.04f,
-                        com.badlogic.gdx.math.Interpolation.sineOut
-                ));
-                return false;
-            }
-
-            @Override
-            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
-                mapBtn.clearActions();
-                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
-                        1f,
-                        1f,
-                        0.08f,
-                        com.badlogic.gdx.math.Interpolation.sineOut
-                ));
-            }
-        });
+        // Press feedback: scale up briefly, then always snap back.
         labBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                labBtn.clearActions();
+                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1.05f,
+                        1.05f,
+                        0.04f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                return super.touchDown(event, x, y, pointer, button);
+            }
+
+            @Override
+            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                labBtn.clearActions();
+                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1f,
+                        1f,
+                        0.08f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                super.touchUp(event, x, y, pointer, button);
+            }
+
+            @Override
+            public void exit(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                // If finger/mouse leaves while pressed, ensure scale resets.
+                labBtn.clearActions();
+                labBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(1f, 1f, 0.08f, com.badlogic.gdx.math.Interpolation.sineOut));
+                super.exit(event, x, y, pointer, toActor);
+            }
+
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
                 if (labListener != null) labListener.run();
+                // Some click paths skip touchUp (stage switch/dispose). Force reset.
+                labBtn.setScale(1f);
             }
         });
         mapBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                mapBtn.clearActions();
+                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1.05f,
+                        1.05f,
+                        0.04f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                return super.touchDown(event, x, y, pointer, button);
+            }
+
+            @Override
+            public void touchUp(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                mapBtn.clearActions();
+                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(
+                        1f,
+                        1f,
+                        0.08f,
+                        com.badlogic.gdx.math.Interpolation.sineOut
+                ));
+                super.touchUp(event, x, y, pointer, button);
+            }
+
+            @Override
+            public void exit(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                mapBtn.clearActions();
+                mapBtn.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.scaleTo(1f, 1f, 0.08f, com.badlogic.gdx.math.Interpolation.sineOut));
+                super.exit(event, x, y, pointer, toActor);
+            }
+
+            @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
                 if (mapListener != null) mapListener.run();
+                mapBtn.setScale(1f);
             }
         });
         float btnW = 450f;
@@ -385,11 +406,17 @@ public final class MainLobbyView {
 
     private Drawable tryLoadIcon(String path, TexGetter getter, TexSetter setter) {
         if (path == null) return null;
-        if (!com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
         Texture existing = getter.get();
         if (existing == null) {
-            existing = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
-            existing.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            // Prefer AssetManager (preloaded in LoadingScreen) to avoid ad-hoc loads.
+            if (context != null && context.assets != null) {
+                existing = context.assets.getTexture(path);
+            }
+            if (existing == null) {
+                if (!com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
+                existing = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
+                existing.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            }
             setter.set(existing);
         }
         return new TextureRegionDrawable(new TextureRegion(existing));
