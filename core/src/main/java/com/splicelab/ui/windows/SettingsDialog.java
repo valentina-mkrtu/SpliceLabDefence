@@ -31,38 +31,45 @@ public final class SettingsDialog extends Dialog {
     private Texture sliderTrackTex;
     private Texture sliderKnobTex;
 
+    private DialogCloseImageFactory.CloseImage closeButton;
+
     private final GameContext context;
 
-    // Background is applied to the Dialog style directly (no extra stage actor).
+    // Background is applied via setBackground() (no extra stage actor).
 
     private void createBackgroundIfNeeded(GameContext context) {
-        if (bgTex != null) return;
+        // Always re-apply the background to our instance style. Other dialogs may mutate the
+        // shared skin WindowStyle background, so relying on a cached bgTex alone is fragile.
 
-        String bgPath = Gdx.files.internal(BG_PATH).exists() ? BG_PATH : BG_PATH_ALT;
-        var bgFile = Gdx.files.internal(bgPath);
-        if (!bgFile.exists()) {
-            Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
-            return;
-        }
-
+        // Prefer the AssetService-loaded texture (fast, no IO). If the preferred path isn't
+        // available, fall back to the legacy filename.
         Texture texture = null;
         if (context != null && context.assets != null) {
-            texture = context.assets.getTexture(bgPath);
+            texture = context.assets.getTexture(BG_PATH);
+            if (texture == null) {
+                texture = context.assets.getTexture(BG_PATH_ALT);
+            }
+        }
+
+        // If neither path is loaded, verify whether the file actually exists so we can
+        // log the right missing path.
+        if (texture == null) {
+            if (!Gdx.files.internal(BG_PATH).exists() && !Gdx.files.internal(BG_PATH_ALT).exists()) {
+                Gdx.app.log("SpliceLab", "Missing dialog background: " + BG_PATH);
+                return;
+            }
         }
         if (texture == null) {
             // Avoid blocking disk IO during interaction. If not preloaded, keep
             // the dialog usable with a flat-color fallback.
-            if (getStyle() != null) {
-                getStyle().background = getSkin().newDrawable("white", new Color(0.12f, 0.13f, 0.17f, 1f));
-            }
+            setBackground(getSkin().newDrawable("white", new Color(0.12f, 0.13f, 0.17f, 1f)));
             return;
         }
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;
 
-        if (getStyle() != null) {
-            getStyle().background = new TextureRegionDrawable(new TextureRegion(bgTex));
-        }
+        Drawable bg = new TextureRegionDrawable(new TextureRegion(bgTex));
+        setBackground(bg);
     }
 
     public SettingsDialog(Skin skin, GameContext context) {
@@ -78,8 +85,24 @@ public final class SettingsDialog extends Dialog {
 
         UiFactory ui = new UiFactory(skin, context.audio);
 
+        Table topRight = new Table();
+        topRight.setFillParent(true);
+        closeButton = DialogCloseImageFactory.create(context.assets);
+        Image closeBtn = closeButton.image;
+        closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override
+            public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                context.audio.playButtonClick();
+                hide();
+            }
+        });
+        topRight.top().right();
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
+        addActor(topRight);
+
         Table content = new Table();
-        content.defaults().pad(10);
+        // Keep rows comfortably inside the window frame.
+        content.defaults().pad(10, 4, 10, 4);
 
         content.add(makeSoundHeader(skin, ui, "Music")).left().row();
         content.add(makeVolumeRow(
@@ -109,7 +132,8 @@ public final class SettingsDialog extends Dialog {
                 }
         )).expandX().fillX().row();
 
-        getContentTable().add(content).width(480).pad(18);
+        // Use padding instead of a hard width so the layout never overflows the frame.
+        getContentTable().add(content).growX().pad(18, 42, 18, 42);
         getButtonTable().clearChildren();
 
         setModal(false);
@@ -121,6 +145,12 @@ public final class SettingsDialog extends Dialog {
 
         // Ensure we don't tint the window.
         setColor(1f, 1f, 1f, 1f);
+    }
+
+    @Override
+    public Dialog show(com.badlogic.gdx.scenes.scene2d.Stage stage, com.badlogic.gdx.scenes.scene2d.Action action) {
+        createBackgroundIfNeeded(context);
+        return super.show(stage, action);
     }
 
     private void normalizeWindowSize() {
@@ -185,7 +215,8 @@ public final class SettingsDialog extends Dialog {
         });
 
         row.add(mute).left();
-        row.add(slider).expandX().fillX().height(34).minWidth(280);
+        // Don't force a wide minimum width; keep everything inside the window frame.
+        row.add(slider).expandX().fillX().height(34).minWidth(140);
         row.add(percent).width(56).right();
         return row;
     }
@@ -257,7 +288,8 @@ public final class SettingsDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so switching windows feels snappy.
+        super.hide(null);
         // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
         soundIconTex = null;
@@ -267,5 +299,8 @@ public final class SettingsDialog extends Dialog {
 
         if (sliderKnobTex != null) sliderKnobTex.dispose();
         sliderKnobTex = null;
+
+        if (closeButton != null) closeButton.dispose();
+        closeButton = null;
     }
 }

@@ -77,7 +77,7 @@ public final class MainLobbyView {
     private Texture cryTex;
 
     private String lastPlayerName;
-    private int lastPlayerLevel = Integer.MIN_VALUE;
+    private int lastShownLevel = Integer.MIN_VALUE;
     private int lastDna = Integer.MIN_VALUE;
     private int lastCry = Integer.MIN_VALUE;
 
@@ -99,23 +99,35 @@ public final class MainLobbyView {
         if (mainBg != null) root.setBackground(mainBg);
         else root.setBackground(skin.newDrawable("white", UiConstants.PANEL_BG));
 
-        Table top = new Table();
-        top.pad(12);
+        // -----------------------------------------------------------------
+        // Top header (single container so everything stays aligned)
+        // -----------------------------------------------------------------
+        Table header = new Table();
+        header.top().left();
+        header.pad(21, 20, 0, 20);
 
-        Table profile = new Table();
-        profile.defaults().left();
         Image pfp = makeIconImage(
                 ICON_PFP_PATH,
                 new Color(0.25f, 0.3f, 0.45f, 1f),
                 () -> pfpTex,
                 t -> pfpTex = t
         );
-        profile.add(pfp).size(52).row();
-        usernameLabel = ui.label(save.playerName);
-        profile.add(usernameLabel).padTop(6);
 
-        Table currencies = new Table();
-        currencies.defaults().right();
+        usernameLabel = ui.label(save.playerName);
+        usernameLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        usernameLabel.setFontScale(0.8f);
+
+        levelLabel = ui.label("Level " + save.currentLevel);
+        levelLabel.setFontScale(1.125f * 0.8f);
+
+        Table left = new Table();
+        left.add(pfp).size(58).left();
+        left.add(levelLabel).padLeft(16).center().left();
+        left.row();
+        // Keep username centered under the avatar only.
+        left.add(usernameLabel).width(58).center().padTop(6);
+        left.add();
+
         Drawable currBg = tryLoadIcon(BG_CURR_PATH, () -> currBgTex, t -> currBgTex = t);
         Drawable dnaIcon = tryLoadIcon(ICON_DNA_PATH, () -> dnaTex, t -> dnaTex = t);
         Drawable cryIcon = tryLoadIcon(ICON_CRY_PATH, () -> cryTex, t -> cryTex = t);
@@ -125,7 +137,7 @@ public final class MainLobbyView {
                 ui,
                 currBg,
                 dnaIcon,
-                "DNA",
+                null,
                 context.economy.getBalance(CurrencyType.DNA)
         );
         cryPill = new CurrencyPillWidget(
@@ -133,21 +145,28 @@ public final class MainLobbyView {
                 ui,
                 currBg,
                 cryIcon,
-                "CRY",
+                null,
                 context.economy.getBalance(CurrencyType.CRY)
         );
 
-        // Make pills match navbar height.
-        float pillScale = 0.68f;
-        dnaPill.setTransform(true);
-        cryPill.setTransform(true);
-        dnaPill.setScale(pillScale);
-        cryPill.setScale(pillScale);
-        dnaPill.setRotation(0f);
-        cryPill.setRotation(0f);
+        Table currencyRow = new Table();
+        // Keep pills grouped together with a fixed gap, but allow the whole group
+        // to scale down if the viewport is too narrow.
+        float basePillW = 170f;
+        float basePillH = 64f;
+        float baseGap = 14f;
+        // Approximate available width in the FitViewport (540px wide UI design).
+        // Subtract header padding + avatar + settings + room for the level label.
+        float available = 540f - (20f * 2f) - 58f - 58f - 96f;
+        float currencyGroupW = basePillW * 2f + baseGap;
+        float currencyScale = Math.min(1f, available / currencyGroupW);
 
-        currencies.add(dnaPill).padLeft(10).padRight(4).top();
-        currencies.add(cryPill).top();
+        currencyRow.setTransform(true);
+        currencyRow.setOrigin(com.badlogic.gdx.utils.Align.center);
+        currencyRow.setScale(currencyScale);
+        currencyRow.add(dnaPill).size(basePillW, basePillH);
+        currencyRow.add().width(baseGap);
+        currencyRow.add(cryPill).size(basePillW, basePillH);
 
         ImageButton settingsBtn = makeNavButton(ICON_SETTINGS_PATH, () -> settingsTex, t -> settingsTex = t);
         settingsBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
@@ -158,21 +177,19 @@ public final class MainLobbyView {
             }
         });
 
-
-
-        levelLabel = ui.label("Level " + save.playerLevel);
-
-        // Navbar: pfp left, currencies middle-right, settings right.
-        // Keep all elements on the same horizontal baseline.
-        float navIconSize = 52f;
-        top.add(profile).left().top().padRight(10);
-        top.add(levelLabel).expandX().left().top().padTop(12);
-        top.add(currencies).right().top().padTop(-50).padRight(10);
-        top.add(settingsBtn).size(navIconSize).right().top();
+        header.add(left).left().top();
+        header.add(currencyRow)
+                .width(currencyGroupW * currencyScale)
+                .height(basePillH * currencyScale)
+                .expandX()
+                .center()
+                .center()
+                .padLeft(5);
+        header.add(settingsBtn).size(58).right().top().padRight(0);
 
         Table center = new Table();
         center.defaults().pad(12);
-        center.padTop(50);
+        center.padTop(130);
 
         TextButton labBtn = ui.textButton("");
         TextButton mapBtn = ui.textButton("");
@@ -327,7 +344,7 @@ public final class MainLobbyView {
         bottom.add(entitiesBtn).size(navSize);
         bottom.add(shopBtn).size(navSize);
 
-        root.add(top).expandX().fillX().top().row();
+        root.add(header).expand(true, false).fill(true, false).top().height(120).row();
         root.add(center).expand().fill().row();
         root.add(bottom).expandX().fillX().bottom().height(130);
     }
@@ -343,7 +360,7 @@ public final class MainLobbyView {
     public void refresh(GameContext context) {
         SaveData save = context.saves.get();
         usernameLabel.setText(save.playerName);
-        levelLabel.setText("Level " + save.playerLevel);
+        levelLabel.setText("Level " + save.currentLevel);
         if (dnaPill != null) dnaPill.setAmount(context.economy.getBalance(CurrencyType.DNA));
         if (cryPill != null) cryPill.setAmount(context.economy.getBalance(CurrencyType.CRY));
     }
@@ -351,7 +368,7 @@ public final class MainLobbyView {
     public void refreshIfNeeded(GameContext context) {
         SaveData save = context.saves.get();
         String playerName = save.playerName;
-        int playerLevel = save.playerLevel;
+        int currentLevel = save.currentLevel;
         int dna = context.economy.getBalance(CurrencyType.DNA);
         int cry = context.economy.getBalance(CurrencyType.CRY);
 
@@ -360,8 +377,8 @@ public final class MainLobbyView {
             lastPlayerName = playerName;
             changed = true;
         }
-        if (lastPlayerLevel != playerLevel) {
-            lastPlayerLevel = playerLevel;
+        if (lastShownLevel != currentLevel) {
+            lastShownLevel = currentLevel;
             changed = true;
         }
         if (lastDna != dna) {
@@ -376,7 +393,7 @@ public final class MainLobbyView {
         if (!changed) return;
 
         usernameLabel.setText(playerName);
-        levelLabel.setText("Level " + playerLevel);
+        levelLabel.setText("Level " + currentLevel);
         if (dnaPill != null) dnaPill.setAmount(dna);
         if (cryPill != null) cryPill.setAmount(cry);
     }

@@ -28,7 +28,8 @@ public final class LevelMapDialog extends Dialog {
     private static final String WINDOW_BG_TEXTURE_PATH = "art/backgrounds/levelsbg.png";
     private static final Color LEVEL_TEXT_COLOR = new Color(0.07f, 0.16f, 0.45f, 1f);
 
-    private static final float LEVEL_WIDGET_SCALE = 0.70f;
+    // Scale level cards to fit cleanly within the window frame.
+    private static final float LEVEL_WIDGET_SCALE = 1.12f; // 20% smaller than 1.40f
     private static final int LEVEL_COLUMNS = 2;
 
     private static final float CONTENT_PAD = 22f;
@@ -69,7 +70,7 @@ public final class LevelMapDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
         addActor(topRight);
 
         // Pull level-button background from AssetService — no new Texture() call here. (T-2.2, T-3.4)
@@ -156,7 +157,8 @@ public final class LevelMapDialog extends Dialog {
         scroll.setScrollBarPositions(false, false);
         scroll.setScrollbarsOnTop(false);
 
-        getContentTable().add(scroll).width(420).height(470).pad(CONTENT_PAD);
+        // Keep the scroll area comfortably inside the frame.
+        getContentTable().add(scroll).width(420).height(470 * 0.80f).pad(CONTENT_PAD);
         getButtonTable().clearChildren();
 
         setModal(false);
@@ -172,7 +174,7 @@ public final class LevelMapDialog extends Dialog {
         float vw = 540f;
         float vh = 960f;
         float w = vw * 0.90f;
-        float h = vh * 0.76f;
+        float h = vh * 0.76f * 1.20f * 0.80f;
         setSize(w, h);
     }
 
@@ -227,8 +229,10 @@ public final class LevelMapDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so the window background doesn't "blink".
+        // Remove the extra background actor first (super.hide() may trigger remove()).
         if (bgImage != null) bgImage.remove();
+        super.hide(null);
         // Keep textures alive; they are managed globally (AssetManager or per-dialog).
         // Just drop references to allow GC and avoid stale actors.
         bgTex = null;
@@ -239,11 +243,10 @@ public final class LevelMapDialog extends Dialog {
 
     @Override
     public boolean remove() {
+        if (bgImage != null) bgImage.remove();
         boolean removed = super.remove();
-        if (removed) {
-            bgTex = null;
-            bgImage = null;
-        }
+        bgTex = null;
+        bgImage = null;
         return removed;
     }
 }

@@ -5,11 +5,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.splicelab.app.GameContext;
 import com.splicelab.model.CurrencyType;
 import com.splicelab.ui.UiFactory;
@@ -21,9 +23,8 @@ public final class ShopDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
     private static final String ITEM_ROW_BG_PATH = "art/backgrounds/menuitembg.png";
 
-    private static final float CONTENT_WIDTH = 360f;
-    private static final float CONTENT_HEIGHT = 460f;
-    private static final float ROW_MAX_WIDTH = 320f;
+    private static final float TEXT_SCALE = 0.70f;
+
     private static final float BUY_BUTTON_WIDTH = 84f;
     private static final float BUY_BUTTON_HEIGHT = 38f;
 
@@ -35,6 +36,8 @@ public final class ShopDialog extends Dialog {
 
     private Label dnaBalanceLabel;
     private final List<RowWidgets> rows = new ArrayList<>();
+
+    private int lastKnownDna;
 
     public enum PurchaseType {
         TIME_FREEZE,
@@ -51,6 +54,9 @@ public final class ShopDialog extends Dialog {
     public ShopDialog(Skin skin, GameContext context, PurchaseListener listener) {
         super("Shop", skin);
         this.context = context;
+
+        // Hide the window title text (keep layout/padding stable).
+        getTitleLabel().setText("");
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((Drawable) null);
@@ -76,28 +82,52 @@ public final class ShopDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
         addActor(topRight);
 
         Table content = new Table();
-        content.defaults().pad(6).expandX().fillX();
-        // Keep rows inside the fixed window content area.
-        content.defaults().maxWidth(ROW_MAX_WIDTH);
+        // Let content fill the dialog; control padding at the dialog-level.
+        content.defaults().pad(8).growX();
 
         dnaBalanceLabel = ui.label("DNA: 0");
+        dnaBalanceLabel.setFontScale(TEXT_SCALE);
         content.add(dnaBalanceLabel).row();
-        content.add(ui.smallLabel("Spend DNA on boosts")).row();
+        var sub = ui.smallLabel("Spend DNA on boosts");
+        sub.setFontScale(TEXT_SCALE);
+        content.add(sub).row();
 
-        content.add(makeItemRow(skin, ui, context, listener, PurchaseType.TIME_FREEZE, "Time Freeze", 50)).row();
-        content.add(makeItemRow(skin, ui, context, listener, PurchaseType.IMMEDIATE_COOLDOWN, "Immediate Cooldown", 40)).row();
-        content.add(makeItemRow(skin, ui, context, listener, PurchaseType.ATK_X2, "ATK x2", 80)).row();
-        content.add(makeItemRow(skin, ui, context, listener, PurchaseType.TUBE_HP_RECOVERY, "Tube HP Recovery", 30)).row();
-        content.add(makeItemRow(skin, ui, context, listener, PurchaseType.REMOVE_ITEM, "Remove 1 Item", 35)).row();
+        Table list = new Table();
+        list.defaults().pad(8).growX();
+        list.add(makeItemRow(skin, ui, context, listener, PurchaseType.TIME_FREEZE, "Time Freeze", 50)).row();
+        list.add(makeItemRow(skin, ui, context, listener, PurchaseType.IMMEDIATE_COOLDOWN, "Immediate Cooldown", 40)).row();
+        list.add(makeItemRow(skin, ui, context, listener, PurchaseType.ATK_X2, "ATK x2", 80)).row();
+        list.add(makeItemRow(skin, ui, context, listener, PurchaseType.TUBE_HP_RECOVERY, "Tube HP Recovery", 30)).row();
+        list.add(makeItemRow(skin, ui, context, listener, PurchaseType.REMOVE_ITEM, "Remove 1 Item", 35)).row();
 
-        content.add(ui.smallLabel("Note: boosts work in combat")).row();
+        ScrollPane scroll = new ScrollPane(list, skin);
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+        scroll.setScrollbarsVisible(false);
+        scroll.setOverscroll(false, false);
+        scroll.setStyle(new ScrollPane.ScrollPaneStyle(scroll.getStyle()));
+        if (scroll.getStyle() != null) {
+            scroll.getStyle().background = null;
+            scroll.getStyle().corner = null;
+            scroll.getStyle().hScroll = null;
+            scroll.getStyle().hScrollKnob = null;
+            scroll.getStyle().vScroll = null;
+            scroll.getStyle().vScrollKnob = null;
+        }
+        scroll.setScrollBarPositions(false, false);
+        scroll.setScrollbarsOnTop(false);
 
-        // Keep content comfortably inside the PNG frame.
-        getContentTable().add(content).width(CONTENT_WIDTH).height(CONTENT_HEIGHT).pad(22);
+        content.add(scroll).grow().minHeight(1).row();
+        var note = ui.smallLabel("Note: boosts work in combat");
+        note.setFontScale(TEXT_SCALE);
+        content.add(note).row();
+
+        // Keep content comfortably inside the PNG frame without hard-coded sizes.
+        getContentTable().add(content).grow().pad(28, 46, 24, 46);
         getButtonTable().clearChildren();
 
         // Non-modal so bottom nav buttons stay clickable.
@@ -125,12 +155,21 @@ public final class ShopDialog extends Dialog {
     public void refresh(GameContext context) {
         if (context == null) return;
         int dna = context.economy == null ? 0 : context.economy.getBalance(CurrencyType.DNA);
+        lastKnownDna = dna;
         if (dnaBalanceLabel != null) dnaBalanceLabel.setText("DNA: " + dna);
 
         for (RowWidgets r : rows) {
             int owned = context.boosts == null ? 0 : context.boosts.count(r.type.name());
-            r.ownedLabel.setText("Owned: " + owned);
-            r.buyButton.setText("Buy");
+            r.ownedLabel.setText("x" + owned);
+
+            boolean canAfford = dna >= r.cost;
+            r.buyButton.setText(r.cost + " DNA");
+            r.buyButton.setDisabled(!canAfford);
+            r.buyButton.setTouchable(canAfford ? Touchable.enabled : Touchable.disabled);
+
+            // Visual affordance: dim the button when you can't afford it.
+            if (canAfford) r.buyButton.setColor(1f, 1f, 1f, 1f);
+            else r.buyButton.setColor(0.65f, 0.65f, 0.65f, 1f);
         }
     }
 
@@ -138,7 +177,7 @@ public final class ShopDialog extends Dialog {
         float vw = 540f;
         float vh = 960f;
         float w = vw * 0.90f;
-        float h = vh * 0.76f;
+        float h = vh * 0.76f * 0.80f;
         setSize(w, h);
     }
 
@@ -198,7 +237,8 @@ public final class ShopDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so the window background doesn't "blink".
+        super.hide(null);
         if (bgImage != null) bgImage.remove();
         bgImage = null;
         // bgTex may be owned by AssetManager; don't dispose here.
@@ -213,37 +253,50 @@ public final class ShopDialog extends Dialog {
         row.setBackground(rowBg != null ? rowBg : skin.newDrawable("white", new Color(0.14f, 0.15f, 0.2f, 1f)));
         row.defaults().pad(6);
 
+        // Hard guarantee: never draw text/buttons outside the row frame.
+        row.setClip(true);
+
         // Avoid scaling: it breaks layout sizing in Dialog/Table.
         row.setTransform(false);
 
-        row.add(ui.label(name)).expandX().left();
-        row.add(ui.label(cost + " DNA")).right().padRight(8);
-        Label ownedLabel = ui.smallLabel("Owned: 0");
-        row.add(ownedLabel).right().padRight(8);
+        Label nameLabel = ui.label(name);
+        nameLabel.setFontScale(TEXT_SCALE);
+        nameLabel.setWrap(true);
+        nameLabel.setAlignment(com.badlogic.gdx.utils.Align.left);
+        row.add(nameLabel)
+                .expandX()
+                .fillX()
+                .minWidth(0)
+                .left()
+                .padLeft(8);
 
-        TextButton buy = ui.textButton("Buy");
+        Label ownedLabel = ui.smallLabel("x0");
+        ownedLabel.setFontScale(TEXT_SCALE);
+        row.add(ownedLabel).width(54).right().padRight(6);
+
+        TextButton buy = ui.textButton(cost + " DNA");
+        buy.getLabel().setFontScale(TEXT_SCALE);
+        boolean canAffordNow = lastKnownDna >= cost;
+        buy.setDisabled(!canAffordNow);
+        buy.setTouchable(canAffordNow ? Touchable.enabled : Touchable.disabled);
+        if (canAffordNow) buy.setColor(1f, 1f, 1f, 1f);
+        else buy.setColor(0.65f, 0.65f, 0.65f, 1f);
         buy.addListener(new ClickListener() {
             @Override
             public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
+                if (buy.isDisabled()) return;
                 if (context.economy.canSpend(CurrencyType.DNA, cost)) {
                     if (listener != null) listener.onPurchase(type, cost);
                     refresh(context);
-                } else {
-                    buy.setText("No DNA");
-                    buy.clearActions();
-                    buy.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
-                            com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(0.75f),
-                            com.badlogic.gdx.scenes.scene2d.actions.Actions.run(() -> buy.setText("Buy"))
-                    ));
                 }
             }
         });
-        row.add(buy).width(BUY_BUTTON_WIDTH).height(BUY_BUTTON_HEIGHT);
+        row.add(buy).width(110).height(BUY_BUTTON_HEIGHT).padRight(8);
 
-        rows.add(new RowWidgets(type, ownedLabel, buy));
+        rows.add(new RowWidgets(type, cost, ownedLabel, buy));
         return row;
     }
 
-    private record RowWidgets(PurchaseType type, Label ownedLabel, TextButton buyButton) {
+    private record RowWidgets(PurchaseType type, int cost, Label ownedLabel, TextButton buyButton) {
     }
 }

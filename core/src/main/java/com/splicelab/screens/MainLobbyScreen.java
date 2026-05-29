@@ -50,7 +50,12 @@ public final class MainLobbyScreen extends BaseScreen {
         view = new MainLobbyView(context);
         view.setLabListener(() -> game.setScreen(new LabGameScreen(game, context, context.saves.get().currentLevel)));
         view.setMapListener(() -> showSingletonDialog(
-                new LevelMapDialog(view.getSkin(), context, lvl -> game.setScreen(new LabGameScreen(game, context, lvl))),
+                new LevelMapDialog(view.getSkin(), context, lvl -> {
+                    // Keep lobby "Level X" label in sync with the selected map level.
+                    context.saves.get().currentLevel = lvl;
+                    context.saves.save();
+                    game.setScreen(new LabGameScreen(game, context, lvl));
+                }),
                 DialogType.MAP
         ));
 
@@ -77,10 +82,6 @@ public final class MainLobbyScreen extends BaseScreen {
 
         hideAllDialogs();
 
-        // Dialog's default fade-in/out makes the window background feel like it's
-        // "loading" and can cause a visible size/position snap. Keep it instant.
-        dialog.setFadeDuration(0f);
-
         switch (type) {
             case ACCOUNT -> accountDialog = dialog;
             case COLLECTIONS -> collectionsDialog = dialog;
@@ -89,13 +90,39 @@ public final class MainLobbyScreen extends BaseScreen {
             case MAP -> mapDialog = dialog;
             case SETTINGS -> settingsDialog = dialog;
         }
-        dialog.show(stage);
+
+        // Avoid Dialog's default fade-in animation; we want instant UI response.
+        dialog.show(stage, null);
 
         // Size dialogs relative to the current viewport so they don't appear huge on desktop.
+        // Use pref size (pack()) so layout is stable, then clamp to viewport.
         float w = stage.getViewport().getWorldWidth();
         float h = stage.getViewport().getWorldHeight();
-        float dw = Math.min(dialog.getWidth(), w * 0.92f);
-        float dh = Math.min(dialog.getHeight(), h * 0.82f);
+        float dw;
+        float dh;
+
+        // Keep the main menu windows perfectly consistent in size/position so
+        // switching between them doesn't cause visible snapping.
+        boolean fixedMenuWindow = dialog instanceof AccountDialog
+                || dialog instanceof CollectionsDialog
+                || dialog instanceof EntitiesDialog
+                || dialog instanceof ShopDialog;
+
+        boolean fixedMapWindow = dialog instanceof LevelMapDialog;
+
+        if (fixedMenuWindow) {
+            dw = w * 0.90f;
+            // 20% shorter than the previous 0.76f height.
+            dh = h * 0.76f * 0.80f;
+        } else if (fixedMapWindow) {
+            // Make the map window taller so the background frame feels less cramped.
+            dw = w * 0.90f;
+            // 20% shorter than the previous map size.
+            dh = Math.min(h * 0.92f, h * 0.76f * 1.20f * 0.80f);
+        } else {
+            dw = Math.min(dialog.getPrefWidth(), w * 0.92f);
+            dh = Math.min(dialog.getPrefHeight(), h * 0.82f);
+        }
         dialog.setSize(dw, dh);
         dialog.setPosition((w - dw) * 0.5f, (h - dh) * 0.5f);
 

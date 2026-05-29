@@ -66,4 +66,55 @@ public final class CombatTuning {
 
     /** Probability the enemy targets the lowest-HP fusion (vs. random). */
     public static final float ENEMY_TARGET_LOW_HP_CHANCE = 0.70f;
+
+    // =========================================================================
+    // Gameplay-depth mechanics
+    // =========================================================================
+
+    // --- Shield / Armor ------------------------------------------------------
+    /** Armor points granted to mid/high-tier enemies at spawn. 0 = no armor. */
+    public static final int ARMOR_WEAK_ENEMY    = 0;
+    public static final int ARMOR_REGULAR_ENEMY = 0;
+    /** Mid-tier enemies (TOOL_RAIDER, GAS_BOMBER, SHIELD_SMUGGLER …) */
+    public static final int ARMOR_TOUGH_ENEMY   = 40;
+    /** Boss-tier armor (soaks a whole burst before HP starts dropping). */
+    public static final int ARMOR_BOSS          = 100;
+
+    // --- Rage ----------------------------------------------------------------
+    /** HP fraction below which the enemy enters rage (first time). */
+    public static final float RAGE_THRESHOLD    = 0.30f;
+    /** ATK multiplier applied while raging. */
+    public static final float RAGE_ATK_MULT     = 1.40f;
+    /** Attack interval multiplier while raging (< 1 = faster). */
+    public static final float RAGE_INTERVAL_MULT = 0.70f;
+
+    // --- Tell / telegraph ----------------------------------------------------
+    /** Duration of the wind-up warning before the heavy strike fires. */
+    public static final float TELL_DURATION_SECONDS = 1.0f;
+    /** Damage multiplier on the telegraphed heavy strike. */
+    public static final float TELL_DAMAGE_MULT      = 2.5f;
+    /** Probability the enemy uses a telegraphed heavy attack instead of normal. */
+    public static final float TELL_CHANCE            = 0.20f;
+
+    // --- Anti-carry stun -----------------------------------------------------
+    /** Probability the enemy stuns the highest-DPS fusion when it attacks. */
+    public static final float STUN_CHANCE            = 0.15f;
+    /** Duration of the stun (fusion cannot attack). */
+    public static final float STUN_DURATION_SECONDS  = 2.0f;
+
+    // --- DPS-based scaling ---------------------------------------------------
+    /**
+     * Replaces pure fusion-count scaling with belt-DPS scoring.
+     * Each 100 DPS the player has on the belt adds this fraction to the enemy's
+     * effective difficulty multiplier (HP and ATK).
+     */
+    public static final float DPS_SCALE_PER_100_DPS = 0.08f;
+    /** DPS baseline: below this value no extra scaling is applied. */
+    public static final float DPS_SCALE_BASE_DPS    = 100f;
+    /** Hard cap on the extra DPS-based multiplier so enemies can't one-shot. */
+    public static final float DPS_SCALE_MAX_EXTRA   = 1.20f;
+
+    // --- Mid-level choice ----------------------------------------------------
+    /** Fraction through the level timer at which the choice is offered. */
+    public static final float MID_LEVEL_CHOICE_FRACTION = 0.50f;
 }

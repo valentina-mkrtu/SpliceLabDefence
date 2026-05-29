@@ -5,7 +5,9 @@ import com.splicelab.app.SpliceLabGame;
 import com.splicelab.combat.CombatController;
 import com.splicelab.combat.CombatLog;
 import com.splicelab.combat.CombatState;
+import com.splicelab.combat.MidLevelBuff;
 import com.splicelab.ui.screens.LabGameView;
+import com.splicelab.ui.windows.MidLevelChoiceDialog;
 import com.splicelab.ui.windows.ShopDialog;
 import com.splicelab.ui.windows.DevPanelDialog;
 
@@ -120,6 +122,44 @@ public final class LabGameScreen extends BaseScreen {
             public void onTimeoutWarning() {
                 context.audio.playTimeoutWarning();
             }
+
+            @Override
+            public void onEnemyTellStart() {
+                var anchor = view.getEnemyAnchor();
+                if (anchor != null) view.floatTextNear(anchor, "⚠ CHARGING!", com.badlogic.gdx.graphics.Color.YELLOW);
+                view.playHitJuice(0.2f, 2f);
+            }
+
+            @Override
+            public void onEnemyTellFire(int damage) {
+                var anchor = view.getEnemyAnchor();
+                if (anchor != null) view.floatTextNear(anchor, "HEAVY HIT!", com.badlogic.gdx.graphics.Color.SCARLET);
+                view.playHitJuice(0.9f, 8f);
+            }
+
+            @Override
+            public void onEnemyRage() {
+                var anchor = view.getEnemyAnchor();
+                if (anchor != null) view.floatTextNear(anchor, "RAGE!", com.badlogic.gdx.graphics.Color.ORANGE);
+                view.playHitJuice(0.5f, 5f);
+            }
+
+            @Override
+            public void onFusionStunned(int socketId, float durationSeconds) {
+                var anchor = view.getSocketActor(socketId);
+                if (anchor != null) view.floatTextNear(anchor, "STUNNED!", com.badlogic.gdx.graphics.Color.CYAN);
+            }
+
+            @Override
+            public void onEnemyArmorBroken() {
+                var anchor = view.getEnemyAnchor();
+                if (anchor != null) view.floatTextNear(anchor, "ARMOR BREAK!", com.badlogic.gdx.graphics.Color.GOLD);
+            }
+
+            @Override
+            public void onMidLevelChoice(MidLevelBuff optionA, MidLevelBuff optionB) {
+                showMidLevelChoice(optionA, optionB);
+            }
         });
         combatState = combatController.startLevel(levelNumber);
 
@@ -189,6 +229,15 @@ public final class LabGameScreen extends BaseScreen {
             pauseDialog.hide();
             pauseDialog = null;
         }
+    }
+
+    private void showMidLevelChoice(MidLevelBuff optionA, MidLevelBuff optionB) {
+        // Pause combat while player decides.
+        paused = true;
+        new MidLevelChoiceDialog(view.getSkin(), context, optionA, optionB, chosen -> {
+            combatController.applyMidLevelBuff(chosen);
+            paused = false;
+        }).show(stage);
     }
 
     @Override

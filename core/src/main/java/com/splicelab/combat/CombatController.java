@@ -31,6 +31,16 @@ public final class CombatController {
 
     private boolean timeoutWarningFired;
 
+    // Active mid-level buffs applied via applyMidLevelBuff().
+    /** Fusion ATK multiplier from mid-level choice (stacks multiplicatively). */
+    private float midLevelFusionAtkMult = 1f;
+    /** Tube cooldown multiplier from FAST_COOLDOWN buff. */
+    private float midLevelTubeCdMult = 1f;
+    /** Seconds to add to belt loop when BELT_SPEED is chosen. */
+    private float midLevelBeltSpeedBonus = 0f;
+    /** Next enemy spawns with reduced attack interval if ENEMY_SLOW chosen. */
+    private float midLevelNextEnemyIntervalMult = 1f;
+
     public interface CombatFeedback {
         int getConveyorPathLength();
 
@@ -45,6 +55,24 @@ public final class CombatController {
         void onEnemyDefeated();
 
         void onEnemySpawned();
+
+        /** Called when an enemy starts charging a telegraphed heavy hit. */
+        default void onEnemyTellStart() {}
+
+        /** Called when the telegraphed heavy hit fires. */
+        default void onEnemyTellFire(int damage) {}
+
+        /** Called when an enemy enters rage (HP below threshold). */
+        default void onEnemyRage() {}
+
+        /** Called when a fusion is stunned by an enemy anti-carry attack. */
+        default void onFusionStunned(int socketId, float durationSeconds) {}
+
+        /** Called when the armor of an enemy is broken (depleted to 0). */
+        default void onEnemyArmorBroken() {}
+
+        /** Called when the mid-level choice should be shown to the player. */
+        default void onMidLevelChoice(MidLevelBuff optionA, MidLevelBuff optionB) {}
 
         void onFusionDamaged(boolean leftSide, int slotIndex, int damage);
 
@@ -110,6 +138,14 @@ public final class CombatController {
         for (int i = 0; i < state.fusionAttackCooldownSockets.length; i++) state.fusionAttackCooldownSockets[i] = 0f;
 
         state.result = CombatResult.RUNNING;
+        state.midLevelChoiceOffered = false;
+        state.midLevelChoicePending = false;
+
+        // Reset per-level mid-level buff state.
+        midLevelFusionAtkMult = 1f;
+        midLevelTubeCdMult = 1f;
+        midLevelBeltSpeedBonus = 0f;
+        midLevelNextEnemyIntervalMult = 1f;
 
         context.saves.get().unlockedConveyorSlotsLeft = Math.max(context.saves.get().unlockedConveyorSlotsLeft, level.unlockedConveyorSlotsLeft);
         context.saves.get().unlockedConveyorSlotsRight = Math.max(context.saves.get().unlockedConveyorSlotsRight, level.unlockedConveyorSlotsRight);
@@ -229,14 +265,31 @@ public final class CombatController {
         if (!frozen) updateConveyorPhase(delta);
         // Conveyor sockets are visual belt pockets; they don't advance occupancy.
 
+        // Mid-level choice: offer once at the halfway mark.
+        if (!state.midLevelChoiceOffered && !frozen && state.level != null) {
+            float halfTime = state.level.durationSeconds * CombatTuning.MID_LEVEL_CHOICE_FRACTION;
+            float elapsed = state.level.durationSeconds - state.remainingTimeSeconds;
+            if (elapsed >= halfTime) {
+                state.midLevelChoiceOffered = true;
+                state.midLevelChoicePending = true;
+                MidLevelBuff[] pool = MidLevelBuff.values();
+                MidLevelBuff a = pool[context.random.nextInt(pool.length)];
+                MidLevelBuff b;
+                do { b = pool[context.random.nextInt(pool.length)]; } while (b == a);
+                if (feedback != null) feedback.onMidLevelChoice(a, b);
+            }
+        }
+
         if (!frozen) {
             updateFusionAutoAttack(delta);
             updateEnemyAttack(delta);
+            updateEnemyTell(delta);
+            tickStun(delta);
         }
     }
 
     private void updateConveyorPhase(float delta) {
-        float loopSeconds = Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
+        float loopSeconds = Math.max(0.01f, getBeltLoopSeconds());
         state.conveyorBeltPhase += delta / loopSeconds;
         if (state.conveyorBeltPhase >= 1f) state.conveyorBeltPhase -= (float) Math.floor(state.conveyorBeltPhase);
     }
@@ -350,6 +403,7 @@ public final class CombatController {
     private float getTubeCooldownSeconds() {
         float cd = state.level == null ? context.config.tubeCooldownSeconds : state.level.tubeCooldownSeconds;
         if (cd <= 0f) cd = context.config.tubeCooldownSeconds;
+        cd *= midLevelTubeCdMult; // FAST_COOLDOWN buff halves this
         return Math.max(0.25f, cd);
     }
 
@@ -489,9 +543,17 @@ public final class CombatController {
 
     public void debugDamageEnemy(int amount) {
         if (state.activeEnemy == null) return;
-        state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - Math.max(1, amount));
+        // Strip armor first, then damage HP.
+        int dmg = Math.max(1, amount);
+        if (state.activeEnemy.armor > 0) {
+            int abs = Math.min(state.activeEnemy.armor, dmg);
+            state.activeEnemy.armor -= abs;
+            dmg -= abs;
+        }
+        if (dmg > 0) state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - dmg);
         if (state.activeEnemy.hp <= 0) {
             CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
+            if (feedback != null) feedback.onEnemyDefeated();
             state.activeEnemy = null;
             state.enemySpawnCooldownRemaining = getDynamicSpawnIntervalSeconds();
         }
@@ -544,16 +606,37 @@ public final class CombatController {
         float dynamicMult = computeDynamicEnemyMultiplier();
         float bossMult = chosenType == EnemyType.BOSS_SMUGGLER_CAPTAIN ? CombatTuning.BOSS_BASE_HP_MULT : 1f;
         int scaledHp = Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier * dynamicMult * bossMult));
+
         state.activeEnemy = new EnemyInstance(nextInstanceId(), chosenType, scaledHp);
-        state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
-        CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp);
+
+        // Assign armor based on enemy tier.
+        state.activeEnemy.armor = armorForType(chosenType);
+
+        // Apply ENEMY_SLOW buff from previous mid-level choice.
+        float interval = def.attack.intervalSeconds() * midLevelNextEnemyIntervalMult;
+        midLevelNextEnemyIntervalMult = 1f; // consume it
+        state.enemyAttackCooldownRemaining = interval;
+
+        CombatLog.d("enemy spawned type=" + chosenType + " hp=" + scaledHp + " armor=" + state.activeEnemy.armor);
         if (feedback != null) feedback.onEnemySpawned();
     }
 
+    private static int armorForType(EnemyType type) {
+        return switch (type) {
+            case BOSS_SMUGGLER_CAPTAIN -> CombatTuning.ARMOR_BOSS;
+            case SHIELD_SMUGGLER, DRONE_THIEF, MUTATION_HUNTER, BLACKMARKET_BRUTE -> CombatTuning.ARMOR_TOUGH_ENEMY;
+            default -> CombatTuning.ARMOR_REGULAR_ENEMY;
+        };
+    }
+
     private float computeDynamicEnemyMultiplier() {
+        // T-33: scale from player belt DPS instead of raw fusion count.
+        float beltDps = computeBeltTotalDps();
+        float dpsExtra = Math.max(0f, (beltDps - CombatTuning.DPS_SCALE_BASE_DPS) / 100f);
+        float dpsMult = 1f + Math.min(CombatTuning.DPS_SCALE_MAX_EXTRA, dpsExtra * CombatTuning.DPS_SCALE_PER_100_DPS);
+
         int deployedFusions = 0;
-        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-            FusionInstance f = state.conveyorSockets[socketId];
+        for (FusionInstance f : state.conveyorSockets) {
             if (f != null && f.hp > 0) deployedFusions++;
         }
 
@@ -561,6 +644,7 @@ public final class CombatController {
         float tier = getDifficultyTierFactor();
         float mult = 1f + (CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_HP * tier) * extra;
         mult *= computeFusionSpikeMultiplier(deployedFusions);
+        mult *= dpsMult;
         if (state.endlessMode) mult *= (1f + Math.max(0f, state.endlessHpMultiplierBonus));
         return mult;
     }
@@ -606,6 +690,14 @@ public final class CombatController {
         for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
             FusionInstance fusion = state.conveyorSockets[socketId];
             if (fusion == null) continue;
+
+            // Anti-carry stun: skip attack if this socket is stunned.
+            if (state.activeEnemy != null
+                    && state.activeEnemy.stunnedSocketId == socketId
+                    && state.activeEnemy.stunRemaining > 0f) {
+                continue;
+            }
+
             state.fusionAttackCooldownSockets[socketId] = Math.max(0f, state.fusionAttackCooldownSockets[socketId] - delta);
 
             // Gameplay: each fusion has an attack interval.
@@ -654,6 +746,7 @@ public final class CombatController {
         float variance = Math.max(0f, fusion.stats.variance());
         float roll = context.random.range(-variance, variance);
         float atkMult = state.atkX2SecondsRemaining > 0f ? 2f : 1f;
+        atkMult *= midLevelFusionAtkMult; // mid-level buff
         int dmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(base * atkMult * (1f + roll)));
 
         boolean special = context.random.chance(fusion.stats.specialChance());
@@ -662,12 +755,26 @@ public final class CombatController {
         CombatLog.d("fusion hit enemy dmg=" + dmg + (special ? " SPECIAL" : ""));
 
         if (feedback != null) {
-            // Map socket-based attacks through the new socket anchor.
             feedback.onFusionAttack(true, socketId, dmg, special);
             feedback.onEnemyDamaged(dmg, special);
         }
 
-        state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - dmg);
+        // Armor absorbs damage before HP.
+        int remaining = dmg;
+        if (state.activeEnemy.armor > 0) {
+            int absorbed = Math.min(state.activeEnemy.armor, remaining);
+            state.activeEnemy.armor -= absorbed;
+            remaining -= absorbed;
+            if (state.activeEnemy.armor == 0) {
+                CombatLog.d("enemy armor broken by fusion hit");
+                if (feedback != null) feedback.onEnemyArmorBroken();
+            }
+        }
+
+        if (remaining > 0) {
+            state.activeEnemy.hp = Math.max(0, state.activeEnemy.hp - remaining);
+        }
+
         if (state.activeEnemy.hp <= 0) {
             CombatLog.d("enemy defeated type=" + state.activeEnemy.enemyType);
             if (feedback != null) feedback.onEnemyDefeated();
@@ -679,84 +786,183 @@ public final class CombatController {
     private void updateEnemyAttack(float delta) {
         if (state.level == null) return;
         if (state.activeEnemy == null) return;
+        // Don't start a new attack while a tell is charging.
+        if (state.activeEnemy.chargingTell > 0f) return;
 
         EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
         if (def == null || def.attack == null) return;
 
         state.enemyAttackCooldownRemaining = Math.max(0f, state.enemyAttackCooldownRemaining - delta);
         if (state.enemyAttackCooldownRemaining > 0f) return;
-        state.enemyAttackCooldownRemaining = def.attack.intervalSeconds();
+
+        // --- Rage check: enter rage once HP falls below threshold ---
+        if (!state.activeEnemy.inRage && state.activeEnemy.maxHp > 0) {
+            float hpFrac = (float) state.activeEnemy.hp / (float) state.activeEnemy.maxHp;
+            if (hpFrac <= CombatTuning.RAGE_THRESHOLD) {
+                state.activeEnemy.inRage = true;
+                CombatLog.d("enemy RAGE type=" + state.activeEnemy.enemyType);
+                if (feedback != null) feedback.onEnemyRage();
+            }
+        }
 
         int deployedFusions = 0;
-        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-            FusionInstance f = state.conveyorSockets[socketId];
+        for (FusionInstance f : state.conveyorSockets) {
             if (f != null && f.hp > 0) deployedFusions++;
         }
+
+        float baseInterval = def.attack.intervalSeconds();
+        // Rage: attack faster
+        if (state.activeEnemy.inRage) baseInterval *= CombatTuning.RAGE_INTERVAL_MULT;
+
+        // Belt fill pressure: enemy attacks faster when belt is crowded.
+        float fill = state.conveyorSockets.length <= 0 ? 0f : ((float) deployedFusions / state.conveyorSockets.length);
+        float intervalCap = fill > 0.85f ? 1f : (fill >= 0.50f ? 2f : baseInterval);
+        state.enemyAttackCooldownRemaining = Math.max(
+                CombatTuning.MIN_ATTACK_INTERVAL_SECONDS,
+                Math.min(baseInterval, intervalCap)
+        );
+
+        // --- Compute raw damage ---
         int extra = Math.max(0, deployedFusions - 1);
         float tier = getDifficultyTierFactor();
         float dynamicAtkMult = 1f + (CombatTuning.DYNAMIC_DIFFICULTY_PER_FUSION_EXTRA_ATK * tier) * extra;
         dynamicAtkMult *= computeFusionSpikeMultiplier(deployedFusions);
         if (state.activeEnemy.enemyType == EnemyType.BOSS_SMUGGLER_CAPTAIN) dynamicAtkMult *= CombatTuning.BOSS_BASE_ATK_MULT;
         if (state.endlessMode) dynamicAtkMult *= (1f + Math.max(0f, state.endlessAtkMultiplierBonus));
+        if (state.activeEnemy.inRage) dynamicAtkMult *= CombatTuning.RAGE_ATK_MULT;
+
         int scaledDmg = Math.max(
                 CombatTuning.MIN_DAMAGE,
                 Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult * CombatTuning.ENEMY_DAMAGE_MULT)
         );
 
-        int targetSocket = findEnemyTargetSocket();
-        FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
-        if (target == null) {
-            state.tubeHp = Math.max(0, state.tubeHp - scaledDmg);
-            CombatLog.d("tube damaged amount=" + scaledDmg + " tubeHp=" + state.tubeHp);
-            if (feedback != null) feedback.onTubeDamaged(scaledDmg);
-            if (state.tubeHp <= 0) {
-                state.result = CombatResult.LOSE;
-            }
+        // --- Tell (telegraph heavy strike) ---
+        boolean isTell = context.random.chance(CombatTuning.TELL_CHANCE);
+        if (isTell) {
+            int heavyDmg = Math.round(scaledDmg * CombatTuning.TELL_DAMAGE_MULT);
+            state.activeEnemy.chargingTell = CombatTuning.TELL_DURATION_SECONDS;
+            state.activeEnemy.pendingTellDamage = heavyDmg;
+            CombatLog.d("enemy TELL charge heavyDmg=" + heavyDmg);
+            if (feedback != null) feedback.onEnemyTellStart();
+            // Don't apply hit now — it fires in updateEnemyTell().
             return;
         }
 
-        target.hp = Math.max(0, target.hp - scaledDmg);
-        CombatLog.d("fusion damaged amount=" + scaledDmg + " hp=" + target.hp + "/" + target.maxHp);
-        if (feedback != null) {
-            feedback.onFusionDamaged(true, targetSocket, scaledDmg);
+        // --- Anti-carry stun ---
+        boolean appliedStun = false;
+        if (context.random.chance(CombatTuning.STUN_CHANCE)) {
+            int highDpsSocket = findHighestDpsSocket();
+            if (highDpsSocket >= 0) {
+                if (state.activeEnemy.stunnedSocketId >= 0) {
+                    // Already stunned; renew.
+                }
+                state.activeEnemy.stunRemaining = CombatTuning.STUN_DURATION_SECONDS;
+                state.activeEnemy.stunnedSocketId = highDpsSocket;
+                appliedStun = true;
+                CombatLog.d("STUN applied to socket=" + highDpsSocket);
+                if (feedback != null) feedback.onFusionStunned(highDpsSocket, CombatTuning.STUN_DURATION_SECONDS);
+            }
         }
+
+        // Normal attack (may still hit even if stun was applied — stun is a side effect).
+        applyEnemyHit(scaledDmg, false);
+    }
+
+    /**
+     * Apply an enemy hit: deducts armor first, then HP. Handles fusion/tube selection
+     * and destruction feedback. Used by both direct attacks and tell-fire.
+     */
+    private void applyEnemyHit(int rawDmg, boolean isTellFire) {
+        if (state.activeEnemy == null) return;
+
+        // Armor absorbs damage first.
+        int dmg = rawDmg;
+        if (state.activeEnemy.armor > 0) {
+            int absorbed = Math.min(state.activeEnemy.armor, dmg);
+            state.activeEnemy.armor -= absorbed;
+            dmg -= absorbed;
+            if (state.activeEnemy.armor == 0) {
+                CombatLog.d("enemy armor broken");
+                if (feedback != null) feedback.onEnemyArmorBroken();
+            }
+            if (dmg <= 0) return; // fully absorbed
+        }
+
+        int targetSocket = findEnemyTargetSocket();
+        FusionInstance target = targetSocket < 0 ? null : state.conveyorSockets[targetSocket];
+        if (target == null) {
+            state.tubeHp = Math.max(0, state.tubeHp - dmg);
+            CombatLog.d("tube damaged amount=" + dmg + " tubeHp=" + state.tubeHp);
+            if (feedback != null) feedback.onTubeDamaged(dmg);
+            if (state.tubeHp <= 0) state.result = CombatResult.LOSE;
+            return;
+        }
+
+        target.hp = Math.max(0, target.hp - dmg);
+        CombatLog.d("fusion damaged amount=" + dmg + " hp=" + target.hp + "/" + target.maxHp);
+        if (feedback != null) feedback.onFusionDamaged(true, targetSocket, dmg);
         if (target.hp <= 0) {
             state.conveyorSockets[targetSocket] = null;
             state.fusionAttackCooldownSockets[targetSocket] = 0f;
+            if (state.activeEnemy != null && state.activeEnemy.stunnedSocketId == targetSocket) {
+                state.activeEnemy.stunnedSocketId = -1;
+                state.activeEnemy.stunRemaining = 0f;
+            }
             CombatLog.d("fusion destroyed");
             if (feedback != null) feedback.onFusionDestroyed(true, targetSocket);
         }
     }
 
+    /**
+     * Role-based targeting AI.
+     *
+     * <ul>
+     *   <li>BOSS / high-tier → TANK role → targets the fusion with the most HP (most durable threat).</li>
+     *   <li>NET_THROWER / DRONE_THIEF → ASSASSIN role → targets highest DPS (the carry).</li>
+     *   <li>GAS_BOMBER → MAGE role → picks randomly (splash feel; actual multi-hit in future).</li>
+     *   <li>Others → default smart AI: highest DPS with 70% chance, random 30%.</li>
+     * </ul>
+     */
     private int findEnemyTargetSocket() {
-        // Fairness: prefer the weakest fusion so the player can react,
-        // but add randomness so it doesn't feel scripted.
-        // If no fusions, return -1 so the tube takes the hit.
-        int count = 0;
-        for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-            FusionInstance f = state.conveyorSockets[socketId];
-            if (f != null && f.hp > 0) count++;
-        }
-        if (count == 0) return -1;
+        if (state.activeEnemy == null) return findRandomOccupiedSocket();
 
-        // 70%: target the lowest HP% fusion.
-        if (context.random.chance(CombatTuning.ENEMY_TARGET_LOW_HP_CHANCE)) {
-            int bestSocket = -1;
-            float bestHpPct = Float.POSITIVE_INFINITY;
-            for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
-                FusionInstance f = state.conveyorSockets[socketId];
-                if (f == null || f.hp <= 0) continue;
-                float pct = f.maxHp <= 0 ? 1f : ((float) f.hp / (float) f.maxHp);
-                if (pct < bestHpPct) {
-                    bestHpPct = pct;
-                    bestSocket = socketId;
-                }
-            }
-            if (bestSocket >= 0) return bestSocket;
-        }
+        return switch (state.activeEnemy.enemyType) {
+            // TANK role: go for the beefiest fusion (highest max HP).
+            case BOSS_SMUGGLER_CAPTAIN, SHIELD_SMUGGLER, BLACKMARKET_BRUTE -> findHighestHpSocket();
+            // ASSASSIN role: always hits the highest-DPS fusion.
+            case NET_THROWER, DRONE_THIEF -> findHighestDpsSocket();
+            // MAGE/splash role: random target.
+            case GAS_BOMBER -> findRandomOccupiedSocket();
+            // Default: smart AI with 70% chance of highest DPS, 30% random.
+            default -> context.random.chance(CombatTuning.ENEMY_TARGET_LOW_HP_CHANCE)
+                    ? findHighestDpsSocket()
+                    : findRandomOccupiedSocket();
+        };
+    }
 
-        // 30%: random target.
-        return findRandomOccupiedSocket();
+    /** Returns the socket with the highest current DPS, or -1 if none. */
+    private int findHighestDpsSocket() {
+        int best = -1;
+        float bestDps = -1f;
+        for (int i = 0; i < state.conveyorSockets.length; i++) {
+            FusionInstance f = state.conveyorSockets[i];
+            if (f == null || f.hp <= 0 || f.stats == null) continue;
+            float dps = f.stats.atk() / Math.max(0.05f, f.stats.attackIntervalSeconds());
+            if (dps > bestDps) { bestDps = dps; best = i; }
+        }
+        return best >= 0 ? best : findRandomOccupiedSocket();
+    }
+
+    /** Returns the socket with the highest max HP, or -1 if none. */
+    private int findHighestHpSocket() {
+        int best = -1;
+        int bestHp = -1;
+        for (int i = 0; i < state.conveyorSockets.length; i++) {
+            FusionInstance f = state.conveyorSockets[i];
+            if (f == null || f.hp <= 0) continue;
+            if (f.maxHp > bestHp) { bestHp = f.maxHp; best = i; }
+        }
+        return best >= 0 ? best : findRandomOccupiedSocket();
     }
 
     private int findRandomOccupiedSocket() {
@@ -791,6 +997,99 @@ public final class CombatController {
         mult = Math.max(CombatTuning.DYNAMIC_DIFFICULTY_MIN_SPAWN_INTERVAL_MULT, mult);
         mult = Math.min(CombatTuning.DYNAMIC_DIFFICULTY_MAX_SPAWN_INTERVAL_MULT, mult);
         return state.level.spawnIntervalSeconds * mult;
+    }
+
+    // =========================================================================
+    // Tell (telegraph) — enemy winds up before big hit
+    // =========================================================================
+
+    private void updateEnemyTell(float delta) {
+        if (state.activeEnemy == null) return;
+        if (state.activeEnemy.chargingTell <= 0f) return;
+
+        state.activeEnemy.chargingTell = Math.max(0f, state.activeEnemy.chargingTell - delta);
+        if (state.activeEnemy.chargingTell <= 0f) {
+            // Fire the heavy strike.
+            int dmg = state.activeEnemy.pendingTellDamage;
+            state.activeEnemy.pendingTellDamage = 0;
+            applyEnemyHit(dmg, true);
+            if (feedback != null) feedback.onEnemyTellFire(dmg);
+        }
+    }
+
+    // =========================================================================
+    // Stun tick — reduce stun timer each frame
+    // =========================================================================
+
+    private void tickStun(float delta) {
+        if (state.activeEnemy == null) return;
+        if (state.activeEnemy.stunRemaining > 0f) {
+            state.activeEnemy.stunRemaining = Math.max(0f, state.activeEnemy.stunRemaining - delta);
+        }
+    }
+
+    // =========================================================================
+    // Mid-level buff application (called from UI when player picks)
+    // =========================================================================
+
+    /**
+     * Apply the chosen mid-level buff. Call this from the screen after the player
+     * taps an option. Resumes combat by clearing {@code midLevelChoicePending}.
+     */
+    public void applyMidLevelBuff(MidLevelBuff buff) {
+        if (buff == null) return;
+        switch (buff) {
+            case FUSION_ATK_UP -> midLevelFusionAtkMult *= 1.25f;
+            case TUBE_CHARGE -> {
+                state.tubeCooldownRemaining = 0f;
+                state.tubeCharges = state.tubeMaxCharges;
+            }
+            case FAST_COOLDOWN -> midLevelTubeCdMult *= 0.50f;
+            case FUSION_HP_UP -> {
+                for (FusionInstance f : state.conveyorSockets) {
+                    if (f != null && f.maxHp > 0) {
+                        f.hp = Math.min(f.maxHp, f.hp + Math.round(f.maxHp * 0.30f));
+                    }
+                }
+            }
+            case BELT_SPEED -> midLevelBeltSpeedBonus += 0.40f; // 40% faster belt
+            case ENEMY_SLOW -> midLevelNextEnemyIntervalMult = 1.30f; // next enemy 30% slower
+            case TIME_BONUS -> state.remainingTimeSeconds += 20f;
+            case ARMOR_STRIP -> {
+                if (state.activeEnemy != null) {
+                    state.activeEnemy.armor = 0;
+                }
+            }
+        }
+        state.midLevelChoicePending = false;
+        CombatLog.d("mid_level_buff applied=" + buff.name());
+    }
+
+    /** Expose the belt speed bonus so the view can adjust visual speed. */
+    public float getMidLevelBeltSpeedBonus() { return midLevelBeltSpeedBonus; }
+
+    // =========================================================================
+    // Belt speed multiplier (used by view)
+    // =========================================================================
+
+    public float getBeltLoopSeconds() {
+        float base = CombatTuning.CONVEYOR_LOOP_SECONDS;
+        return base / Math.max(0.1f, 1f + midLevelBeltSpeedBonus);
+    }
+
+    // =========================================================================
+    // Player DPS calculation for scaling
+    // =========================================================================
+
+    private float computeBeltTotalDps() {
+        float total = 0f;
+        for (FusionInstance f : state.conveyorSockets) {
+            if (f == null || f.hp <= 0 || f.stats == null) continue;
+            float atk = Math.max(0, f.stats.atk());
+            float interval = Math.max(0.05f, f.stats.attackIntervalSeconds());
+            total += atk / interval;
+        }
+        return total;
     }
 
     private void clearGrid() {

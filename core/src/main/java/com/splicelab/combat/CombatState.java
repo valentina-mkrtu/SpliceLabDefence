@@ -50,6 +50,10 @@ public final class CombatState {
     public float atkX2SecondsRemaining;
     public boolean removeItemArmed;
 
+    // Mid-level choice (offered once per level at the halfway mark).
+    public boolean midLevelChoiceOffered;
+    public boolean midLevelChoicePending; // true while the game is paused waiting for player input
+
     public CombatState(int slotsPerSide) {
         // Real 12-socket conveyor.
         int sockets = 12;

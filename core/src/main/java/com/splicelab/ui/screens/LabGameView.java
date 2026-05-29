@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.splicelab.ui.UiStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -139,6 +140,14 @@ public final class LabGameView {
     private final Image attackZoneMarkerImage;
     private final Texture attackMarkerTexture;
 
+    // --- Gameplay visual indicators (armor bar, rage/tell/stun overlays) ---
+    // Armor bar below enemy HP bar (gold-coloured)
+    private HpBarWidget enemyArmorBar;
+    // Rage, tell-charge, and stun label overlay (reused; text is set per-state)
+    private Label enemyStatusLabel;
+    // Stun overlay labels per socket
+    private final Label[] socketStunLabels = new Label[SOCKET_COUNT];
+
     private float beltPhase;
 
     private Runnable onTubeTapped;
@@ -264,6 +273,24 @@ public final class LabGameView {
         // Keep enemy HP bar above the enemy image.
         enemyHpBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 66f);
         enemyVisual.addActor(enemyHpBar);
+
+        // Armor bar (gold) just below HP bar.
+        enemyArmorBar = new HpBarWidget(skin, new com.badlogic.gdx.graphics.Color(0f, 0f, 0f, 0.35f),
+                new com.badlogic.gdx.graphics.Color(1f, 0.85f, 0.1f, 1f));
+        enemyArmorBar.setSize(150, 6);
+        enemyArmorBar.setPosition(0f, enemyVisual.getHeight() - enemyHpBar.getHeight() + 57f);
+        enemyArmorBar.setVisible(false);
+        enemyVisual.addActor(enemyArmorBar);
+
+        // Status label (RAGE / ⚡ CHARGING / STUNNED)
+        enemyStatusLabel = ui.smallLabel("");
+        enemyStatusLabel.setFontScale(0.75f);
+        enemyStatusLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        enemyStatusLabel.setPosition(0f, enemyVisual.getHeight() - 16f);
+        enemyStatusLabel.setSize(150, 16);
+        enemyStatusLabel.setVisible(false);
+        enemyVisual.addActor(enemyStatusLabel);
+
         enemyPanel.add(enemyVisual).size(140, 118).pad(4).padTop(12).padBottom(34);
 
         conveyor.add(enemyPanel).pad(6);
@@ -358,6 +385,16 @@ public final class LabGameView {
             socketHpActors[i].setSize(70, 7);
             socketHpActors[i].setVisible(false);
             conveyorSockets[i].addActor(socketHpActors[i]);
+
+            // Stun label overlay per socket
+            socketStunLabels[i] = ui.smallLabel("STUNNED");
+            socketStunLabels[i].setFontScale(0.65f);
+            socketStunLabels[i].setAlignment(com.badlogic.gdx.utils.Align.center);
+            socketStunLabels[i].setColor(com.splicelab.ui.UiStyle.CRY_ACCENT);
+            socketStunLabels[i].setVisible(false);
+            socketStunLabels[i].setSize(64, 14);
+            socketStunLabels[i].setPosition(0f, conveyorSockets[i].getHeight() / 2f - 7f);
+            conveyorSockets[i].addActor(socketStunLabels[i]);
         }
 
         layoutConveyorPath();
@@ -908,13 +945,51 @@ public final class LabGameView {
         if (state.activeEnemy == null) {
             enemyHpBar.setPercent(0f);
             enemyVisual.setVisible(false);
+            if (enemyArmorBar != null) enemyArmorBar.setVisible(false);
+            if (enemyStatusLabel != null) enemyStatusLabel.setVisible(false);
             lastEnemyType = null; // reset so drawable refreshes on next enemy spawn
         } else {
             enemyIcon.setScale(1f);
             EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
-            int maxHp = def == null ? Math.max(1, state.activeEnemy.hp) : Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier));
+            int maxHp = state.activeEnemy.maxHp > 0 ? state.activeEnemy.maxHp
+                    : (def == null ? Math.max(1, state.activeEnemy.hp) : Math.max(1, Math.round(def.maxHp * state.level.enemyHpMultiplier)));
             enemyHpBar.setPercent(state.activeEnemy.hp / (float) maxHp);
             enemyVisual.setVisible(true);
+
+            // Armor bar — visible only when armor > 0.
+            if (enemyArmorBar != null) {
+                int maxArmor = com.splicelab.combat.CombatTuning.ARMOR_BOSS; // use boss as the visual reference cap
+                if (maxArmor <= 0) maxArmor = 1;
+                boolean hasArmor = state.activeEnemy.armor > 0;
+                enemyArmorBar.setVisible(hasArmor);
+                if (hasArmor) enemyArmorBar.setPercent(state.activeEnemy.armor / (float) maxArmor);
+            }
+
+            // Status label: prioritise tell > rage > none.
+            if (enemyStatusLabel != null) {
+                if (state.activeEnemy.chargingTell > 0f) {
+                    enemyStatusLabel.setText("⚡ CHARGING!");
+                    enemyStatusLabel.setColor(com.badlogic.gdx.graphics.Color.YELLOW);
+                    enemyStatusLabel.setVisible(true);
+                } else if (state.activeEnemy.inRage) {
+                    enemyStatusLabel.setText("RAGE!");
+                    enemyStatusLabel.setColor(com.badlogic.gdx.graphics.Color.ORANGE);
+                    enemyStatusLabel.setVisible(true);
+                } else {
+                    enemyStatusLabel.setVisible(false);
+                }
+            }
+
+            // Rage: tint enemy icon red.
+            if (state.activeEnemy.inRage) {
+                enemyIcon.setColor(1f, 0.4f, 0.4f, 1f);
+            } else if (state.activeEnemy.chargingTell > 0f) {
+                // Pulse yellow during tell wind-up.
+                float pulse = (float) Math.abs(Math.sin(state.activeEnemy.chargingTell * 6f));
+                enemyIcon.setColor(1f, 1f, 0.2f + 0.8f * pulse, 1f);
+            } else {
+                enemyIcon.setColor(1f, 1f, 1f, 1f);
+            }
 
             // T-2.1: only rebuild the enemy drawable when the enemy type changes.
             if (state.activeEnemy.enemyType != lastEnemyType) {
@@ -934,6 +1009,15 @@ public final class LabGameView {
             }
             // Make enemy image 10% smaller.
             enemyIcon.setScale(0.9f);
+        }
+
+        // Stun overlays per socket.
+        for (int i = 0; i < SOCKET_COUNT; i++) {
+            if (socketStunLabels[i] == null) continue;
+            boolean stunned = state.activeEnemy != null
+                    && state.activeEnemy.stunnedSocketId == i
+                    && state.activeEnemy.stunRemaining > 0f;
+            socketStunLabels[i].setVisible(stunned && socketFusion[i] != null);
         }
     }
 

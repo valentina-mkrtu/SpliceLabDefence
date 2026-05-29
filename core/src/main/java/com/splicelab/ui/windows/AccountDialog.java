@@ -26,6 +26,9 @@ public final class AccountDialog extends Dialog {
         super("Account", skin);
         this.context = context;
 
+        // Hide the window title text (keep layout/padding stable).
+        getTitleLabel().setText("");
+
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
         getContentTable().setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
@@ -51,7 +54,7 @@ public final class AccountDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
         addActor(topRight);
 
         Table content = new Table();
@@ -71,22 +74,22 @@ public final class AccountDialog extends Dialog {
         Color darkBlue = new Color(0.05f, 0.13f, 0.28f, 1f);
         Label nameLabel = ui.label(save.playerName);
         nameLabel.setColor(darkBlue);
-        nameLabel.setFontScale(1.15f);
+        nameLabel.setFontScale(1.15f * 1.30f);
         content.add(nameLabel).row();
 
         Label level = ui.label("Level " + save.playerLevel);
         level.setColor(darkBlue);
-        level.setFontScale(1.1f);
+        level.setFontScale(1.1f * 1.30f);
         content.add(level).row();
 
         Label streak = ui.label("Day Streak: " + save.dayStreak);
         streak.setColor(darkBlue);
-        streak.setFontScale(1.1f);
+        streak.setFontScale(1.1f * 1.30f);
         content.add(streak).row();
 
         Label fusions = ui.label("Total Fusions: " + save.totalFusionsUnlocked);
         fusions.setColor(darkBlue);
-        fusions.setFontScale(1.1f);
+        fusions.setFontScale(1.1f * 1.30f);
         content.add(fusions).row();
 
         // Leave margin so background frame is visible.
@@ -121,7 +124,7 @@ public final class AccountDialog extends Dialog {
         float vw = 540f;
         float vh = 960f;
         float w = vw * 0.90f;
-        float h = vh * 0.76f;
+        float h = vh * 0.76f * 0.80f;
         setSize(w, h);
     }
 
@@ -178,7 +181,8 @@ public final class AccountDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so the window background doesn't "blink".
+        super.hide(null);
         if (bgImage != null) bgImage.remove();
         bgImage = null;
         // bgTex may be owned by AssetManager; don't dispose here.

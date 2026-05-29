@@ -21,6 +21,8 @@ public final class CollectionsDialog extends Dialog {
     private static final String FRAME_PATH = "art/icons/iconbg.png";
     private static final String LOCK_PATH = "art/icons/slot.png";
 
+    private static final float TEXT_SCALE = 0.70f;
+
     private Texture bgTex;
     private Image bgImage;
     // frameTex and lockTex are sourced from AssetService and not privately owned. (T-2.2, T-3.4)
@@ -32,6 +34,9 @@ public final class CollectionsDialog extends Dialog {
         super("Collections", skin);
 
         this.context = context;
+
+        // Hide the window title text (keep layout/padding stable).
+        getTitleLabel().setText("");
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((Drawable) null);
@@ -57,7 +62,7 @@ public final class CollectionsDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
         addActor(topRight);
 
         Table grid = new Table();
@@ -123,7 +128,7 @@ public final class CollectionsDialog extends Dialog {
         float vw = 540f;
         float vh = 960f;
         float w = vw * 0.90f;
-        float h = vh * 0.76f;
+        float h = vh * 0.76f * 0.80f;
         setSize(w, h);
     }
 
@@ -175,7 +180,8 @@ public final class CollectionsDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so the window background doesn't "blink".
+        super.hide(null);
         if (bgImage != null) bgImage.remove();
         disposeTextures();
         if (closeButton != null) closeButton.dispose();
@@ -225,7 +231,9 @@ public final class CollectionsDialog extends Dialog {
         if (name == null || name.isBlank()) {
             name = fusion == null ? "" : (fusion.entityType.name() + " + " + fusion.itemType.name());
         }
-        cell.add(ui.label(unlocked ? name : "Locked")).padTop(4);
+        var label = ui.label(unlocked ? name : "Locked");
+        label.setFontScale(TEXT_SCALE);
+        cell.add(label).padTop(4);
         return cell;
     }
 

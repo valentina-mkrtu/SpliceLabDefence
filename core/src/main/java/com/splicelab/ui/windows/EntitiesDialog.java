@@ -20,6 +20,8 @@ import com.splicelab.ui.UiFactory;
 public final class EntitiesDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
 
+    private static final float TEXT_SCALE = 0.70f;
+
     private final GameContext context;
 
     private com.badlogic.gdx.graphics.Texture bgTex;
@@ -29,6 +31,9 @@ public final class EntitiesDialog extends Dialog {
     public EntitiesDialog(Skin skin, GameContext context) {
         super("Entities", skin);
         this.context = context;
+
+        // Hide the window title text (keep layout/padding stable).
+        getTitleLabel().setText("");
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
@@ -54,7 +59,7 @@ public final class EntitiesDialog extends Dialog {
             }
         });
         topRight.top().right();
-        topRight.add(closeBtn).size(48).padTop(38).padRight(58);
+        topRight.add(closeBtn).size(48).padTop(50).padRight(58);
         addActor(topRight);
 
         Table list = new Table();
@@ -114,7 +119,7 @@ public final class EntitiesDialog extends Dialog {
         float vw = 540f;
         float vh = 960f;
         float w = vw * 0.90f;
-        float h = vh * 0.76f;
+        float h = vh * 0.76f * 0.80f;
         setSize(w, h);
     }
 
@@ -171,7 +176,8 @@ public final class EntitiesDialog extends Dialog {
 
     @Override
     public void hide() {
-        super.hide();
+        // Hide instantly (no fade) so the window background doesn't "blink".
+        super.hide(null);
         if (bgImage != null) bgImage.remove();
         bgImage = null;
         // bgTex may be owned by AssetManager; don't dispose here.
@@ -183,7 +189,7 @@ public final class EntitiesDialog extends Dialog {
     private Table sectionHeader(UiFactory ui, String title) {
         var l = ui.label(title == null ? "" : title);
         l.setColor(new Color(0.8f, 0.9f, 1f, 1f));
-        l.setFontScale(1.2f);
+        l.setFontScale(1.2f * TEXT_SCALE);
         Table t = new Table();
         t.add(l).left();
         return t;
@@ -204,9 +210,19 @@ public final class EntitiesDialog extends Dialog {
 
         Table right = new Table();
         right.defaults().left();
-        right.add(ui.label(name + (unlocked ? "" : " (Locked)"))).row();
-        right.add(ui.smallLabel("HP: " + def.baseStats.maxHp() + "   ATK: " + def.baseStats.atk())).row();
-        if (def.description != null && !def.description.isBlank()) right.add(ui.smallLabel(def.description)).row();
+        var nameLabel = ui.label(name + (unlocked ? "" : " (Locked)"));
+        nameLabel.setFontScale(TEXT_SCALE);
+        right.add(nameLabel).row();
+
+        var statsLabel = ui.smallLabel("HP: " + def.baseStats.maxHp() + "   ATK: " + def.baseStats.atk());
+        statsLabel.setFontScale(TEXT_SCALE);
+        right.add(statsLabel).row();
+
+        if (def.description != null && !def.description.isBlank()) {
+            var desc = ui.smallLabel(def.description);
+            desc.setFontScale(TEXT_SCALE);
+            right.add(desc).row();
+        }
 
         card.add(left).padRight(8);
         card.add(right).expandX().fillX();
@@ -228,13 +244,17 @@ public final class EntitiesDialog extends Dialog {
 
         Table right = new Table();
         right.defaults().left();
-        right.add(ui.label(name + (unlocked ? "" : " (Locked)"))).row();
+        var nameLabel = ui.label(name + (unlocked ? "" : " (Locked)"));
+        nameLabel.setFontScale(TEXT_SCALE);
+        right.add(nameLabel).row();
 
         String effect = def.description;
         if (effect == null || effect.isBlank()) {
             effect = "HP +" + def.statModifiers.hp() + ", ATK +" + def.statModifiers.atk();
         }
-        right.add(ui.smallLabel(effect)).row();
+        var effectLabel = ui.smallLabel(effect);
+        effectLabel.setFontScale(TEXT_SCALE);
+        right.add(effectLabel).row();
 
         card.add(left).padRight(8);
         card.add(right).expandX().fillX();
