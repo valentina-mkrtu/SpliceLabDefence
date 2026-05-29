@@ -19,21 +19,22 @@ public final class CombatController {
     private final CombatState state;
     private int instanceCounter;
 
-    private final java.util.Random rng = new java.util.Random();
+    // T-4.1: all random calls now route through context.random (the seeded RandomService)
+    //         so that DebugFlags.SEEDED_RANDOM actually produces deterministic runs.
 
-    private static final int DEFAULT_TUBE_BAG_SIZE = 8;
+    // DEFAULT_TUBE_BAG_SIZE removed — tube bag system deleted (T-5.1)
     private static final int ENDLESS_START_LEVEL = 50;
     private static final float ENDLESS_SCALE_STEP_SECONDS = 60f;
     private static final float ENDLESS_SCALE_STEP_AMOUNT = 0.10f;
     private static final float TIMEOUT_WARNING_SECONDS = 4f;
-    private final java.util.ArrayDeque<com.splicelab.services.TubeSpawnService.SpawnChoice> tubeBag = new java.util.ArrayDeque<>();
+    // tubeBag field removed — dead legacy spawn system (T-5.1)
 
     private boolean timeoutWarningFired;
 
     public interface CombatFeedback {
         int getConveyorPathLength();
 
-        int mapSlotToPathIndex(boolean leftSide, int slotIndex);
+        // mapSlotToPathIndex removed — unused (T-5.2)
 
         void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex);
 
@@ -93,12 +94,12 @@ public final class CombatController {
         state.tubeMaxCharges = charges;
         state.tubeCharges = charges;
         state.consecutiveItemSpawns = 0;
-        refillTubeBagIfNeeded();
         state.activeEnemy = null;
         state.enemySpawnCooldownRemaining = 0f;
         state.enemyWaveIndex = 0;
-        // Enemy attacks every 3 seconds.
-        state.enemyAttackCooldownRemaining = 3f;
+        // T-4.3: initial cooldown is set by spawnEnemyOfType() from the enemy definition.
+        // Reset to 0 so the first enemy spawns and sets its own interval immediately.
+        state.enemyAttackCooldownRemaining = 0f;
 
         state.endlessMode = endless;
         state.endlessElapsedSeconds = 0f;
@@ -150,8 +151,7 @@ public final class CombatController {
         state.tubeCooldownRemaining = 0f;
         if (state.tubeCharges <= 0) {
             state.tubeCharges = state.tubeMaxCharges;
-            refillTubeBagIfNeeded();
-        }
+            }
         // Safety: allow an immediate spit even if the UI/state got out of sync.
         if (state.tubeCharges <= 0) state.tubeCharges = Math.max(1, state.tubeMaxCharges);
         return true;
@@ -217,8 +217,7 @@ public final class CombatController {
         if (state.level != null && state.tubeCharges <= 0) {
             if (state.tubeCooldownRemaining <= 0f) {
                 state.tubeCharges = state.tubeMaxCharges;
-                refillTubeBagIfNeeded();
-            }
+                    }
         }
 
         if (state.enemySpawnCooldownRemaining > 0f && !frozen) {
@@ -242,9 +241,7 @@ public final class CombatController {
         if (state.conveyorBeltPhase >= 1f) state.conveyorBeltPhase -= (float) Math.floor(state.conveyorBeltPhase);
     }
 
-    private void updateConveyorMovement(float delta) {
-        // Intentionally left blank: sockets stay in their assigned pocket.
-    }
+    // updateConveyorMovement(float) removed — empty stub (T-5.2)
 
     public CommandResult requestTubeSpawn() {
         if (state.result != CombatResult.RUNNING) {
@@ -262,12 +259,14 @@ public final class CombatController {
             return CommandResult.fail(CommandResult.Code.TUBE_ON_COOLDOWN, "Tube on cooldown");
         }
 
-        int[] empty = findRandomEmptyNonTubeCell();
-        if (empty == null) {
+        // T-5.3: build the empty-cell list once; pass it to both the crowd-check and placement.
+        java.util.List<int[]> emptyCells = collectEmptyNonTubeCells();
+        if (emptyCells.isEmpty()) {
             return CommandResult.fail(CommandResult.Code.NO_EMPTY_GRID_CELL, "No empty grid cell");
         }
+        int[] empty = emptyCells.get(context.random.nextInt(emptyCells.size()));
 
-        var choice = chooseTubeSpawnWithPity();
+        var choice = chooseTubeSpawnWithPity(emptyCells.size());
         if (choice == null || choice.type() == com.splicelab.services.TubeSpawnService.SpawnChoice.Type.NONE) {
             return CommandResult.fail(CommandResult.Code.INVALID_LEVEL, "No spawn choices");
         }
@@ -306,18 +305,11 @@ public final class CombatController {
         return CommandResult.ok();
     }
 
-    private com.splicelab.services.TubeSpawnService.SpawnChoice chooseTubeSpawnWithPity() {
+    /** T-5.3: accepts pre-computed empty cell count so the caller doesn't scan twice. */
+    private com.splicelab.services.TubeSpawnService.SpawnChoice chooseTubeSpawnWithPity(int emptyCount) {
         // Grid safety: if grid is getting full, bias toward entities.
         // Items without entities create deadlocks where the player can't fuse.
-        int filled = 0;
-        int empty = 0;
-        for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
-            for (int c = 0; c < AppConstants.GRID_COLS; c++) {
-                if (isTubeCell(c, r)) continue;
-                if (state.grid[c][r] == null) empty++; else filled++;
-            }
-        }
-        boolean gridCrowded = empty <= 2;
+        boolean gridCrowded = emptyCount <= 2;
 
         int pityEveryX = Math.max(0, context.config.pityGuaranteeEntityEveryXItemSpawns);
         boolean forceEntity = pityEveryX > 0 && state.consecutiveItemSpawns >= pityEveryX;
@@ -361,13 +353,7 @@ public final class CombatController {
         return Math.max(0.25f, cd);
     }
 
-    private void refillTubeBagIfNeeded() {
-        // Legacy system: kept for compatibility if any old code path uses it.
-        if (!tubeBag.isEmpty()) return;
-        if (state.level == null) return;
-        int bagSize = Math.max(1, state.tubeMaxCharges > 0 ? state.tubeMaxCharges : DEFAULT_TUBE_BAG_SIZE);
-        tubeBag.addAll(context.tubeSpawnService.buildSpawnBagForLevel(state.level.levelNumber, bagSize));
-    }
+    // refillTubeBagIfNeeded() removed — dead legacy system (T-5.1)
 
     public CommandResult requestMoveIngredient(int fromCol, int fromRow, int toCol, int toRow) {
         if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
@@ -439,10 +425,7 @@ public final class CombatController {
         return CommandResult.ok();
     }
 
-    public CommandResult requestDeployFusionFromGrid(int fromCol, int fromRow, boolean leftSide, int slotIndex) {
-        // Deprecated: left/right slot deployment replaced by 12-socket deployment.
-        return CommandResult.fail(CommandResult.Code.INVALID_PAYLOAD, "Use socket deployment");
-    }
+    // requestDeployFusionFromGrid() removed — deprecated stub replaced by socket deployment (T-5.2)
 
     public CommandResult requestDeployFusionToSocket(int fromCol, int fromRow, int socketId) {
         if (state.result != CombatResult.RUNNING) return CommandResult.fail(CommandResult.Code.ROUND_NOT_RUNNING, "Round not running");
@@ -520,26 +503,20 @@ public final class CombatController {
         return c >= 0 && c < AppConstants.GRID_COLS && r >= 0 && r < AppConstants.GRID_ROWS;
     }
 
-    private int[] findRandomEmptyNonTubeCell() {
-        int emptyCount = 0;
+    /**
+     * T-5.3: Returns all empty non-tube cells in a single pass.
+     * Callers use the list for both the crowd-check count and random placement pick,
+     * eliminating the previous double-scan.
+     */
+    private java.util.List<int[]> collectEmptyNonTubeCells() {
+        java.util.List<int[]> cells = new java.util.ArrayList<>();
         for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
                 if (isTubeCell(c, r)) continue;
-                if (state.grid[c][r] == null) emptyCount++;
+                if (state.grid[c][r] == null) cells.add(new int[]{c, r});
             }
         }
-        if (emptyCount == 0) return null;
-
-        int pick = rng.nextInt(emptyCount);
-        for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
-            for (int c = 0; c < AppConstants.GRID_COLS; c++) {
-                if (isTubeCell(c, r)) continue;
-                if (state.grid[c][r] != null) continue;
-                if (pick == 0) return new int[]{c, r};
-                pick--;
-            }
-        }
-        return null;
+        return cells;
     }
 
     private void ensureEnemySpawned() {
@@ -593,19 +570,16 @@ public final class CombatController {
     }
 
     private float getDifficultyTierFactor() {
-        // Smooth ramp with noticeable bumps at 11, 15, 20, ...
-        // L1-10: keep dynamic scaling gentle.
+        // T-5.4: literals replaced with CombatTuning constants.
         int level = Math.max(1, state.levelNumber);
-        if (level <= 10) return 0.35f;
+        if (level <= CombatTuning.TIER_GENTLE_CAP) return CombatTuning.TIER_GENTLE_FACTOR;
 
-        // Every 5 levels starting at 11 adds a bump.
-        // 11-14 => 1 bump, 15-19 => 2, 20-24 => 3, ...
-        int bumps = 1 + Math.max(0, (level - 11) / 5);
-
-        // Inside a 5-level band, add a small smooth ramp 0..1.
-        float withinBand = ((level - 11) % 5) / 4f;
-        float tier = 0.55f + 0.15f * bumps + 0.20f * withinBand;
-        return Math.max(0.35f, Math.min(1.35f, tier));
+        int bumps = 1 + Math.max(0, (level - CombatTuning.TIER_RAMP_START) / CombatTuning.TIER_BUMP_INTERVAL);
+        float withinBand = ((level - CombatTuning.TIER_RAMP_START) % CombatTuning.TIER_BUMP_INTERVAL) / 4f;
+        float tier = CombatTuning.TIER_RAMP_BASE
+                + CombatTuning.TIER_BUMP_FACTOR * bumps
+                + CombatTuning.TIER_INTRA_BAND_FACTOR * withinBand;
+        return Math.max(CombatTuning.TIER_MIN, Math.min(CombatTuning.TIER_MAX, tier));
     }
 
     private EnemyType chooseWeightedEnemyType(LevelDefinition level) {
@@ -642,7 +616,7 @@ public final class CombatController {
             float interval = fusion.stats == null ? 1f : fusion.stats.attackIntervalSeconds();
             interval = Math.max(CombatTuning.MIN_ATTACK_INTERVAL_SECONDS, interval);
             // Slight jitter so stacks feel less robotic.
-            interval *= 0.90f + rng.nextFloat() * 0.20f;
+            interval *= context.random.range(0.90f, 1.10f);
             state.fusionAttackCooldownSockets[socketId] = interval;
         }
     }
@@ -665,7 +639,7 @@ public final class CombatController {
 
         // Window so we don't skip it between frames.
         float frac = idxF - (float) Math.floor(idxF);
-        return frac < 0.35f;
+        return frac < CombatTuning.FUSION_LOW_HEALTH_THRESHOLD;
     }
 
     private void attackEnemyFromFusionSocket(int socketId, FusionInstance fusion) {
@@ -676,11 +650,11 @@ public final class CombatController {
 
         int base = Math.max(0, fusion.stats.atk());
         float variance = Math.max(0f, fusion.stats.variance());
-        float roll = (rng.nextFloat() * 2f - 1f) * variance;
+        float roll = context.random.range(-variance, variance);
         float atkMult = state.atkX2SecondsRemaining > 0f ? 2f : 1f;
         int dmg = Math.max(CombatTuning.MIN_DAMAGE, Math.round(base * atkMult * (1f + roll)));
 
-        boolean special = rng.nextFloat() < fusion.stats.specialChance();
+        boolean special = context.random.chance(fusion.stats.specialChance());
         if (special) dmg *= 2;
 
         CombatLog.d("fusion hit enemy dmg=" + dmg + (special ? " SPECIAL" : ""));
@@ -764,7 +738,7 @@ public final class CombatController {
         if (count == 0) return -1;
 
         // 70%: target the lowest HP% fusion.
-        if (rng.nextFloat() < 0.70f) {
+        if (context.random.chance(CombatTuning.ENEMY_TARGET_LOW_HP_CHANCE)) {
             int bestSocket = -1;
             float bestHpPct = Float.POSITIVE_INFINITY;
             for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
@@ -791,7 +765,7 @@ public final class CombatController {
         }
         if (count == 0) return -1;
 
-        int pick = rng.nextInt(count);
+        int pick = context.random.nextInt(count);
         for (int socketId = 0; socketId < state.conveyorSockets.length; socketId++) {
             FusionInstance f = state.conveyorSockets[socketId];
             if (f == null || f.hp <= 0) continue;

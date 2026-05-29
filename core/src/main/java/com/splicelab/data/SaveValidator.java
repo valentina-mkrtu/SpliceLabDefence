@@ -28,11 +28,11 @@ public final class SaveValidator {
             data.schemaVersion = config.saveSchemaVersion;
         }
 
-        data.playerLevel = Math.max(1, data.playerLevel);
-        data.xp = Math.max(0, data.xp);
-        data.currentLevel = Math.max(1, data.currentLevel);
-        data.coins = Math.max(0, data.coins);
-        data.dna = Math.max(0, data.dna);
+        data.playerLevel = clamp(data.playerLevel, 1, GameConfig.MAX_PLAYER_LEVEL);
+        data.xp = clamp(data.xp, 0, GameConfig.MAX_XP);
+        data.currentLevel = clamp(data.currentLevel, 1, GameConfig.MAX_CURRENT_LEVEL);
+        data.coins = clamp(data.coins, 0, GameConfig.MAX_COINS);
+        data.dna = clamp(data.dna, 0, GameConfig.MAX_DNA);
         data.endlessBestSurvivalSeconds = Math.max(0f, data.endlessBestSurvivalSeconds);
 
         data.unlockedConveyorSlotsLeft = clamp(data.unlockedConveyorSlotsLeft, 0, config.maxConveyorSlotsPerSide);

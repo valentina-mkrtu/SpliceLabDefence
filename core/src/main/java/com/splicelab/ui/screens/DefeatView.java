@@ -5,7 +5,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.splicelab.app.GameContext;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.ui.UiFactory;
 
 public final class DefeatView {
@@ -14,7 +13,7 @@ public final class DefeatView {
     private Runnable retryListener;
 
     public DefeatView(GameContext context) {
-        skin = PlaceholderSkinFactory.create();
+        skin = context.skin;
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = ui.panel();
@@ -39,6 +38,5 @@ public final class DefeatView {
     }
 
     public void dispose() {
-        if (skin != null) skin.dispose();
     }
 }

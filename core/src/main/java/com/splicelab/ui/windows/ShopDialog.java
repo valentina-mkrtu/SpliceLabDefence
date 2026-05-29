@@ -52,7 +52,7 @@ public final class ShopDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseImageFactory.create();
+        closeButton = DialogCloseImageFactory.create(context.assets);
         Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override

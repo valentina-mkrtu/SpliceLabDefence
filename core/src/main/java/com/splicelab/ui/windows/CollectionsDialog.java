@@ -41,8 +41,7 @@ public final class CollectionsDialog extends Dialog {
 
     private Texture bgTex;
     private Image bgImage;
-    private Texture frameTex;
-    private Texture lockTex;
+    // frameTex and lockTex are sourced from AssetService and not privately owned. (T-2.2, T-3.4)
     private DialogCloseImageFactory.CloseImage closeButton;
 
     private final GameContext context;
@@ -66,7 +65,7 @@ public final class CollectionsDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseImageFactory.create();
+        closeButton = DialogCloseImageFactory.create(context.assets);
         Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
@@ -200,18 +199,9 @@ public final class CollectionsDialog extends Dialog {
     private void disposeTextures() {
         if (bgImage != null) bgImage.remove();
         bgImage = null;
-        // bgTex may be owned by AssetManager; don't dispose here.
-        if (frameTex != null) frameTex.dispose();
-        if (lockTex != null) lockTex.dispose();
-        if (fusionTextures != null) {
-            for (Texture t : fusionTextures) {
-                if (t != null) t.dispose();
-            }
-        }
+        // bgTex, frameTex, lockTex all come from AssetService — not disposed here. (T-2.2, T-3.4)
         bgTex = null;
-        frameTex = null;
-        lockTex = null;
-        fusionTextures = null;
+        // All textures are AssetService-owned; no private textures to dispose. (T-2.2, T-3.4)
     }
 
     private Drawable loadFusionDrawable(String fusionId) {
@@ -239,7 +229,7 @@ public final class CollectionsDialog extends Dialog {
         cell.defaults().pad(6);
 
         Table frame = new Table();
-        Drawable frameDrawable = loadDrawable(FRAME_PATH, () -> frameTex, t -> frameTex = t);
+        Drawable frameDrawable = loadDrawable(FRAME_PATH);
         if (frameDrawable != null) frame.setBackground(frameDrawable);
 
         Image icon;
@@ -249,7 +239,7 @@ public final class CollectionsDialog extends Dialog {
                     ? new Image(fusionDrawable)
                     : Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.65f, 0.5f, 1f));
         } else {
-            Drawable lockDrawable = loadDrawable(LOCK_PATH, () -> lockTex, t -> lockTex = t);
+            Drawable lockDrawable = loadDrawable(LOCK_PATH);
             if (lockDrawable != null) {
                 icon = new Image(lockDrawable);
                 icon.setColor(0.55f, 0.55f, 0.55f, 1f);
@@ -266,23 +256,10 @@ public final class CollectionsDialog extends Dialog {
         return cell;
     }
 
-    private interface TexGetter {
-        Texture get();
-    }
-
-    private interface TexSetter {
-        void set(Texture texture);
-    }
-
-    private Drawable loadDrawable(String path, TexGetter getter, TexSetter setter) {
-        if (path == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) {
-            return null;
-        }
-
-        // Prefer AssetManager only; avoid disk IO during UI interaction.
-        Texture t = null;
-        if (context != null && context.assets != null) t = context.assets.getTexture(path);
-        if (t == null) return null;
-        return new TextureRegionDrawable(new TextureRegion(t));
+    /** Returns a drawable from the shared AssetService, or null if not loaded. (T-2.2, T-3.4) */
+    private Drawable loadDrawable(String path) {
+        if (path == null) return null;
+        if (context == null || context.assets == null) return null;
+        return context.assets.getDrawable(path);
     }
 }

@@ -17,6 +17,34 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        // Release signing reads credentials from gradle.properties or environment variables.
+        // Set the following in your local gradle.properties (gitignored):
+        //   RELEASE_STORE_FILE=path/to/release.keystore
+        //   RELEASE_STORE_PASSWORD=...
+        //   RELEASE_KEY_ALIAS=...
+        //   RELEASE_KEY_PASSWORD=...
+        release {
+            storeFile     project.hasProperty('RELEASE_STORE_FILE')     ? file(RELEASE_STORE_FILE)     : null
+            storePassword project.hasProperty('RELEASE_STORE_PASSWORD') ? RELEASE_STORE_PASSWORD       : ''
+            keyAlias      project.hasProperty('RELEASE_KEY_ALIAS')      ? RELEASE_KEY_ALIAS            : ''
+            keyPassword   project.hasProperty('RELEASE_KEY_PASSWORD')   ? RELEASE_KEY_PASSWORD         : ''
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled   true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Uncomment once a keystore is configured above:
+            // signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
     packaging {
         resources {
             excludes += [

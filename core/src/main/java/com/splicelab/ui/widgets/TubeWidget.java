@@ -1,31 +1,30 @@
 package com.splicelab.ui.widgets;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.splicelab.assets.AssetService;
 import com.splicelab.ui.UiFactory;
 
+/** Tube tap widget. Textures are owned by the shared {@link AssetService}. (T-2.2) */
 public final class TubeWidget extends Group {
-    private static final String TUBE_ICON_TEXTURE_PATH = "art/icons/tube.png";
+    static final String TUBE_ICON_TEXTURE_PATH = "art/icons/tube.png";
 
     private final Table bg;
-    private final Texture iconTexture;
     private final Image icon;
     private final Table cooldownBar;
     private float cooldownPct;
 
-    public TubeWidget(Skin skin, UiFactory ui) {
+    public TubeWidget(Skin skin, UiFactory ui, AssetService assets) {
         bg = new Table();
         // Let the gameplay background show through.
         bg.setBackground(skin.newDrawable("white", new Color(0.2f, 0.25f, 0.3f, 0.0f)));
         bg.setFillParent(true);
 
-        iconTexture = new Texture(TUBE_ICON_TEXTURE_PATH);
-        icon = new Image(new TextureRegion(iconTexture));
+        var drawable = assets.getDrawable(TUBE_ICON_TEXTURE_PATH);
+        icon = drawable != null ? new Image(drawable) : new Image();
         bg.add(icon).grow();
         addActor(bg);
 
@@ -35,9 +34,8 @@ public final class TubeWidget extends Group {
         setSize(66, 66);
     }
 
-    public void dispose() {
-        iconTexture.dispose();
-    }
+    /** No-op: texture owned by {@link AssetService}. */
+    public void dispose() {}
 
     public void setCooldown(float remainingSeconds, float totalSeconds) {
         float total = Math.max(0.001f, totalSeconds);

@@ -21,6 +21,18 @@ public final class GameConfig {
     public final float defeatCoinsMultiplier;
     public final float defeatDnaMultiplier;
 
+    // -------------------------------------------------------------------------
+    // Save-data ceiling constants (used by SaveValidator to clamp edited values)
+    // Adjust these if your economy changes substantially.
+    // -------------------------------------------------------------------------
+    public static final int MAX_COINS        = 10_000_000;
+    public static final int MAX_DNA          = 1_000_000;
+    public static final int MAX_CRYSTALS     = 100_000;
+    public static final int MAX_PLAYER_LEVEL = 100;
+    /** Highest level index + a small margin so future levels don't get clamped. */
+    public static final int MAX_CURRENT_LEVEL = 200;
+    public static final int MAX_XP            = 100_000_000;
+
     public GameConfig(
             int saveSchemaVersion,
             int maxConveyorSlotsPerSide,

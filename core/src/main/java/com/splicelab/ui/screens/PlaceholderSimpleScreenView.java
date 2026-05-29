@@ -1,12 +1,10 @@
 package com.splicelab.ui.screens;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.splicelab.app.GameContext;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.ui.UiConstants;
 import com.splicelab.ui.UiFactory;
 
@@ -16,24 +14,21 @@ public final class PlaceholderSimpleScreenView {
 
     private final Table root;
     private final Skin skin;
-    private Texture pfpTexture;
-    private Texture bgTexture;
 
     public PlaceholderSimpleScreenView(GameContext context, String title, String subtitle) {
-        this.skin = PlaceholderSkinFactory.create();
+        this.skin = context.skin;
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = new Table();
         root.setFillParent(true);
-        bgTexture = new Texture(BG_PATH);
-        bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        root.setBackground(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(new com.badlogic.gdx.graphics.g2d.TextureRegion(bgTexture)));
+        var bgDrawable = context.assets.getDrawable(BG_PATH);
+        if (bgDrawable != null) root.setBackground(bgDrawable);
 
         Table header = new Table();
         header.setBackground(skin.newDrawable("white", UiConstants.PANEL_DARK));
 
-        pfpTexture = new Texture(PFP_ICON_PATH);
-        Image pfp = new Image(pfpTexture);
+        var pfpDrawable = context.assets.getDrawable(PFP_ICON_PATH);
+        Image pfp = pfpDrawable != null ? new Image(pfpDrawable) : new Image();
         header.add(pfp).size(44).pad(10);
 
         Table text = new Table();
@@ -53,8 +48,6 @@ public final class PlaceholderSimpleScreenView {
     }
 
     public void dispose() {
-        skin.dispose();
-        if (pfpTexture != null) pfpTexture.dispose();
-        if (bgTexture != null) bgTexture.dispose();
+        // Textures are owned by AssetService — not disposed here. (T-2.2)
     }
 }

@@ -25,12 +25,12 @@ import com.splicelab.app.GameContext;
 import com.splicelab.model.EntityType;
 import com.splicelab.model.ItemType;
 import com.splicelab.assets.PlaceholderSkinFactory;
-import com.splicelab.assets.TextureCache;
 import com.splicelab.combat.CombatController;
 import com.splicelab.combat.CombatState;
 import com.splicelab.combat.CombatTuning;
 import com.splicelab.model.IngredientKind;
 import com.splicelab.model.enemy.EnemyDefinition;
+import com.splicelab.model.enemy.EnemyType;
 import com.splicelab.model.ingredient.FusionInstance;
 import com.splicelab.model.ingredient.IngredientInstance;
 import com.splicelab.model.ingredient.SimpleIngredientInstance;
@@ -68,6 +68,17 @@ public final class LabGameView {
     // Positive value shifts the whole belt-line segment upward.
     private static final float BELT_TRACK_VERTICAL_OFFSET_RATIO = 0.01f;
     private static final float BELT_SCALE = 0.8f;
+
+    // -------------------------------------------------------------------------
+    // Layout constants — T-5.4
+    // All stage-world-unit values for a 540×960 design viewport.
+    // -------------------------------------------------------------------------
+    /** Horizontal margin from stage edge to the outermost belt path point. */
+    private static final float LAYOUT_MARGIN = 52f;
+    /** Distance from the top of the stage to the upper belt rail. */
+    private static final float LAYOUT_TOP_OFFSET = 70f;
+    /** Distance from the top of the stage to the lower belt rail. */
+    private static final float LAYOUT_BOTTOM_OFFSET = 448f;
 
     // Marker is a fixed warning pointer on the left side.
     private static final int ATTACK_MARKER_PATH_INDEX = 10;
@@ -109,8 +120,14 @@ public final class LabGameView {
     private float screenShakeStrengthPx;
     private float screenShakeSeedSeconds;
 
-    private final TextureCache textures = new TextureCache();
     private final Image enemyIcon;
+
+    // Persistent per-socket actors — created once in the constructor, mutated in syncFromState
+    // rather than being rebuilt every frame. (T-2.1)
+    private final Image[] socketIconActors;
+    private final HpBarWidget[] socketHpActors;
+    private final FusionInstance[] lastSocketFusion;
+    private EnemyType lastEnemyType = null;
 
     private final Table attackZoneMarker;
     private final AttackZoneMarkerActor attackZoneMarkerActor;
@@ -138,15 +155,21 @@ public final class LabGameView {
 
     private final Table background;
 
-    private Texture freezeTex;
-    private Texture cooldownTex;
-    private Texture x2Tex;
-    private Texture recoverTex;
-    private Texture removeTex;
+    // Boost icon drawables are now fetched from context.assets (T-2.2); no per-field Texture fields needed.
 
     private final Table boostLeft;
 
     private boolean dragSfxPlayed;
+
+    // T-2.4: Reusable projectile pool — avoids a new Table + Drawable allocation per shot.
+    private final com.badlogic.gdx.utils.Pool<Table> projectilePool = new com.badlogic.gdx.utils.Pool<Table>(8) {
+        @Override
+        protected Table newObject() {
+            Table t = new Table();
+            t.setSize(10, 10);
+            return t;
+        }
+    };
 
     private static final float FUSION_FRAME_NATIVE_W = 399f;
     private static final float FUSION_FRAME_NATIVE_H = 496;
@@ -161,7 +184,7 @@ public final class LabGameView {
 
     public LabGameView(GameContext context) {
         this.context = context;
-        this.skin = PlaceholderSkinFactory.create();
+        this.skin = context.skin;
         this.ui = new UiFactory(skin, context.audio);
 
         PlaceholderSkinFactory.addTextureIfPresent(skin, "lab_game_bg", "art/backgrounds/lab_game_bg.png");
@@ -201,7 +224,7 @@ public final class LabGameView {
         enemyHpBar = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.95f, 0.2f, 0.2f, 1f));
         enemyHpBar.setSize(150, 10);
 
-        shaftBgTexture = textures.get(SHAFT_BG_TEXTURE_PATH);
+        shaftBgTexture = context.assets.getTexture(SHAFT_BG_TEXTURE_PATH);
 
         enemyVisual = new Table();
         enemyIcon = new Image();
@@ -226,11 +249,11 @@ public final class LabGameView {
 
         conveyor.add(enemyPanel).pad(6);
 
-        enemyReg1Texture = textures.get("art/enemies/reg1.png");
-        enemyReg2Texture = textures.get("art/enemies/reg2.png");
-        enemyReg3Texture = textures.get("art/enemies/reg3.png");
-        enemyBoss1Texture = textures.get("art/enemies/boss1.png");
-        enemyBoss2Texture = textures.get("art/enemies/boss2.png");
+        enemyReg1Texture = context.assets.getTexture("art/enemies/reg1.png");
+        enemyReg2Texture = context.assets.getTexture("art/enemies/reg2.png");
+        enemyReg3Texture = context.assets.getTexture("art/enemies/reg3.png");
+        enemyBoss1Texture = context.assets.getTexture("art/enemies/boss1.png");
+        enemyBoss2Texture = context.assets.getTexture("art/enemies/boss2.png");
 
         // Lower section: fusion station background behind the grid.
         // Scale the frame up uniformly to better align with top section composition.
@@ -244,14 +267,14 @@ public final class LabGameView {
         Table grid = new Table();
         for (int r = AppConstants.GRID_ROWS - 1; r >= 0; r--) {
             for (int c = 0; c < AppConstants.GRID_COLS; c++) {
-                GridCellWidget cell = new GridCellWidget(skin, ui, c, r);
+                GridCellWidget cell = new GridCellWidget(skin, ui, context.assets, c, r);
                 cells[c][r] = cell;
                 grid.add(cell).size(MERGE_CELL_SIZE, MERGE_CELL_SIZE).pad(MERGE_CELL_PAD_Y, MERGE_CELL_PAD_X, MERGE_CELL_PAD_Y, MERGE_CELL_PAD_X);
             }
             grid.row();
         }
 
-        tube = new TubeWidget(skin, ui);
+        tube = new TubeWidget(skin, ui, context.assets);
         cells[AppConstants.TUBE_COL][AppConstants.TUBE_ROW].addActor(tube);
         tube.setPosition(9f, 10f);
         tube.addListener(new ClickListener() {
@@ -280,8 +303,8 @@ public final class LabGameView {
         // Conveyor loop background image from design export.
         beltLoop = new Table();
         beltLoop.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
-        beltLoopBaseTexture = textures.get(CONVEYOR_LOOP_BASE_TEXTURE_PATH);
-        beltLoopLineTexture = textures.get(CONVEYOR_LOOP_LINE_TEXTURE_PATH);
+        beltLoopBaseTexture = context.assets.getTexture(CONVEYOR_LOOP_BASE_TEXTURE_PATH);
+        beltLoopLineTexture = context.assets.getTexture(CONVEYOR_LOOP_LINE_TEXTURE_PATH);
         beltLoop.setBackground(new TextureRegionDrawable(new TextureRegion(beltLoopBaseTexture)));
         beltLayer.addActor(beltLoop);
         beltLoopLineActor = new MovingBeltLineActor(new TextureRegion(beltLoopLineTexture));
@@ -298,10 +321,24 @@ public final class LabGameView {
         socketPathIndex = new int[SOCKET_COUNT];
         pathDirectionDegrees = new float[SOCKET_COUNT];
         socketFusion = new FusionInstance[SOCKET_COUNT];
+        socketIconActors = new Image[SOCKET_COUNT];
+        socketHpActors = new HpBarWidget[SOCKET_COUNT];
+        lastSocketFusion = new FusionInstance[SOCKET_COUNT];
         for (int i = 0; i < SOCKET_COUNT; i++) {
             conveyorSockets[i] = makeSocket(i);
             socketPathIndex[i] = i;
             beltLayer.addActor(conveyorSockets[i]);
+
+            // Create persistent icon + HP bar actors — added once, mutated in syncFromState (T-2.1)
+            socketIconActors[i] = new Image();
+            socketIconActors[i].setScaling(com.badlogic.gdx.utils.Scaling.fit);
+            socketIconActors[i].setVisible(false);
+            conveyorSockets[i].add(socketIconActors[i]).size(72, 72);
+
+            socketHpActors[i] = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.2f, 0.95f, 0.2f, 1f));
+            socketHpActors[i].setSize(70, 7);
+            socketHpActors[i].setVisible(false);
+            conveyorSockets[i].addActor(socketHpActors[i]);
         }
 
         layoutConveyorPath();
@@ -310,7 +347,7 @@ public final class LabGameView {
         attackZoneMarker.setSize(22, 22);
         root.addActor(attackZoneMarker);
 
-        attackMarkerTexture = textures.get(ATTACK_MARKER_TEXTURE_PATH);
+        attackMarkerTexture = context.assets.getTexture(ATTACK_MARKER_TEXTURE_PATH);
         attackMarkerTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         attackZoneMarkerImage = new Image(new TextureRegionDrawable(new TextureRegion(attackMarkerTexture)));
         attackZoneMarkerImage.setSize(34 * 1.2f, 34 * 1.2f);
@@ -328,23 +365,23 @@ public final class LabGameView {
         boostLeft.defaults().size(BOOST_BTN_SIZE).padBottom(BOOST_BTN_GAP_Y);
         root.addActor(boostLeft);
 
-        ImageButton freezeBtn = makeBoostButton(ICON_FREEZE_PATH, () -> freezeTex, t -> freezeTex = t, () -> {
+        ImageButton freezeBtn = makeBoostButton(ICON_FREEZE_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostFreeze != null) onBoostFreeze.run();
         });
-        ImageButton cooldownBtn = makeBoostButton(ICON_COOLDOWN_PATH, () -> cooldownTex, t -> cooldownTex = t, () -> {
+        ImageButton cooldownBtn = makeBoostButton(ICON_COOLDOWN_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostCooldown != null) onBoostCooldown.run();
         });
-        ImageButton x2Btn = makeBoostButton(ICON_X2_PATH, () -> x2Tex, t -> x2Tex = t, () -> {
+        ImageButton x2Btn = makeBoostButton(ICON_X2_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostX2 != null) onBoostX2.run();
         });
-        ImageButton recoverBtn = makeBoostButton(ICON_RECOVER_PATH, () -> recoverTex, t -> recoverTex = t, () -> {
+        ImageButton recoverBtn = makeBoostButton(ICON_RECOVER_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostRecover != null) onBoostRecover.run();
         });
-        ImageButton removeBtn = makeBoostButton(ICON_REMOVE_PATH, () -> removeTex, t -> removeTex = t, () -> {
+        ImageButton removeBtn = makeBoostButton(ICON_REMOVE_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostRemove != null) onBoostRemove.run();
         });
@@ -372,28 +409,18 @@ public final class LabGameView {
         this.onBoostRemove = remove;
     }
 
-    private interface TexGetter {
-        Texture get();
-    }
-
-    private interface TexSetter {
-        void set(Texture texture);
-    }
-
-    private Drawable tryLoadIcon(String path, TexGetter getter, TexSetter setter) {
+    /**
+     * Returns a drawable for the given path via the shared {@link com.splicelab.assets.AssetService}.
+     * Replaces the old per-field TexGetter/TexSetter pattern that loaded textures outside the
+     * AssetManager. (T-2.2)
+     */
+    private Drawable tryLoadIcon(String path) {
         if (path == null) return null;
-        if (!com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
-        Texture existing = getter.get();
-        if (existing == null) {
-            existing = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
-            existing.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            setter.set(existing);
-        }
-        return new TextureRegionDrawable(new TextureRegion(existing));
+        return context.assets.getDrawable(path);
     }
 
-    private ImageButton makeBoostButton(String iconPath, TexGetter iconGetter, TexSetter iconSetter, Runnable onClick) {
-        Drawable icon = tryLoadIcon(iconPath, iconGetter, iconSetter);
+    private ImageButton makeBoostButton(String iconPath, Runnable onClick) {
+        Drawable icon = tryLoadIcon(iconPath);
         ImageButton btn;
         if (icon == null) {
             btn = new ImageButton(skin.newDrawable("white", UiConstants.PANEL_DARK));
@@ -415,8 +442,15 @@ public final class LabGameView {
     }
 
     public void update(float delta) {
-        beltPhase += delta / Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
-        if (beltPhase >= 1f) beltPhase -= (float) Math.floor(beltPhase);
+        // T-4.2: beltPhase is now read from state.conveyorBeltPhase in syncFromState;
+        // the view no longer maintains its own independent integrator.
+        // beltPhase is still used for pre-sync rendering; it advances here only until
+        // the first syncFromState overwrites it.
+        if (beltPhase == 0f) {
+            // Advance a placeholder phase until the first state sync arrives.
+            beltPhase += delta / Math.max(0.01f, CombatTuning.CONVEYOR_LOOP_SECONDS);
+            if (beltPhase >= 1f) beltPhase -= (float) Math.floor(beltPhase);
+        }
 
         hitFlashRemainingSeconds = Math.max(0f, hitFlashRemainingSeconds - Math.max(0f, delta));
         if (hitFlashRemainingSeconds <= 0f) hitFlashIntensity = 0f;
@@ -428,7 +462,6 @@ public final class LabGameView {
         // Screen shake disabled (too disruptive for the whole lab page).
         root.setPosition(0f, 0f);
 
-        // Keep sockets moving even before the first state sync.
         layoutConveyorPath();
         layoutConveyorPathForPhase(beltPhase);
     }
@@ -453,10 +486,9 @@ public final class LabGameView {
         // Fixed 12-point loop in beltLayer coordinates.
         // Keep it stable: do not depend on child actor layout/initialization.
         layoutShaftBackground();
-        float margin = 52f;
-        // Make the conveyor segment a bit larger.
-        float combatTopY = root.getHeight() - 70f;
-        float combatBottomY = root.getHeight() - 448f;
+        float margin = LAYOUT_MARGIN;
+        float combatTopY = root.getHeight() - LAYOUT_TOP_OFFSET;
+        float combatBottomY = root.getHeight() - LAYOUT_BOTTOM_OFFSET;
         float leftX = margin;
         float rightX = root.getWidth() - margin;
 
@@ -664,11 +696,19 @@ public final class LabGameView {
         return root;
     }
 
+    /**
+     * Disposes only what this view uniquely owns.
+     *
+     * <p>Textures loaded via {@link com.splicelab.assets.AssetService} are NOT disposed here —
+     * they are owned by the AssetService and will be released at shutdown.
+     * The shared {@link com.badlogic.gdx.scenes.scene2d.ui.Skin} is owned by
+     * {@link com.splicelab.app.SpliceLabGame} and must not be disposed here.  (T-3.2)</p>
+     */
     public void dispose() {
         if (attackZoneMarkerActor != null) attackZoneMarkerActor.dispose();
+        // tube.dispose() is a no-op since TubeWidget no longer owns any textures (T-2.2).
         tube.dispose();
-        textures.dispose();
-
+        // cells[c][r].dispose() is a no-op since GridCellWidget no longer owns any textures (T-3.3).
         for (int c = 0; c < AppConstants.GRID_COLS; c++) {
             for (int r = 0; r < AppConstants.GRID_ROWS; r++) {
                 cells[c][r].dispose();
@@ -743,38 +783,46 @@ public final class LabGameView {
         // Positions are sampled continuously along the belt path.
         layoutConveyorPathForPhase(beltPhase);
 
+        // T-2.1: mutate persistent actors rather than rebuilding them every frame.
         for (int i = 0; i < conveyorSockets.length; i++) {
-            conveyorSockets[i].clearChildren();
-            if (socketFusion[i] == null) {
+            FusionInstance fusion = socketFusion[i];
+            if (fusion == null) {
                 conveyorSockets[i].setVisible(true);
                 conveyorSockets[i].getColor().a = 0.45f;
+                socketIconActors[i].setVisible(false);
+                socketHpActors[i].setVisible(false);
+                lastSocketFusion[i] = null;
             } else {
                 conveyorSockets[i].setVisible(true);
                 conveyorSockets[i].getColor().a = 1f;
-                String iconPath = iconFor(socketFusion[i]);
-                if (iconPath != null) {
-                    Texture tex = getTextureCached(iconPath);
+
+                // Only reload the drawable when the fusion identity changes.
+                if (fusion != lastSocketFusion[i]) {
+                    lastSocketFusion[i] = fusion;
+                    String iconPath = iconFor(fusion);
+                    Texture tex = iconPath != null ? getTextureCached(iconPath) : null;
                     if (tex != null) {
-                        Image icon = new Image(new TextureRegionDrawable(new TextureRegion(tex)));
-                        icon.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                        // Make fusions 20% smaller.
-                        conveyorSockets[i].add(icon).size(72, 72);
+                        socketIconActors[i].setDrawable(new TextureRegionDrawable(new TextureRegion(tex)));
+                        socketIconActors[i].setVisible(true);
+                    } else {
+                        socketIconActors[i].setDrawable((Drawable) null);
+                        socketIconActors[i].setVisible(false);
                     }
+                    // Re-position HP bar now that we know socket height.
+                    socketHpActors[i].setPosition(10f, conveyorSockets[i].getHeight() - 14f);
                 }
 
-                // Per-fusion HP bar.
-                HpBarWidget hp = new HpBarWidget(skin, new Color(0f, 0f, 0f, 0.35f), new Color(0.2f, 0.95f, 0.2f, 1f));
-                hp.setSize(70, 7);
-                float pct = socketFusion[i].maxHp <= 0 ? 1f : (socketFusion[i].hp / (float) socketFusion[i].maxHp);
-                hp.setPercent(pct);
-                hp.setPosition(10f, conveyorSockets[i].getHeight() - 14f);
-                conveyorSockets[i].addActor(hp);
+                // HP percent updates every frame (cheap — no allocation).
+                float pct = fusion.maxHp <= 0 ? 1f : (fusion.hp / (float) fusion.maxHp);
+                socketHpActors[i].setPercent(pct);
+                socketHpActors[i].setVisible(true);
             }
         }
 
         if (state.activeEnemy == null) {
             enemyHpBar.setPercent(0f);
             enemyVisual.setVisible(false);
+            lastEnemyType = null; // reset so drawable refreshes on next enemy spawn
         } else {
             enemyIcon.setScale(1f);
             EnemyDefinition def = context.definitions.getEnemy(state.activeEnemy.enemyType).orElse(null);
@@ -782,18 +830,22 @@ public final class LabGameView {
             enemyHpBar.setPercent(state.activeEnemy.hp / (float) maxHp);
             enemyVisual.setVisible(true);
 
-            Texture iconTexture = switch (state.activeEnemy.enemyType) {
-                case SMUGGLER_GRUNT -> enemyReg1Texture;
-                case NET_THROWER -> enemyReg2Texture;
-                case TOOL_RAIDER -> enemyReg3Texture;
-                case GAS_BOMBER -> enemyReg1Texture;
-                case SHIELD_SMUGGLER -> enemyReg2Texture;
-                case DRONE_THIEF -> enemyReg3Texture;
-                case MUTATION_HUNTER -> enemyReg1Texture;
-                case BLACKMARKET_BRUTE -> enemyReg2Texture;
-                case BOSS_SMUGGLER_CAPTAIN -> enemyBoss1Texture;
-            };
-            enemyIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
+            // T-2.1: only rebuild the enemy drawable when the enemy type changes.
+            if (state.activeEnemy.enemyType != lastEnemyType) {
+                lastEnemyType = state.activeEnemy.enemyType;
+                Texture iconTexture = switch (state.activeEnemy.enemyType) {
+                    case SMUGGLER_GRUNT -> enemyReg1Texture;
+                    case NET_THROWER -> enemyReg2Texture;
+                    case TOOL_RAIDER -> enemyReg3Texture;
+                    case GAS_BOMBER -> enemyReg1Texture;
+                    case SHIELD_SMUGGLER -> enemyReg2Texture;
+                    case DRONE_THIEF -> enemyReg3Texture;
+                    case MUTATION_HUNTER -> enemyReg1Texture;
+                    case BLACKMARKET_BRUTE -> enemyReg2Texture;
+                    case BOSS_SMUGGLER_CAPTAIN -> enemyBoss1Texture;
+                };
+                enemyIcon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
+            }
             // Make enemy image 10% smaller.
             enemyIcon.setScale(0.9f);
         }
@@ -801,9 +853,10 @@ public final class LabGameView {
 
     public void spawnProjectile(Actor from, Actor to, Color color, Runnable onHit) {
         if (from == null || to == null) return;
-        Table p = new Table();
+
+        // T-2.4: obtain from pool instead of allocating a new Table each shot.
+        Table p = projectilePool.obtain();
         p.setBackground(skin.newDrawable("white", color));
-        p.setSize(10, 10);
         root.addActor(p);
 
         Vector2 start = from.localToStageCoordinates(new Vector2(from.getWidth() / 2f, from.getHeight() / 2f));
@@ -821,7 +874,12 @@ public final class LabGameView {
                 Actions.run(() -> {
                     if (onHit != null) onHit.run();
                 }),
-                Actions.removeActor()
+                Actions.run(() -> {
+                    p.remove();
+                    p.clearActions();
+                    p.setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
+                    projectilePool.free(p);
+                })
         ));
     }
 
@@ -877,8 +935,9 @@ public final class LabGameView {
         return pathAnchors[pathIndex];
     }
 
+    /** Returns a texture via the shared AssetService. Prefer {@code context.assets.getDrawable()} where possible. */
     private Texture getTextureCached(String path) {
-        return textures.get(path);
+        return context.assets.getTexture(path);
     }
 
     private static String labelFor(IngredientInstance inst) {

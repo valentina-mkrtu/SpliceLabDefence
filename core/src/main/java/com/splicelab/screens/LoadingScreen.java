@@ -8,7 +8,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.splicelab.app.GameContext;
 import com.splicelab.app.SpliceLabGame;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.ui.Scene2dPlaceholders;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -29,7 +28,7 @@ public final class LoadingScreen extends BaseScreen {
     protected void buildUi() {
         context.assets.loadMinimal();
         context.assets.loadUi();
-        skin = PlaceholderSkinFactory.create();
+        skin = context.skin;
 
         Table root = new Table();
         root.setFillParent(true);
@@ -69,7 +68,6 @@ public final class LoadingScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        if (skin != null) skin.dispose();
         if (loadingBgTex != null) loadingBgTex.dispose();
     }
 }

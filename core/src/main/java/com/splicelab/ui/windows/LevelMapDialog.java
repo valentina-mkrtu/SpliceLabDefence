@@ -39,7 +39,7 @@ public final class LevelMapDialog extends Dialog {
 
     private final GameContext context;
 
-    private Texture levelBgTexture;
+    // levelBgTexture is now sourced from AssetService — not stored or disposed here. (T-2.2, T-3.4)
     private BitmapFont levelFont;
 
     public LevelMapDialog(Skin skin, GameContext context, LevelSelectListener listener) {
@@ -59,7 +59,7 @@ public final class LevelMapDialog extends Dialog {
 
         Table topRight = new Table();
         topRight.setFillParent(true);
-        closeButton = DialogCloseImageFactory.create();
+        closeButton = DialogCloseImageFactory.create(context.assets);
         Image closeBtn = closeButton.image;
         closeBtn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override
@@ -72,12 +72,8 @@ public final class LevelMapDialog extends Dialog {
         topRight.add(closeBtn).size(48).padTop(38).padRight(58);
         addActor(topRight);
 
-        TextureRegionDrawable levelBgDrawable = null;
-        if (com.badlogic.gdx.Gdx.files.internal(LEVEL_BG_TEXTURE_PATH).exists()) {
-            levelBgTexture = new Texture(com.badlogic.gdx.Gdx.files.internal(LEVEL_BG_TEXTURE_PATH));
-            levelBgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            levelBgDrawable = new TextureRegionDrawable(new TextureRegion(levelBgTexture));
-        }
+        // Pull level-button background from AssetService — no new Texture() call here. (T-2.2, T-3.4)
+        TextureRegionDrawable levelBgDrawable = context.assets.getDrawable(LEVEL_BG_TEXTURE_PATH);
 
         BitmapFont baseFont = skin.getFont("default-font");
         levelFont = new BitmapFont(baseFont.getData(), baseFont.getRegion(), baseFont.usesIntegerPositions());

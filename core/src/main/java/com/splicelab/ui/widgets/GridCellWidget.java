@@ -1,33 +1,36 @@
 package com.splicelab.ui.widgets;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.splicelab.assets.AssetService;
 import com.splicelab.ui.UiFactory;
 
+/**
+ * A single cell in the ingredient grid.
+ *
+ * <p>Textures are sourced from the shared {@link AssetService} — this widget owns no
+ * {@link com.badlogic.gdx.graphics.Texture} objects and therefore has nothing to dispose. (T-2.2, T-3.3)</p>
+ */
 public final class GridCellWidget extends Group {
-    private static final String SLOT_ICON_TEXTURE_PATH = "art/icons/slot.png";
+    static final String SLOT_ICON_TEXTURE_PATH = "art/icons/slot.png";
 
     public final int col;
     public final int row;
     private final Table bg;
     private final Image icon;
-    private final Texture slotTexture;
-    private Texture iconTexture;
+    private final AssetService assets;
     private String iconTexturePath;
 
-    public GridCellWidget(Skin skin, UiFactory ui, int col, int row) {
+    public GridCellWidget(Skin skin, UiFactory ui, AssetService assets, int col, int row) {
+        this.assets = assets;
         this.col = col;
         this.row = row;
         bg = new Table();
-        slotTexture = new Texture(SLOT_ICON_TEXTURE_PATH);
-        bg.setBackground(new TextureRegionDrawable(new TextureRegion(slotTexture)));
+        TextureRegionDrawable slotDrawable = assets.getDrawable(SLOT_ICON_TEXTURE_PATH);
+        if (slotDrawable != null) bg.setBackground(slotDrawable);
         bg.getColor().a = 0.9f;
         bg.setFillParent(true);
 
@@ -38,9 +41,12 @@ public final class GridCellWidget extends Group {
         setSize(110, 110);
     }
 
+    /**
+     * No-op: this widget does not own any textures; the {@link AssetService} owns them all.
+     * Kept for API compatibility — callers that invoke dispose() will not break.
+     */
     public void dispose() {
-        slotTexture.dispose();
-        if (iconTexture != null) iconTexture.dispose();
+        // Textures are owned by AssetService; nothing to dispose here. (T-3.3)
     }
 
     public void setIcon(String texturePath) {
@@ -49,11 +55,6 @@ public final class GridCellWidget extends Group {
                 || (iconTexturePath != null && iconTexturePath.equals(texturePath))) {
             return;
         }
-
-        if (iconTexture != null) {
-            iconTexture.dispose();
-            iconTexture = null;
-        }
         iconTexturePath = texturePath;
 
         if (texturePath == null) {
@@ -61,8 +62,8 @@ public final class GridCellWidget extends Group {
             return;
         }
 
-        iconTexture = new Texture(texturePath);
-        icon.setDrawable(new TextureRegionDrawable(new TextureRegion(iconTexture)));
+        TextureRegionDrawable drawable = assets.getDrawable(texturePath);
+        icon.setDrawable(drawable); // null is fine — shows nothing gracefully
     }
 
     public TextureRegionDrawable getIconDrawable() {

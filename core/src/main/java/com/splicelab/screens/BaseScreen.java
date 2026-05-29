@@ -31,6 +31,10 @@ public abstract class BaseScreen implements Screen {
     }
 
     protected void onPauseScreen() {
+        // T-2.5: flush any pending save mutations when the screen loses focus.
+        if (context != null && context.saves != null) {
+            context.saves.flushIfDirty();
+        }
     }
 
     protected void onResumeScreen() {

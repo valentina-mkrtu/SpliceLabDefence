@@ -5,7 +5,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.splicelab.app.GameContext;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.model.level.LevelRewardSummary;
 import com.splicelab.ui.UiFactory;
 
@@ -16,7 +15,7 @@ public final class LevelCompleteView {
     private Runnable doubleListener;
 
     public LevelCompleteView(GameContext context, LevelRewardSummary rewards) {
-        skin = PlaceholderSkinFactory.create();
+        skin = context.skin;
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = ui.panel();
@@ -65,6 +64,5 @@ public final class LevelCompleteView {
     }
 
     public void dispose() {
-        if (skin != null) skin.dispose();
     }
 }

@@ -28,7 +28,9 @@ public final class EconomyService {
             case DNA -> saves.get().dna = Math.max(0, saves.get().dna + amount);
             case CRYSTALS -> saves.get().crystals = Math.max(0, saves.get().crystals + amount);
         }
-        saves.save();
+        // T-2.5: mark dirty instead of flushing synchronously on every mutation.
+        // Call saves.flushIfDirty() at natural checkpoints (level complete, lobby, app pause).
+        saves.markDirty();
     }
 
     public int getBalance(CurrencyType currency) {

@@ -97,12 +97,9 @@ public final class GameDatabase {
     }
 
     private DefinitionRepository loadDefinitions(DataValidationReport report, DefinitionRepository fallback) {
-        DefinitionRepository.MutableDefinitions m = new DefinitionRepository.MutableDefinitions();
-        // Start from fallback so partial XML can override.
-        m.entities.putAll(extractMutable(fallback).entities);
-        m.items.putAll(extractMutable(fallback).items);
-        m.fusions.putAll(extractMutable(fallback).fusions);
-        m.enemies.putAll(extractMutable(fallback).enemies);
+        // T-4.5: build the starter snapshot once instead of calling extractMutable(fallback) four times,
+        // each of which previously rebuilt a full DefinitionRepository.createStarter() internally.
+        DefinitionRepository.MutableDefinitions m = extractMutable(fallback);
 
         try {
             new EntityXmlParser().parseInto(loader.loadRoot("data/entities.xml"), m, report);
@@ -264,18 +261,18 @@ public final class GameDatabase {
         return c;
     }
 
-    private static DefinitionRepository.MutableDefinitions extractMutable(DefinitionRepository repo) {
-        // Current DefinitionRepository has no iteration API; reuse starter fallback by re-creating.
-        // For now, caller passes fallback and we rebuild from it directly.
-        // This method keeps extension point for future.
+    /**
+     * Builds a mutable snapshot from the given {@link DefinitionRepository}.
+     * Uses the passed repo directly rather than rebuilding from {@code createStarter()} each call. (T-4.5)
+     */
+    private static DefinitionRepository.MutableDefinitions extractMutable(DefinitionRepository source) {
         DefinitionRepository.MutableDefinitions m = new DefinitionRepository.MutableDefinitions();
-        DefinitionRepository starter = DefinitionRepository.createStarter();
-        for (var e : com.splicelab.model.EntityType.values()) starter.getEntity(e).ifPresent(d -> m.entities.put(e, d));
-        for (var i : com.splicelab.model.ItemType.values()) starter.getItem(i).ifPresent(d -> m.items.put(i, d));
-        for (var e : com.splicelab.model.enemy.EnemyType.values()) starter.getEnemy(e).ifPresent(d -> m.enemies.put(e, d));
+        for (var e : com.splicelab.model.EntityType.values()) source.getEntity(e).ifPresent(d -> m.entities.put(e, d));
+        for (var i : com.splicelab.model.ItemType.values()) source.getItem(i).ifPresent(d -> m.items.put(i, d));
+        for (var e : com.splicelab.model.enemy.EnemyType.values()) source.getEnemy(e).ifPresent(d -> m.enemies.put(e, d));
         for (var e : com.splicelab.model.EntityType.values())
             for (var i : com.splicelab.model.ItemType.values())
-                starter.getFusion(e, i).ifPresent(d -> m.fusions.put(e.name() + "+" + i.name(), d));
+                source.getFusion(e, i).ifPresent(d -> m.fusions.put(e.name() + "+" + i.name(), d));
         return m;
     }
 }

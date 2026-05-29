@@ -12,7 +12,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.app.GameContext;
 import com.splicelab.data.SaveData;
 import com.splicelab.model.CurrencyType;
@@ -84,7 +83,7 @@ public final class MainLobbyView {
 
     public MainLobbyView(GameContext context) {
         this.context = context;
-        skin = PlaceholderSkinFactory.create();
+        skin = context.skin;
         ui = new UiFactory(skin, context.audio);
 
         SaveData save = context.saves.get();
@@ -425,7 +424,6 @@ public final class MainLobbyView {
         if (dnaTex != null) dnaTex.dispose();
         if (cryTex != null) cryTex.dispose();
 
-        skin.dispose();
     }
 
     private Image makeIconImage(String path, Color fallbackColor, TexGetter getter, TexSetter setter) {

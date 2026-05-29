@@ -36,4 +36,31 @@ public final class CombatTuning {
     // Checkpoint on the belt loop where fusions auto-attack.
     // Must match the UI marker index (LabGameView.ATTACK_MARKER_PATH_INDEX).
     public static final int ATTACK_ZONE_INDEX = 10;
+
+    // -------------------------------------------------------------------------
+    // Difficulty tier curve (getDifficultyTierFactor) — T-5.4
+    // -------------------------------------------------------------------------
+    /** Levels 1–TIER_GENTLE_CAP use the flat gentle factor. */
+    public static final int TIER_GENTLE_CAP = 10;
+    /** Base difficulty factor for gentle levels (1–10). */
+    public static final float TIER_GENTLE_FACTOR = 0.35f;
+    /** First level where the scaling ramp begins. */
+    public static final int TIER_RAMP_START = 11;
+    /** Number of levels per difficulty bump. */
+    public static final int TIER_BUMP_INTERVAL = 5;
+    /** Per-bump additive factor. */
+    public static final float TIER_BUMP_FACTOR = 0.15f;
+    /** Intra-band smooth-ramp contribution. */
+    public static final float TIER_INTRA_BAND_FACTOR = 0.20f;
+    /** Base factor at the start of the ramp (level 11). */
+    public static final float TIER_RAMP_BASE = 0.55f;
+    /** Hard minimum and maximum tier clamp. */
+    public static final float TIER_MIN = 0.35f;
+    public static final float TIER_MAX = 1.35f;
+
+    /** HP fraction below which a fusion is considered low-health (for AI targeting). */
+    public static final float FUSION_LOW_HEALTH_THRESHOLD = 0.35f;
+
+    /** Probability the enemy targets the lowest-HP fusion (vs. random). */
+    public static final float ENEMY_TARGET_LOW_HP_CHANCE = 0.70f;
 }

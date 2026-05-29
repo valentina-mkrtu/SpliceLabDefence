@@ -1,5 +1,6 @@
 package com.splicelab.app;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.splicelab.assets.AssetService;
 import com.splicelab.audio.AudioService;
 import com.splicelab.data.DefinitionRepository;
@@ -19,6 +20,11 @@ import com.splicelab.telemetry.TelemetryBus;
 public final class GameContext {
     public final AssetService assets;
     public final AudioService audio;
+    /**
+     * Shared UI skin — built once in {@link SpliceLabGame#create()} and disposed in
+     * {@link SpliceLabGame#dispose()}.  Views and screens must NOT dispose this skin.  (T-3.1)
+     */
+    public final Skin skin;
     public final DefinitionRepository definitions;
     public final LevelRepository levels;
     public final SaveRepository saves;
@@ -37,6 +43,7 @@ public final class GameContext {
     public GameContext(
             AssetService assets,
             AudioService audio,
+            Skin skin,
             DefinitionRepository definitions,
             LevelRepository levels,
             SaveRepository saves,
@@ -54,6 +61,7 @@ public final class GameContext {
     ) {
         this.assets = assets;
         this.audio = audio;
+        this.skin = skin;
         this.definitions = definitions;
         this.levels = levels;
         this.saves = saves;

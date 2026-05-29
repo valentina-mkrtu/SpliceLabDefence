@@ -5,7 +5,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.splicelab.app.GameContext;
-import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.ui.UiConstants;
 import com.splicelab.ui.UiFactory;
 
@@ -18,7 +17,7 @@ public final class MainMenuView {
     private Runnable collectionsListener;
 
     public MainMenuView(GameContext context) {
-        skin = PlaceholderSkinFactory.create();
+        skin = context.skin;
         UiFactory ui = new UiFactory(skin, context.audio);
 
         root = new Table();
@@ -91,6 +90,5 @@ public final class MainMenuView {
     }
 
     public void dispose() {
-        if (skin != null) skin.dispose();
     }
 }

@@ -10,6 +10,7 @@ import com.splicelab.ui.screens.LabGameView;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
+import com.splicelab.debug.DebugFlags;
 
 public final class LabGameScreen extends BaseScreen {
     private final int levelNumber;
@@ -36,12 +37,7 @@ public final class LabGameScreen extends BaseScreen {
                 return view.getConveyorPathLength();
             }
 
-            @Override
-            public int mapSlotToPathIndex(boolean leftSide, int slotIndex) {
-                // Simple deterministic mapping: use slotIndex, but offset right side.
-                int base = Math.max(0, Math.min(slotIndex, view.getConveyorPathLength() - 1));
-                return leftSide ? base : (base + 2) % view.getConveyorPathLength();
-            }
+            // mapSlotToPathIndex() removed — unused (T-5.2)
 
             @Override
             public void onFusionMoved(boolean leftSide, int slotIndex, int pathIndex) {
@@ -136,15 +132,19 @@ public final class LabGameScreen extends BaseScreen {
             Gdx.input.setInputProcessor(new com.badlogic.gdx.InputMultiplexer(stage, new InputAdapter() {
                 @Override
                 public boolean keyDown(int keycode) {
-                    if (keycode == Input.Keys.W) combatController.debugForceWin();
-                    if (keycode == Input.Keys.L) combatController.debugForceLose();
+                    // Cheat/debug keys are compiled out of release builds via DebugFlags.DEBUG.
+                    if (DebugFlags.DEBUG) {
+                        if (keycode == Input.Keys.W) combatController.debugForceWin();
+                        if (keycode == Input.Keys.L) combatController.debugForceLose();
+                        if (keycode == Input.Keys.E) combatController.debugDamageEnemy(9999);
+                        if (keycode == Input.Keys.NUM_1) combatController.activateTimeFreeze(15f);
+                        if (keycode == Input.Keys.NUM_2) combatController.activateImmediateCooldown();
+                        if (keycode == Input.Keys.NUM_3) combatController.activateAtkX2(15f);
+                        if (keycode == Input.Keys.NUM_4) combatController.activateTubeHpRecovery();
+                        if (keycode == Input.Keys.NUM_5) combatController.armRemoveOneItem();
+                    }
+                    // Non-cheat desktop shortcuts (always active):
                     if (keycode == Input.Keys.S) combatController.requestTubeSpawn();
-                    if (keycode == Input.Keys.E) combatController.debugDamageEnemy(9999);
-                    if (keycode == Input.Keys.NUM_1) combatController.activateTimeFreeze(15f);
-                    if (keycode == Input.Keys.NUM_2) combatController.activateImmediateCooldown();
-                    if (keycode == Input.Keys.NUM_3) combatController.activateAtkX2(15f);
-                    if (keycode == Input.Keys.NUM_4) combatController.activateTubeHpRecovery();
-                    if (keycode == Input.Keys.NUM_5) combatController.armRemoveOneItem();
                     return false;
                 }
             }));
@@ -154,7 +154,6 @@ public final class LabGameScreen extends BaseScreen {
     @Override
     protected void update(float delta) {
         combatController.update(delta);
-        context.telemetry.flush();
         view.update(delta);
         view.syncFromState(combatController.getState());
 

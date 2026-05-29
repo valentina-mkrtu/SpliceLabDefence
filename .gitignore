@@ -1,4 +1,24 @@
-.DS_Store
+# Build output
+build/
 .gradle/
-**/build/
 
+# Vendored Gradle distributions (use the wrapper instead)
+gradle-*/
+
+# Local developer config
+local.properties
+*.iml
+
+# macOS metadata
+.DS_Store
+__MACOSX/
+
+# IDE
+.idea/
+*.iws
+out/
+
+# Android
+android/release/
+*.keystore
+*.jks

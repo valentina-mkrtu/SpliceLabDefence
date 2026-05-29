@@ -3,7 +3,9 @@ package com.splicelab.app;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.splicelab.assets.AssetService;
+import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.audio.AudioService;
 import com.splicelab.data.BalanceRepository;
 import com.splicelab.data.DefinitionRepository;
@@ -30,6 +32,7 @@ public final class SpliceLabGame extends Game {
     private SpriteBatch batch;
     private AssetService assets;
     private AudioService audio;
+    private Skin sharedSkin;
     private GameContext context;
 
     @Override
@@ -63,9 +66,13 @@ public final class SpliceLabGame extends Game {
         AdRewardService adRewardService = new AdRewardService();
         TelemetryBus telemetry = new TelemetryBus();
 
+        // T-3.1: build the shared skin once here; dispose in SpliceLabGame.dispose().
+        sharedSkin = PlaceholderSkinFactory.create();
+
         context = new GameContext(
                 assets,
                 audio,
+                sharedSkin,
                 definitionRepository,
                 levelRepository,
                 saveRepository,
@@ -101,6 +108,7 @@ public final class SpliceLabGame extends Game {
         if (assets != null) assets.dispose();
         if (audio != null) audio.dispose();
         if (batch != null) batch.dispose();
+        if (sharedSkin != null) sharedSkin.dispose(); // T-3.1
         Gdx.app.log(AppConstants.LOG_TAG, "Game disposed");
     }
 }

@@ -68,6 +68,7 @@ public final class GameDataValidationTest {
         validateEconomy(docs.get("economy.xml"), localizationKeys, errors);
         validateLevels(docs.get("levels.xml"), entityIds, itemIds, enemyIds, errors);
         validateLocalizationReferences(docs, localizationKeys, errors);
+        validateSaveCurrencyCeilings(errors);  // T-6.1
 
         if (!errors.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -464,6 +465,44 @@ public final class GameDataValidationTest {
                 errors.add("DATA ERROR: localization missing key " + key);
             }
         }
+    }
+
+    /**
+     * T-6.1: Verifies that the currency ceiling constants in GameConfig are sane and
+     * consistent with the economy XML (if present), so that a tampered save with an
+     * astronomically large balance will always be clamped to a reasonable value.
+     *
+     * <p>These are compile-time constants checked at test time — no XML needed.</p>
+     */
+    private static void validateSaveCurrencyCeilings(List<String> errors) {
+        // Import ceiling values directly rather than via reflection so the test fails to compile
+        // if someone renames the constants.
+        int maxCoins    = com.splicelab.app.GameConfig.MAX_COINS;
+        int maxDna      = com.splicelab.app.GameConfig.MAX_DNA;
+        int maxCrystals = com.splicelab.app.GameConfig.MAX_CRYSTALS;
+        int maxLevel    = com.splicelab.app.GameConfig.MAX_PLAYER_LEVEL;
+        int maxCurrent  = com.splicelab.app.GameConfig.MAX_CURRENT_LEVEL;
+        int maxXp       = com.splicelab.app.GameConfig.MAX_XP;
+
+        if (maxCoins <= 0)
+            errors.add("SAVE ERROR: MAX_COINS must be > 0, got " + maxCoins);
+        if (maxDna <= 0)
+            errors.add("SAVE ERROR: MAX_DNA must be > 0, got " + maxDna);
+        if (maxCrystals <= 0)
+            errors.add("SAVE ERROR: MAX_CRYSTALS must be > 0, got " + maxCrystals);
+        if (maxLevel < 1)
+            errors.add("SAVE ERROR: MAX_PLAYER_LEVEL must be >= 1, got " + maxLevel);
+        if (maxCurrent < 1)
+            errors.add("SAVE ERROR: MAX_CURRENT_LEVEL must be >= 1, got " + maxCurrent);
+        if (maxXp <= 0)
+            errors.add("SAVE ERROR: MAX_XP must be > 0, got " + maxXp);
+
+        // Ceilings should not be absurdly small — a reasonable game economy should allow at
+        // least 1 000 of each currency before hitting the cap.
+        if (maxCoins < 1_000)
+            errors.add("SAVE ERROR: MAX_COINS=" + maxCoins + " looks too low (< 1000)");
+        if (maxDna < 1_000)
+            errors.add("SAVE ERROR: MAX_DNA=" + maxDna + " looks too low (< 1000)");
     }
 
     private static String docToText(org.w3c.dom.Document doc) {

@@ -17,5 +17,15 @@ public final class RandomService {
     public float nextFloat() {
         return random.nextFloat();
     }
+
+    /** Returns {@code true} with probability {@code p} (0..1). */
+    public boolean chance(float p) {
+        return random.nextFloat() < p;
+    }
+
+    /** Returns a random float in [min, max). */
+    public float range(float min, float max) {
+        return min + random.nextFloat() * (max - min);
+    }
 }
 
