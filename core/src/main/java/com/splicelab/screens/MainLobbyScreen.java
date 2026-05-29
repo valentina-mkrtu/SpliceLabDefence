@@ -163,6 +163,8 @@ public final class MainLobbyScreen extends BaseScreen {
 
     @Override
     protected void update(float delta) {
-        if (view != null) view.refresh(context);
+        // Avoid per-frame UI mutations (label text/layout invalidation) which can make
+        // the scene feel heavy on desktop. Refresh only when the data changes.
+        if (view != null) view.refreshIfNeeded(context);
     }
 }

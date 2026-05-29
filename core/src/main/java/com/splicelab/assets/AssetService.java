@@ -39,6 +39,27 @@ public final class AssetService {
         assetManager.load("art/icons/dna.png", Texture.class);
         assetManager.load("art/icons/cry.png", Texture.class);
         assetManager.load("art/icons/sound.png", Texture.class);
+
+        // Collections (fusion grid).
+        assetManager.load("art/icons/slot.png", Texture.class);
+        assetManager.load("art/fusions/criofungy.png", Texture.class);
+        assetManager.load("art/fusions/criomech.png", Texture.class);
+        assetManager.load("art/fusions/crioslime.png", Texture.class);
+        assetManager.load("art/fusions/crystalfungy.png", Texture.class);
+        assetManager.load("art/fusions/crystalmech.png", Texture.class);
+        assetManager.load("art/fusions/crystalslime.png", Texture.class);
+        assetManager.load("art/fusions/electrofungy.png", Texture.class);
+        assetManager.load("art/fusions/electroslime.png", Texture.class);
+        assetManager.load("art/fusions/mechbot.png", Texture.class);
+        assetManager.load("art/fusions/nanofungy.png", Texture.class);
+        assetManager.load("art/fusions/nanomechbot.png", Texture.class);
+        assetManager.load("art/fusions/nanoslime.png", Texture.class);
+        assetManager.load("art/fusions/radioactivefungy.png", Texture.class);
+        assetManager.load("art/fusions/radioactivemech.png", Texture.class);
+        assetManager.load("art/fusions/radioactiveslime.png", Texture.class);
+        assetManager.load("art/fusions/toxicfungy.png", Texture.class);
+        assetManager.load("art/fusions/toxicmech.png", Texture.class);
+        assetManager.load("art/fusions/toxicslime.png", Texture.class);
     }
 
     public boolean update() {

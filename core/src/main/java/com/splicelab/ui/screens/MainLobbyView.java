@@ -77,6 +77,11 @@ public final class MainLobbyView {
     private Texture dnaTex;
     private Texture cryTex;
 
+    private String lastPlayerName;
+    private int lastPlayerLevel = Integer.MIN_VALUE;
+    private int lastDna = Integer.MIN_VALUE;
+    private int lastCrystals = Integer.MIN_VALUE;
+
     public MainLobbyView(GameContext context) {
         this.context = context;
         skin = PlaceholderSkinFactory.create();
@@ -342,6 +347,39 @@ public final class MainLobbyView {
         if (cryPill != null) cryPill.setAmount(context.economy.getBalance(CurrencyType.CRYSTALS));
     }
 
+    public void refreshIfNeeded(GameContext context) {
+        SaveData save = context.saves.get();
+        String playerName = save.playerName;
+        int playerLevel = save.playerLevel;
+        int dna = context.economy.getBalance(CurrencyType.DNA);
+        int crystals = context.economy.getBalance(CurrencyType.CRYSTALS);
+
+        boolean changed = false;
+        if (lastPlayerName == null || !lastPlayerName.equals(playerName)) {
+            lastPlayerName = playerName;
+            changed = true;
+        }
+        if (lastPlayerLevel != playerLevel) {
+            lastPlayerLevel = playerLevel;
+            changed = true;
+        }
+        if (lastDna != dna) {
+            lastDna = dna;
+            changed = true;
+        }
+        if (lastCrystals != crystals) {
+            lastCrystals = crystals;
+            changed = true;
+        }
+
+        if (!changed) return;
+
+        usernameLabel.setText(playerName);
+        levelLabel.setText("Level " + playerLevel);
+        if (dnaPill != null) dnaPill.setAmount(dna);
+        if (cryPill != null) cryPill.setAmount(crystals);
+    }
+
     public void setLabListener(Runnable labListener) {
         this.labListener = labListener;
     }
@@ -412,11 +450,9 @@ public final class MainLobbyView {
             if (context != null && context.assets != null) {
                 existing = context.assets.getTexture(path);
             }
-            if (existing == null) {
-                if (!com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
-                existing = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
-                existing.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            }
+            // If it's not in AssetManager, treat it as missing so we don't do blocking
+            // disk IO and ad-hoc Texture allocations during UI creation.
+            if (existing == null) return null;
             setter.set(existing);
         }
         return new TextureRegionDrawable(new TextureRegion(existing));

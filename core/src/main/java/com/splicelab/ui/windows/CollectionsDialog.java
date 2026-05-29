@@ -43,11 +43,14 @@ public final class CollectionsDialog extends Dialog {
     private Image bgImage;
     private Texture frameTex;
     private Texture lockTex;
-    private Texture[] fusionTextures;
     private DialogCloseImageFactory.CloseImage closeButton;
+
+    private final GameContext context;
 
     public CollectionsDialog(Skin skin, GameContext context) {
         super("Collections", skin);
+
+        this.context = context;
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((Drawable) null);
@@ -150,7 +153,7 @@ public final class CollectionsDialog extends Dialog {
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
         if (stage == null) return;
-        createBackgroundIfNeeded(null);
+        createBackgroundIfNeeded(context);
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
@@ -168,11 +171,14 @@ public final class CollectionsDialog extends Dialog {
         }
 
         Texture texture = null;
-        if (context != null && context.assets != null) {
-            texture = context.assets.getTexture(BG_PATH);
-        }
+        if (context != null && context.assets != null) texture = context.assets.getTexture(BG_PATH);
         if (texture == null) {
-            texture = new Texture(bgFile);
+            // Avoid blocking disk IO during dialog show; let the dialog fall back to a
+            // placeholder if assets were not preloaded.
+            bgImage = Scene2dPlaceholders.coloredSquare(getSkin(), new Color(0.12f, 0.13f, 0.17f, 1f));
+            bgImage.setFillParent(false);
+            bgImage.setColor(1f, 1f, 1f, 1f);
+            return;
         }
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;
@@ -218,16 +224,12 @@ public final class CollectionsDialog extends Dialog {
         }
         if (index < 0 || index >= FUSION_ICON_PATHS.length) return null;
 
-        if (fusionTextures == null) fusionTextures = new Texture[FUSION_ICON_PATHS.length];
         String path = FUSION_ICON_PATHS[index];
         if (path == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
 
-        Texture t = fusionTextures[index];
-        if (t == null) {
-            t = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
-            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            fusionTextures[index] = t;
-        }
+        Texture t = null;
+        if (context != null && context.assets != null) t = context.assets.getTexture(path);
+        if (t == null) return null;
         return new TextureRegionDrawable(new TextureRegion(t));
     }
 
@@ -277,12 +279,10 @@ public final class CollectionsDialog extends Dialog {
             return null;
         }
 
-        Texture t = getter.get();
-        if (t == null) {
-            t = new Texture(com.badlogic.gdx.Gdx.files.internal(path));
-            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            setter.set(t);
-        }
+        // Prefer AssetManager only; avoid disk IO during UI interaction.
+        Texture t = null;
+        if (context != null && context.assets != null) t = context.assets.getTexture(path);
+        if (t == null) return null;
         return new TextureRegionDrawable(new TextureRegion(t));
     }
 }

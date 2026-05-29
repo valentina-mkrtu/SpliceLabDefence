@@ -207,11 +207,17 @@ public final class LevelMapDialog extends Dialog {
         }
 
         Texture texture = null;
-        if (context != null && context.assets != null) {
-            texture = context.assets.getTexture(WINDOW_BG_TEXTURE_PATH);
-        }
+        if (context != null && context.assets != null) texture = context.assets.getTexture(WINDOW_BG_TEXTURE_PATH);
         if (texture == null) {
-            texture = new Texture(bgFile);
+            // Avoid blocking disk IO during dialog show; fall back to placeholder
+            // if assets were not preloaded.
+            bgImage = com.splicelab.ui.Scene2dPlaceholders.coloredSquare(
+                    getSkin(),
+                    new com.badlogic.gdx.graphics.Color(0.12f, 0.13f, 0.17f, 1f)
+            );
+            bgImage.setFillParent(false);
+            bgImage.setColor(1f, 1f, 1f, 1f);
+            return;
         }
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;

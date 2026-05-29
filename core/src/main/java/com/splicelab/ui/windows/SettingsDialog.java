@@ -42,13 +42,18 @@ public final class SettingsDialog extends Dialog {
             return;
         }
 
-        Gdx.app.log("SpliceLab", "SettingsDialog loading background: " + bgFile.path());
-
         Texture texture = null;
         if (context != null && context.assets != null) {
             texture = context.assets.getTexture(BG_PATH);
         }
-        if (texture == null) texture = new Texture(bgFile);
+        if (texture == null) {
+            // Avoid blocking disk IO during interaction. If not preloaded, keep
+            // the dialog usable with a flat-color fallback.
+            if (getStyle() != null) {
+                getStyle().background = getSkin().newDrawable("white", new Color(0.12f, 0.13f, 0.17f, 1f));
+            }
+            return;
+        }
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         bgTex = texture;
 
@@ -235,10 +240,10 @@ public final class SettingsDialog extends Dialog {
 
     private Drawable loadSoundIcon() {
         if (!Gdx.files.internal(SOUND_ICON_PATH).exists()) return null;
-        if (soundIconTex == null) {
-            soundIconTex = new Texture(Gdx.files.internal(SOUND_ICON_PATH));
-            soundIconTex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        if (soundIconTex == null && context != null && context.assets != null) {
+            soundIconTex = context.assets.getTexture(SOUND_ICON_PATH);
         }
+        if (soundIconTex == null) return null;
         return new TextureRegionDrawable(new TextureRegion(soundIconTex));
     }
 
@@ -252,8 +257,6 @@ public final class SettingsDialog extends Dialog {
         super.hide();
         // bgTex may be owned by AssetManager; don't dispose here.
         bgTex = null;
-
-        if (soundIconTex != null) soundIconTex.dispose();
         soundIconTex = null;
 
         if (sliderTrackTex != null) sliderTrackTex.dispose();

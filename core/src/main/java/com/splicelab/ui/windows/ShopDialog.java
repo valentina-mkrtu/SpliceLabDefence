@@ -121,7 +121,7 @@ public final class ShopDialog extends Dialog {
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
         if (stage == null) return;
-        createBackgroundIfNeeded(null);
+        createBackgroundIfNeeded(context);
         if (bgImage == null) {
             com.badlogic.gdx.Gdx.app.log("SpliceLab", "ShopDialog bgImage null");
             return;
@@ -147,7 +147,13 @@ public final class ShopDialog extends Dialog {
             texture = context.assets.getTexture(BG_PATH);
         }
         if (texture == null) {
-            texture = new com.badlogic.gdx.graphics.Texture(bgFile);
+            bgImage = com.splicelab.ui.Scene2dPlaceholders.coloredSquare(
+                    getSkin(),
+                    new com.badlogic.gdx.graphics.Color(0.12f, 0.13f, 0.17f, 1f)
+            );
+            bgImage.setFillParent(false);
+            bgImage.setColor(1f, 1f, 1f, 1f);
+            return;
         }
         texture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
         bgTex = texture;
