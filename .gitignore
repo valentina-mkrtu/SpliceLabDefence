@@ -22,3 +22,4 @@ out/
 android/release/
 *.keystore
 *.jks
+Archive.zip
