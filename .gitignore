@@ -23,3 +23,8 @@ android/release/
 *.keystore
 *.jks
 Archive.zip
+
+.gradle/
+build/
+*.apk
+*.zip
