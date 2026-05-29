@@ -157,7 +157,8 @@ public final class ShopDialog extends Dialog {
             return;
         }
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        // Put it directly under the dialog.
+        // Keep the background visible (above the lobby root) and directly behind this dialog.
+        toFront();
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
         bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();

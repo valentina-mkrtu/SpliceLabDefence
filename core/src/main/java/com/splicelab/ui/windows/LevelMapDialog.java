@@ -188,8 +188,8 @@ public final class LevelMapDialog extends Dialog {
         createBackgroundIfNeeded();
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
-        // Ensure the background sits behind this dialog even when the dialog
-        // z-index changes after being added to the stage.
+        // Keep the background visible (above the lobby root) and directly behind this dialog.
+        toFront();
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
         bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();

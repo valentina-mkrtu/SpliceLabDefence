@@ -130,6 +130,8 @@ public final class EntitiesDialog extends Dialog {
         createBackgroundIfNeeded(this.context);
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
+        // Keep the background visible (above the lobby root) and directly behind this dialog.
+        toFront();
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
         bgImage.setColor(1f, 1f, 1f, 1f);
         syncBackground();

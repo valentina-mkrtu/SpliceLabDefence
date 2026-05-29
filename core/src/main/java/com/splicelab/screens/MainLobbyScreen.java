@@ -77,6 +77,10 @@ public final class MainLobbyScreen extends BaseScreen {
 
         hideAllDialogs();
 
+        // Dialog's default fade-in/out makes the window background feel like it's
+        // "loading" and can cause a visible size/position snap. Keep it instant.
+        dialog.setFadeDuration(0f);
+
         switch (type) {
             case ACCOUNT -> accountDialog = dialog;
             case COLLECTIONS -> collectionsDialog = dialog;
