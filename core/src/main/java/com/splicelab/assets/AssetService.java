@@ -1,5 +1,6 @@
 package com.splicelab.assets;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -36,6 +37,12 @@ public final class AssetService {
     /** Cache of path → drawable wrapper so callers don't re-allocate wrappers per frame. */
     private final Map<String, TextureRegionDrawable> drawableCache = new HashMap<>();
 
+    private void loadTextureIfExists(String path) {
+        if (path == null || path.isBlank()) return;
+        if (!Gdx.files.internal(path).exists()) return;
+        assetManager.load(path, Texture.class);
+    }
+
     // -------------------------------------------------------------------------
     // Loading phases
     // -------------------------------------------------------------------------
@@ -58,9 +65,11 @@ public final class AssetService {
         assetManager.load("art/backgrounds/levelsbg.png", Texture.class);
         assetManager.load("art/backgrounds/levels.png", Texture.class);
         assetManager.load("art/backgrounds/settingsbg.png", Texture.class);
+        loadTextureIfExists("art/backgrounds/settingbg.png");
         assetManager.load("art/backgrounds/lab_game_bg.png", Texture.class);
         assetManager.load("art/backgrounds/fusion_station.png", Texture.class);
         assetManager.load("art/backgrounds/shaft.png", Texture.class);
+        assetManager.load("art/backgrounds/levelend.png", Texture.class);
 
         // --- General UI icons ---
         assetManager.load("art/icons/iconbg.png", Texture.class);
@@ -77,6 +86,8 @@ public final class AssetService {
         assetManager.load("art/icons/converted/close_128.png", Texture.class);
         assetManager.load("art/icons/triangle.png", Texture.class);
         assetManager.load("art/icons/hp.png", Texture.class);
+        assetManager.load("art/icons/claim.png", Texture.class);
+        loadTextureIfExists("art/icons/doubleclaim.png");
 
         // --- Grid / belt ---
         assetManager.load("art/icons/slot.png", Texture.class);

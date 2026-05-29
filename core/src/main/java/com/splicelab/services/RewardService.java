@@ -14,9 +14,8 @@ public final class RewardService {
     public void apply(LevelRewardDefinition reward, boolean doubleReward) {
         if (reward == null) return;
         int mult = doubleReward ? 2 : 1;
-        saves.get().coins = Math.max(0, saves.get().coins + reward.coins() * mult);
-        saves.get().dna = Math.max(0, saves.get().dna + reward.dna() * mult);
+        saves.get().dna = Math.max(0, saves.get().dna + reward.coins() * mult); // coins-value -> DNA
+        saves.get().cry = Math.max(0, saves.get().cry + reward.dna() * mult); // dna-value -> CRY
         saves.save();
     }
 }
-

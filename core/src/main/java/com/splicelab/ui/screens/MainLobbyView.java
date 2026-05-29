@@ -79,7 +79,7 @@ public final class MainLobbyView {
     private String lastPlayerName;
     private int lastPlayerLevel = Integer.MIN_VALUE;
     private int lastDna = Integer.MIN_VALUE;
-    private int lastCrystals = Integer.MIN_VALUE;
+    private int lastCry = Integer.MIN_VALUE;
 
     public MainLobbyView(GameContext context) {
         this.context = context;
@@ -125,6 +125,7 @@ public final class MainLobbyView {
                 ui,
                 currBg,
                 dnaIcon,
+                "DNA",
                 context.economy.getBalance(CurrencyType.DNA)
         );
         cryPill = new CurrencyPillWidget(
@@ -132,7 +133,8 @@ public final class MainLobbyView {
                 ui,
                 currBg,
                 cryIcon,
-                context.economy.getBalance(CurrencyType.CRYSTALS)
+                "CRY",
+                context.economy.getBalance(CurrencyType.CRY)
         );
 
         // Make pills match navbar height.
@@ -343,7 +345,7 @@ public final class MainLobbyView {
         usernameLabel.setText(save.playerName);
         levelLabel.setText("Level " + save.playerLevel);
         if (dnaPill != null) dnaPill.setAmount(context.economy.getBalance(CurrencyType.DNA));
-        if (cryPill != null) cryPill.setAmount(context.economy.getBalance(CurrencyType.CRYSTALS));
+        if (cryPill != null) cryPill.setAmount(context.economy.getBalance(CurrencyType.CRY));
     }
 
     public void refreshIfNeeded(GameContext context) {
@@ -351,7 +353,7 @@ public final class MainLobbyView {
         String playerName = save.playerName;
         int playerLevel = save.playerLevel;
         int dna = context.economy.getBalance(CurrencyType.DNA);
-        int crystals = context.economy.getBalance(CurrencyType.CRYSTALS);
+        int cry = context.economy.getBalance(CurrencyType.CRY);
 
         boolean changed = false;
         if (lastPlayerName == null || !lastPlayerName.equals(playerName)) {
@@ -366,8 +368,8 @@ public final class MainLobbyView {
             lastDna = dna;
             changed = true;
         }
-        if (lastCrystals != crystals) {
-            lastCrystals = crystals;
+        if (lastCry != cry) {
+            lastCry = cry;
             changed = true;
         }
 
@@ -376,7 +378,7 @@ public final class MainLobbyView {
         usernameLabel.setText(playerName);
         levelLabel.setText("Level " + playerLevel);
         if (dnaPill != null) dnaPill.setAmount(dna);
-        if (cryPill != null) cryPill.setAmount(crystals);
+        if (cryPill != null) cryPill.setAmount(cry);
     }
 
     public void setLabListener(Runnable labListener) {

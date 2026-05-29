@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class DefinitionRepository {
     private final EnumMap<EntityType, EntityDefinition> entities = new EnumMap<>(EntityType.class);
@@ -56,6 +58,16 @@ public final class DefinitionRepository {
 
     public Optional<FusionDefinition> getFusion(EntityType entityType, ItemType itemType) {
         return Optional.ofNullable(fusions.get(fusionKey(entityType, itemType)));
+    }
+
+    public List<FusionDefinition> allFusions() {
+        List<FusionDefinition> out = new ArrayList<>();
+        for (EntityType e : EntityType.values()) {
+            for (ItemType i : ItemType.values()) {
+                getFusion(e, i).ifPresent(out::add);
+            }
+        }
+        return out;
     }
 
     public Optional<EnemyDefinition> getEnemy(EnemyType type) {

@@ -16,12 +16,15 @@ public final class AccountDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
     private static final String PFP_ICON_PATH = "art/icons/pfp.png";
 
+    private final GameContext context;
+
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
     private DialogCloseImageFactory.CloseImage closeButton;
 
     public AccountDialog(Skin skin, GameContext context) {
         super("Account", skin);
+        this.context = context;
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
@@ -125,12 +128,13 @@ public final class AccountDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(20f, 200f);
+        // Follow the dialog position (MainLobbyScreen centers dialogs).
+        bgImage.setPosition(getX(), getY());
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
         if (stage == null) return;
-        createBackgroundIfNeeded(context);
+        createBackgroundIfNeeded(this.context);
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));

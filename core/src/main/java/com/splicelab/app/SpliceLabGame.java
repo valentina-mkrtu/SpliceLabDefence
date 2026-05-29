@@ -18,6 +18,7 @@ import com.splicelab.data.UnlockRepository;
 import com.splicelab.debug.DebugFlags;
 import com.splicelab.screens.LoadingScreen;
 import com.splicelab.services.AdRewardService;
+import com.splicelab.services.BoostInventoryService;
 import com.splicelab.services.EconomyService;
 import com.splicelab.services.FusionService;
 import com.splicelab.services.FusionUnlockService;
@@ -57,6 +58,7 @@ public final class SpliceLabGame extends Game {
         saveRepository.loadOrCreate();
 
         EconomyService economyService = new EconomyService(saveRepository);
+        BoostInventoryService boostInventoryService = new BoostInventoryService(saveRepository);
         UnlockService unlockService = new UnlockService(saveRepository, config);
         RewardService rewardService = new RewardService(saveRepository);
         FusionService fusionService = new FusionService(definitionRepository);
@@ -77,6 +79,7 @@ public final class SpliceLabGame extends Game {
                 levelRepository,
                 saveRepository,
                 economyService,
+                boostInventoryService,
                 unlockService,
                 rewardService,
                 fusionService,

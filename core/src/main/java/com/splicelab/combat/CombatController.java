@@ -389,7 +389,7 @@ public final class CombatController {
             CombatLog.d("fusion created at=" + toCol + "," + toRow);
             return fuse;
         }
-        return CommandResult.fail(CommandResult.Code.CELL_OCCUPIED, "Target occupied");
+        return fuse;
     }
 
     public CommandResult requestFuse(int colA, int rowA, int colB, int rowB) {
@@ -419,6 +419,8 @@ public final class CombatController {
 
         FusionInstance fusion = context.fusionService.createFusion(nextInstanceId(), entity.entityType(), item.itemType(), state.levelNumber).orElse(null);
         if (fusion == null) return CommandResult.fail(CommandResult.Code.INVALID_FUSION, "Fusion creation failed");
+
+        context.fusionUnlocks.unlock(entity.entityType().name() + "+" + item.itemType().name());
 
         state.grid[colB][rowB] = fusion;
         state.grid[colA][rowA] = null;
@@ -698,7 +700,7 @@ public final class CombatController {
         if (state.endlessMode) dynamicAtkMult *= (1f + Math.max(0f, state.endlessAtkMultiplierBonus));
         int scaledDmg = Math.max(
                 CombatTuning.MIN_DAMAGE,
-                Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult)
+                Math.round(def.attack.damage() * state.level.enemyAtkMultiplier * dynamicAtkMult * CombatTuning.ENEMY_DAMAGE_MULT)
         );
 
         int targetSocket = findEnemyTargetSocket();

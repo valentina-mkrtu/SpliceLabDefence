@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -36,6 +37,7 @@ import com.splicelab.model.ingredient.IngredientInstance;
 import com.splicelab.model.ingredient.SimpleIngredientInstance;
 import com.splicelab.ui.UiConstants;
 import com.splicelab.ui.UiFactory;
+import com.splicelab.ui.IngredientArt;
 import com.splicelab.ui.widgets.GridCellWidget;
 import com.splicelab.ui.widgets.HpBarWidget;
 import com.splicelab.ui.widgets.LevelTimerWidget;
@@ -44,6 +46,8 @@ import com.splicelab.ui.widgets.TubeWidget;
 import java.util.Map;
 
 public final class LabGameView {
+    private static final float WORLD_WIDTH = 540f;
+    private static final float WORLD_HEIGHT = 960f;
     private static final String CONVEYOR_LOOP_BASE_TEXTURE_PATH = "spine/production-line/belt.png";
     private static final String CONVEYOR_LOOP_LINE_TEXTURE_PATH = "spine/production-line/belt_line.png";
     private static final String SHAFT_BG_TEXTURE_PATH = "art/backgrounds/shaft.png";
@@ -54,6 +58,7 @@ public final class LabGameView {
     private static final String ICON_X2_PATH = "art/icons/x2.png";
     private static final String ICON_RECOVER_PATH = "art/icons/hp.png";
     private static final String ICON_REMOVE_PATH = "art/icons/remove.png";
+    private static final String ICON_PAUSE_PATH = "art/icons/settings.png";
 
     private static final float BOOST_BTN_SIZE = 72f;
     private static final float BOOST_BTN_GAP_Y = 14f;
@@ -144,6 +149,8 @@ public final class LabGameView {
     private Runnable onBoostRecover;
     private Runnable onBoostRemove;
 
+    private Runnable onPauseTapped;
+
     private final DragAndDrop dragAndDrop = new DragAndDrop();
 
     private final Table beltLayer;
@@ -158,6 +165,18 @@ public final class LabGameView {
     // Boost icon drawables are now fetched from context.assets (T-2.2); no per-field Texture fields needed.
 
     private final Table boostLeft;
+
+    private ImageButton freezeBtn;
+    private ImageButton cooldownBtn;
+    private ImageButton x2Btn;
+    private ImageButton recoverBtn;
+    private ImageButton removeBtn;
+
+    private Label freezeCount;
+    private Label cooldownCount;
+    private Label x2Count;
+    private Label recoverCount;
+    private Label removeCount;
 
     private boolean dragSfxPlayed;
 
@@ -362,35 +381,47 @@ public final class LabGameView {
         // Boost buttons overlay (left/right middle).
         boostLeft = new Table();
         boostLeft.setFillParent(false);
+        boostLeft.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.childrenOnly);
         boostLeft.defaults().size(BOOST_BTN_SIZE).padBottom(BOOST_BTN_GAP_Y);
         root.addActor(boostLeft);
 
-        ImageButton freezeBtn = makeBoostButton(ICON_FREEZE_PATH, () -> {
+        freezeBtn = makeBoostButton(ICON_FREEZE_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostFreeze != null) onBoostFreeze.run();
         });
-        ImageButton cooldownBtn = makeBoostButton(ICON_COOLDOWN_PATH, () -> {
+        cooldownBtn = makeBoostButton(ICON_COOLDOWN_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostCooldown != null) onBoostCooldown.run();
         });
-        ImageButton x2Btn = makeBoostButton(ICON_X2_PATH, () -> {
+        x2Btn = makeBoostButton(ICON_X2_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostX2 != null) onBoostX2.run();
         });
-        ImageButton recoverBtn = makeBoostButton(ICON_RECOVER_PATH, () -> {
+        recoverBtn = makeBoostButton(ICON_RECOVER_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostRecover != null) onBoostRecover.run();
         });
-        ImageButton removeBtn = makeBoostButton(ICON_REMOVE_PATH, () -> {
+        removeBtn = makeBoostButton(ICON_REMOVE_PATH, () -> {
             context.audio.playButtonClick();
             if (onBoostRemove != null) onBoostRemove.run();
         });
 
-        boostLeft.add(freezeBtn).row();
-        boostLeft.add(cooldownBtn).row();
-        boostLeft.add(x2Btn).row();
-        boostLeft.add(recoverBtn).row();
-        boostLeft.add(removeBtn).row();
+        freezeCount = ui.smallLabel("x0");
+        cooldownCount = ui.smallLabel("x0");
+        x2Count = ui.smallLabel("x0");
+        recoverCount = ui.smallLabel("x0");
+        removeCount = ui.smallLabel("x0");
+        freezeCount.setColor(Color.WHITE);
+        cooldownCount.setColor(Color.WHITE);
+        x2Count.setColor(Color.WHITE);
+        recoverCount.setColor(Color.WHITE);
+        removeCount.setColor(Color.WHITE);
+
+        boostLeft.add(wrapBoostButton(freezeBtn, freezeCount)).row();
+        boostLeft.add(wrapBoostButton(cooldownBtn, cooldownCount)).row();
+        boostLeft.add(wrapBoostButton(x2Btn, x2Count)).row();
+        boostLeft.add(wrapBoostButton(recoverBtn, recoverCount)).row();
+        boostLeft.add(wrapBoostButton(removeBtn, removeCount)).row();
 
         // Absolute positioning so you can tweak numbers fast.
         // X = left edge, Y = center of the whole stack.
@@ -399,6 +430,16 @@ public final class LabGameView {
                 BOOST_BTN_POS_X,
                 BOOST_BTN_CENTER_Y - boostLeft.getHeight() * 0.2f
         );
+
+        ImageButton pauseBtn = makeBoostButton(ICON_PAUSE_PATH, () -> {
+            if (onPauseTapped != null) onPauseTapped.run();
+        });
+        Table pauseOverlay = new Table();
+        pauseOverlay.setFillParent(true);
+        pauseOverlay.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.childrenOnly);
+        pauseOverlay.top().right();
+        pauseOverlay.add(pauseBtn).size(54).pad(12);
+        root.addActor(pauseOverlay);
     }
 
     public void setBoostListeners(Runnable freeze, Runnable cooldown, Runnable x2, Runnable recover, Runnable remove) {
@@ -407,6 +448,43 @@ public final class LabGameView {
         this.onBoostX2 = x2;
         this.onBoostRecover = recover;
         this.onBoostRemove = remove;
+    }
+
+    public void setPauseListener(Runnable r) {
+        this.onPauseTapped = r;
+    }
+
+    public Skin getSkin() {
+        return skin;
+    }
+
+    public void refreshBoostCounts(GameContext context) {
+        if (context == null || context.boosts == null) return;
+        setBoostBtn(freezeBtn, freezeCount, context.boosts.count("TIME_FREEZE"));
+        setBoostBtn(cooldownBtn, cooldownCount, context.boosts.count("IMMEDIATE_COOLDOWN"));
+        setBoostBtn(x2Btn, x2Count, context.boosts.count("ATK_X2"));
+        setBoostBtn(recoverBtn, recoverCount, context.boosts.count("TUBE_HP_RECOVERY"));
+        setBoostBtn(removeBtn, removeCount, context.boosts.count("REMOVE_ITEM"));
+    }
+
+    private void setBoostBtn(ImageButton btn, Label countLabel, int n) {
+        if (btn == null || countLabel == null) return;
+        countLabel.setText("x" + Math.max(0, n));
+        btn.setDisabled(n <= 0);
+        btn.getColor().a = n <= 0 ? 0.45f : 1f;
+    }
+
+    private Stack wrapBoostButton(ImageButton btn, Label countLabel) {
+        Stack stack = new Stack();
+        stack.add(btn);
+
+        Table overlay = new Table();
+        overlay.setFillParent(true);
+        overlay.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+        overlay.bottom().right();
+        overlay.add(countLabel).pad(2);
+        stack.add(overlay);
+        return stack;
     }
 
     /**
@@ -475,14 +553,19 @@ public final class LabGameView {
 
     private Table makeSocket(int index) {
         Table t = new Table();
+        // Must be directly hittable even when the icon child is hidden.
+        // Otherwise DragAndDrop never finds this Target for empty sockets.
+        t.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
         // Make the drop target larger so it's easy to hit.
-        t.setSize(64, 64);
+        t.setSize(82, 82);
+        // Sockets should be invisible visually; they still act as drop targets.
         t.setBackground((Drawable) null);
         t.setVisible(false);
         return t;
     }
 
     private void layoutConveyorPath() {
+        root.validate();
         // Fixed 12-point loop in beltLayer coordinates.
         // Keep it stable: do not depend on child actor layout/initialization.
         layoutShaftBackground();
@@ -529,6 +612,7 @@ public final class LabGameView {
     }
 
     private void layoutConveyorPathForPhase(float beltPhase) {
+        root.validate();
         layoutShaftBackground();
         float margin = 70f;
         float combatTopY = root.getHeight() - 70f;
@@ -583,6 +667,7 @@ public final class LabGameView {
     }
 
     private void positionAttackZoneMarker() {
+        root.validate();
         // Marker stays fixed on the right side of the belt (no phase sync).
         layoutShaftBackground();
         float margin = 70f;
@@ -665,6 +750,7 @@ public final class LabGameView {
 
     private void layoutShaftBackground() {
         if (shaftBg == null) return;
+        root.validate();
         float margin = 70f;
         float combatTopY = root.getHeight() - 70f;
         float combatBottomY = root.getHeight() - 448f;
@@ -735,7 +821,7 @@ public final class LabGameView {
                         }
                     }
                 });
-                dragAndDrop.addSource(new GridCellSource(cell));
+                dragAndDrop.addSource(new GridCellSource(cell, controller));
                 dragAndDrop.addTarget(new GridCellTarget(cell, controller));
             }
         }
@@ -955,72 +1041,20 @@ public final class LabGameView {
     private static String iconFor(IngredientInstance inst) {
         if (inst == null) return null;
         if (inst instanceof FusionInstance f) {
-            return fusionIconPath(f.entityType, f.itemType);
+            return IngredientArt.fusionIconPath(f.entityType, f.itemType);
         }
         if (inst instanceof SimpleIngredientInstance s) {
             if (s.kind() == IngredientKind.ENTITY && s.entityType().name().equalsIgnoreCase("SLIME")) {
-                return entityIconPath(s.entityType());
+                return IngredientArt.entityIconPath(s.entityType());
             }
             if (s.kind() == IngredientKind.ENTITY) {
-                return entityIconPath(s.entityType());
+                return IngredientArt.entityIconPath(s.entityType());
             }
             if (s.kind() == IngredientKind.ITEM) {
-                return itemIconPath(s.itemType());
+                return IngredientArt.itemIconPath(s.itemType());
             }
         }
         return null;
-    }
-
-    private static String entityIconPath(EntityType type) {
-        if (type == null) return null;
-        return switch (type) {
-            case SLIME -> "characters/slime/slime.png";
-            case MECH -> "characters/mech/mech.png";
-            case FUNGUS -> "characters/fungy/fungy.png";
-        };
-    }
-
-    private static String itemIconPath(ItemType type) {
-        if (type == null) return null;
-        // Item art lives in android assets/art/items.
-        return switch (type) {
-            case BATTERY -> "art/items/battery.png";
-            case TOXIC_WASTE -> "art/items/toxicwaste.png";
-            case RADIOACTIVE_GOO -> "art/items/radioactivegoo.png";
-            case CRYOGEL -> "art/items/criogel.png";
-            case CRYSTAL_SHARD -> "art/items/crystalshard.png";
-            case NANOBOTS -> "art/items/nanobots.png";
-        };
-    }
-
-    private static String fusionIconPath(EntityType entityType, ItemType itemType) {
-        if (entityType == null || itemType == null) return null;
-        return switch (entityType) {
-            case SLIME -> switch (itemType) {
-                case BATTERY -> "characters/slime/electroslime.png";
-                case TOXIC_WASTE -> "characters/slime/toxicslime.png";
-                case RADIOACTIVE_GOO -> "characters/slime/radioactiveslime.png";
-                case CRYOGEL -> "characters/slime/crioslime.png";
-                case CRYSTAL_SHARD -> "characters/slime/crystalslime.png";
-                case NANOBOTS -> "characters/slime/nanoslime.png";
-            };
-            case MECH -> switch (itemType) {
-                case BATTERY -> "characters/mech/mechbot.png";
-                case TOXIC_WASTE -> "characters/mech/toxicmech.png";
-                case RADIOACTIVE_GOO -> "characters/mech/radioactivemech.png";
-                case CRYOGEL -> "characters/mech/criomech.png";
-                case CRYSTAL_SHARD -> "characters/mech/crystalmech.png";
-                case NANOBOTS -> "characters/mech/nanomechbot.png";
-            };
-            case FUNGUS -> switch (itemType) {
-                case BATTERY -> "characters/fungy/electrofungy.png";
-                case TOXIC_WASTE -> "characters/fungy/toxicfungy.png";
-                case RADIOACTIVE_GOO -> "characters/fungy/radioactivefungy.png";
-                case CRYOGEL -> "characters/fungy/criofungy.png";
-                case CRYSTAL_SHARD -> "characters/fungy/crystalfungy.png";
-                case NANOBOTS -> "characters/fungy/nanofungy.png";
-            };
-        };
     }
 
     private static final class MovingBeltLineActor extends Actor {
@@ -1246,14 +1280,19 @@ public final class LabGameView {
 
     private final class GridCellSource extends DragAndDrop.Source {
         private final GridCellWidget cell;
+        private final CombatController controller;
 
-        public GridCellSource(GridCellWidget cell) {
+        public GridCellSource(GridCellWidget cell, CombatController controller) {
             super(cell);
             this.cell = cell;
+            this.controller = controller;
         }
 
         @Override
         public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
+            if (controller == null || controller.getState() == null) return null;
+            if (controller.getState().grid[cell.col][cell.row] == null) return null;
+
             if (!dragSfxPlayed) {
                 dragSfxPlayed = true;
                 context.audio.playDrag();
@@ -1265,29 +1304,40 @@ public final class LabGameView {
             // Move only a drag visual; hide source icon so it looks truly moved.
             var iconDrawable = cell.getIconDrawable();
             if (iconDrawable != null) {
+                float iconSize = 58f;
                 Table dragActor = new Table();
-                dragActor.setSize(cell.getWidth(), cell.getHeight());
+                // Keep the drag actor tight to the visible icon so it tracks the pointer closely.
+                dragActor.setSize(iconSize, iconSize);
                 Image dragImage = new Image(iconDrawable);
                 dragImage.setScaling(com.badlogic.gdx.utils.Scaling.fit);
-                float iconSize = 58f;
                 dragActor.add(dragImage).size(iconSize, iconSize).center();
                 payload.setDragActor(dragActor);
 
-                float iconLeft = (cell.getWidth() - iconSize) * 0.5f;
-                float iconBottom = (cell.getHeight() - iconSize) * 0.5f;
-                dragAndDrop.setDragActorPosition(x, -y/2);
+                // Keep the pointer/finger on the same point of the icon that was grabbed.
+                float grabX = Math.max(0f, Math.min(iconSize, cell.getIconLocalX(x)));
+                float grabY = Math.max(0f, Math.min(iconSize, cell.getIconLocalY(y)));
+                // Reduce the perceived offset so the icon stays tighter to the pointer.
+                // 0 = exactly on pointer, 1 = original offset.
+                // No offset: keep the drag visual pinned to the pointer.
+                dragAndDrop.setDragActorPosition(0f, 0f);
             } else {
                 Table dragActor = new Table();
-                dragActor.setSize(cell.getWidth(), cell.getHeight());
+                float iconSize = 58f;
+                dragActor.setSize(iconSize, iconSize);
                 dragActor.setBackground(skin.newDrawable("white", new Color(1f, 1f, 1f, 0.2f)));
                 payload.setDragActor(dragActor);
-                dragAndDrop.setDragActorPosition(x, -y/2);
+                dragAndDrop.setDragActorPosition(0f, 0f);
             }
             return payload;
         }
 
         @Override
         public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
+            // If the move/deploy succeeded, the controller will have already cleared this cell.
+            // Clear the drawable immediately to avoid a 1-frame "snap back" before syncFromState.
+            if (controller != null && controller.getState() != null && controller.getState().grid[cell.col][cell.row] == null) {
+                cell.setIcon(null);
+            }
             cell.setIconVisible(true);
             dragSfxPlayed = false;
         }
@@ -1305,14 +1355,25 @@ public final class LabGameView {
 
         @Override
         public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-            return payload.getObject() instanceof GridCellWidget;
+            if (!(payload.getObject() instanceof GridCellWidget from)) return false;
+            if (controller == null) return false;
+            if (from == target) return false;
+            return controller.getState() != null && controller.getState().grid[from.col][from.row] != null;
         }
 
         @Override
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
-            controller.requestMoveOrFuse(from.col, from.row, target.col, target.row);
-            context.audio.playDrop();
+            if (controller == null) return;
+            com.splicelab.combat.CommandResult res = controller.requestMoveOrFuse(from.col, from.row, target.col, target.row);
+            if (res != null && res.success) {
+                context.audio.playDrop();
+            } else {
+                context.audio.playError();
+                if (res != null) {
+                    floatTextNear(target, res.message.isBlank() ? res.code.name() : res.message, new Color(1f, 0.4f, 0.4f, 1f));
+                }
+            }
         }
     }
 
@@ -1328,14 +1389,26 @@ public final class LabGameView {
 
         @Override
         public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-            return payload.getObject() instanceof GridCellWidget;
+            if (!(payload.getObject() instanceof GridCellWidget from)) return false;
+            if (controller == null) return false;
+
+            boolean ok = controller.getState().grid[from.col][from.row] instanceof FusionInstance
+                    && controller.getState().conveyorSockets[socketIndex] == null;
+            return ok;
         }
 
         @Override
         public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
             if (!(payload.getObject() instanceof GridCellWidget from)) return;
-            controller.requestDeployFusionToSocket(from.col, from.row, socketIndex);
-            context.audio.playDrop();
+            com.splicelab.combat.CommandResult res = controller.requestDeployFusionToSocket(from.col, from.row, socketIndex);
+            if (res != null && res.success) {
+                context.audio.playDrop();
+            } else {
+                context.audio.playError();
+                if (res != null) {
+                    floatTextNear(getActor(), res.message.isBlank() ? res.code.name() : res.message, new Color(1f, 0.4f, 0.4f, 1f));
+                }
+            }
         }
     }
 

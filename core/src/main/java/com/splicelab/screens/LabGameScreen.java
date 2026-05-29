@@ -6,6 +6,8 @@ import com.splicelab.combat.CombatController;
 import com.splicelab.combat.CombatLog;
 import com.splicelab.combat.CombatState;
 import com.splicelab.ui.screens.LabGameView;
+import com.splicelab.ui.windows.ShopDialog;
+import com.splicelab.ui.windows.DevPanelDialog;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -17,6 +19,9 @@ public final class LabGameScreen extends BaseScreen {
     private LabGameView view;
     private CombatController combatController;
     private CombatState combatState;
+
+    private boolean paused;
+    private com.badlogic.gdx.scenes.scene2d.ui.Dialog pauseDialog;
 
     public LabGameScreen(SpliceLabGame game, GameContext context, int levelNumber) {
         super(game, context);
@@ -119,13 +124,15 @@ public final class LabGameScreen extends BaseScreen {
         combatState = combatController.startLevel(levelNumber);
 
         view.setOnTubeTapped(() -> combatController.requestTubeSpawn());
+        view.setPauseListener(this::togglePause);
         view.setBoostListeners(
-                () -> combatController.activateTimeFreeze(15f),
-                () -> combatController.activateImmediateCooldown(),
-                () -> combatController.activateAtkX2(15f),
-                () -> combatController.activateTubeHpRecovery(),
-                () -> combatController.armRemoveOneItem()
+                () -> tryBoost(ShopDialog.PurchaseType.TIME_FREEZE, () -> combatController.activateTimeFreeze(15f)),
+                () -> tryBoost(ShopDialog.PurchaseType.IMMEDIATE_COOLDOWN, () -> combatController.activateImmediateCooldown()),
+                () -> tryBoost(ShopDialog.PurchaseType.ATK_X2, () -> combatController.activateAtkX2(15f)),
+                () -> tryBoost(ShopDialog.PurchaseType.TUBE_HP_RECOVERY, () -> combatController.activateTubeHpRecovery()),
+                () -> tryBoost(ShopDialog.PurchaseType.REMOVE_ITEM, () -> combatController.armRemoveOneItem())
         );
+        view.refreshBoostCounts(context);
         view.bindDragDrop(combatController);
 
         if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
@@ -137,11 +144,12 @@ public final class LabGameScreen extends BaseScreen {
                         if (keycode == Input.Keys.W) combatController.debugForceWin();
                         if (keycode == Input.Keys.L) combatController.debugForceLose();
                         if (keycode == Input.Keys.E) combatController.debugDamageEnemy(9999);
-                        if (keycode == Input.Keys.NUM_1) combatController.activateTimeFreeze(15f);
-                        if (keycode == Input.Keys.NUM_2) combatController.activateImmediateCooldown();
-                        if (keycode == Input.Keys.NUM_3) combatController.activateAtkX2(15f);
-                        if (keycode == Input.Keys.NUM_4) combatController.activateTubeHpRecovery();
-                        if (keycode == Input.Keys.NUM_5) combatController.armRemoveOneItem();
+                        if (keycode == Input.Keys.F1) openDevPanel();
+                        if (keycode == Input.Keys.NUM_1) tryBoost(ShopDialog.PurchaseType.TIME_FREEZE, () -> combatController.activateTimeFreeze(15f));
+                        if (keycode == Input.Keys.NUM_2) tryBoost(ShopDialog.PurchaseType.IMMEDIATE_COOLDOWN, () -> combatController.activateImmediateCooldown());
+                        if (keycode == Input.Keys.NUM_3) tryBoost(ShopDialog.PurchaseType.ATK_X2, () -> combatController.activateAtkX2(15f));
+                        if (keycode == Input.Keys.NUM_4) tryBoost(ShopDialog.PurchaseType.TUBE_HP_RECOVERY, () -> combatController.activateTubeHpRecovery());
+                        if (keycode == Input.Keys.NUM_5) tryBoost(ShopDialog.PurchaseType.REMOVE_ITEM, () -> combatController.armRemoveOneItem());
                     }
                     // Non-cheat desktop shortcuts (always active):
                     if (keycode == Input.Keys.S) combatController.requestTubeSpawn();
@@ -151,8 +159,55 @@ public final class LabGameScreen extends BaseScreen {
         }
     }
 
+    private boolean tryBoost(ShopDialog.PurchaseType type, Runnable activate) {
+        if (type == null || activate == null) return false;
+        if (!context.boosts.consume(type.name())) return false;
+        activate.run();
+        if (view != null) view.refreshBoostCounts(context);
+        return true;
+    }
+
+    private void togglePause() {
+        if (paused) {
+            resumeGame();
+            return;
+        }
+        paused = true;
+        context.audio.playButtonClick();
+        pauseDialog = new com.splicelab.ui.windows.PauseDialog(
+                view.getSkin(),
+                context,
+                this::resumeGame,
+                () -> game.setScreen(new MainLobbyScreen(game, context))
+        );
+        pauseDialog.show(stage);
+    }
+
+    private void resumeGame() {
+        paused = false;
+        if (pauseDialog != null) {
+            pauseDialog.hide();
+            pauseDialog = null;
+        }
+    }
+
+    @Override
+    protected void openDevPanel() {
+        if (!DebugFlags.DEBUG) return;
+        new DevPanelDialog(
+                view.getSkin(),
+                context,
+                () -> {
+                    if (view != null) view.refreshBoostCounts(context);
+                },
+                combatController::debugForceWin,
+                combatController::debugForceLose
+        ).show(stage);
+    }
+
     @Override
     protected void update(float delta) {
+        if (paused) return;
         combatController.update(delta);
         view.update(delta);
         view.syncFromState(combatController.getState());
@@ -165,16 +220,16 @@ public final class LabGameScreen extends BaseScreen {
                 int lvl = combatController.getState().level.levelNumber;
                 boolean firstWin = context.saves.get().completedLevels.add(lvl);
                 CombatLog.d("win reward applied firstWin=" + firstWin);
-                int coinsEarned = combatController.getState().level.rewards.coins();
-                int dnaEarned = combatController.getState().level.rewards.dna();
+                int dnaEarned = combatController.getState().level.rewards.coins();
+                int cryEarned = combatController.getState().level.rewards.dna();
                 if (firstWin) {
-                    coinsEarned += combatController.getState().level.rewards.firstWinBonusCoins();
-                    dnaEarned += combatController.getState().level.rewards.firstWinBonusDna();
+                    dnaEarned += combatController.getState().level.rewards.firstWinBonusCoins();
+                    cryEarned += combatController.getState().level.rewards.firstWinBonusDna();
                 }
                 context.saves.get().currentLevel = Math.max(context.saves.get().currentLevel, lvl + 1);
                 CombatLog.d("level advanced currentLevel=" + context.saves.get().currentLevel);
                 context.saves.save();
-                game.setScreen(new LevelCompleteScreen(game, context, new com.splicelab.model.level.LevelRewardSummary(coinsEarned, dnaEarned)));
+                game.setScreen(new LevelCompleteScreen(game, context, new com.splicelab.model.level.LevelRewardSummary(dnaEarned, cryEarned)));
             }
             case LOSE -> {
                 context.audio.stopBeltLoop();

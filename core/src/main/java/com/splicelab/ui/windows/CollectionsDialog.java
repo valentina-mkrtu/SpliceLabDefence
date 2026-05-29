@@ -11,33 +11,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.splicelab.app.GameContext;
+import com.splicelab.model.ingredient.FusionDefinition;
 import com.splicelab.ui.Scene2dPlaceholders;
+import com.splicelab.ui.IngredientArt;
 import com.splicelab.ui.UiFactory;
 
 public final class CollectionsDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
     private static final String FRAME_PATH = "art/icons/iconbg.png";
     private static final String LOCK_PATH = "art/icons/slot.png";
-    private static final String[] FUSION_ICON_PATHS = new String[] {
-            "art/fusions/criofungy.png",
-            "art/fusions/criomech.png",
-            "art/fusions/crioslime.png",
-            "art/fusions/crystalfungy.png",
-            "art/fusions/crystalmech.png",
-            "art/fusions/crystalslime.png",
-            "art/fusions/electrofungy.png",
-            "art/fusions/electroslime.png",
-            "art/fusions/mechbot.png",
-            "art/fusions/nanofungy.png",
-            "art/fusions/nanomechbot.png",
-            "art/fusions/nanoslime.png",
-            "art/fusions/radioactivefungy.png",
-            "art/fusions/radioactivemech.png",
-            "art/fusions/radioactiveslime.png",
-            "art/fusions/toxicfungy.png",
-            "art/fusions/toxicmech.png",
-            "art/fusions/toxicslime.png"
-    };
 
     private Texture bgTex;
     private Image bgImage;
@@ -82,12 +64,13 @@ public final class CollectionsDialog extends Dialog {
         grid.defaults().pad(14);
 
         int columns = 2;
-        for (int i = 0; i < 18; i++) {
-            String fusionId = "FUSION_" + (i + 1);
-            boolean unlocked = context.fusionUnlocks.isUnlocked(fusionId);
-            // Slightly smaller cards so they stay inside the window frame.
-            grid.add(makeFusionCell(skin, ui, unlocked, fusionId)).width(130);
-            if ((i + 1) % columns == 0) grid.row();
+        int index = 0;
+        for (FusionDefinition fusion : context.definitions.allFusions()) {
+            String key = fusion.entityType.name() + "+" + fusion.itemType.name();
+            boolean unlocked = context.fusionUnlocks.isUnlocked(key);
+            grid.add(makeFusionCell(skin, ui, fusion, unlocked)).width(160);
+            index++;
+            if (index % columns == 0) grid.row();
         }
 
         ScrollPane scroll = new ScrollPane(grid, skin);
@@ -147,7 +130,8 @@ public final class CollectionsDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(20f, 200f);
+        // Follow the dialog position (MainLobbyScreen centers dialogs).
+        bgImage.setPosition(getX(), getY());
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
@@ -204,28 +188,10 @@ public final class CollectionsDialog extends Dialog {
         // All textures are AssetService-owned; no private textures to dispose. (T-2.2, T-3.4)
     }
 
-    private Drawable loadFusionDrawable(String fusionId) {
-        if (fusionId == null || !fusionId.startsWith("FUSION_")) return null;
-        int index;
-        try {
-            index = Integer.parseInt(fusionId.substring("FUSION_".length())) - 1;
-        } catch (Exception ignored) {
-            return null;
-        }
-        if (index < 0 || index >= FUSION_ICON_PATHS.length) return null;
-
-        String path = FUSION_ICON_PATHS[index];
-        if (path == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
-
-        Texture t = null;
-        if (context != null && context.assets != null) t = context.assets.getTexture(path);
-        if (t == null) return null;
-        return new TextureRegionDrawable(new TextureRegion(t));
-    }
-
-    private Table makeFusionCell(Skin skin, UiFactory ui, boolean unlocked, String fusionId) {
+    private Table makeFusionCell(Skin skin, UiFactory ui, FusionDefinition fusion, boolean unlocked) {
         Table cell = new Table();
-        cell.setBackground(skin.newDrawable("white", new Color(0.15f, 0.16f, 0.2f, 1f)));
+        // No dark card background; let the window background show through.
+        cell.setBackground((Drawable) null);
         cell.defaults().pad(6);
 
         Table frame = new Table();
@@ -234,7 +200,8 @@ public final class CollectionsDialog extends Dialog {
 
         Image icon;
         if (unlocked) {
-            Drawable fusionDrawable = loadFusionDrawable(fusionId);
+            String iconPath = fusion == null ? null : IngredientArt.fusionIconPath(fusion.entityType, fusion.itemType);
+            Drawable fusionDrawable = iconPath == null ? null : loadDrawable(iconPath);
             icon = fusionDrawable != null
                     ? new Image(fusionDrawable)
                     : Scene2dPlaceholders.coloredSquare(skin, new Color(0.35f, 0.65f, 0.5f, 1f));
@@ -252,7 +219,11 @@ public final class CollectionsDialog extends Dialog {
         frame.add(icon).size(64).pad(7);
 
         cell.add(frame).size(84).row();
-        cell.add(ui.label(unlocked ? fusionId : "Locked")).padTop(4);
+        String name = fusion == null ? "" : fusion.displayName;
+        if (name == null || name.isBlank()) {
+            name = fusion == null ? "" : (fusion.entityType.name() + " + " + fusion.itemType.name());
+        }
+        cell.add(ui.label(unlocked ? name : "Locked")).padTop(4);
         return cell;
     }
 

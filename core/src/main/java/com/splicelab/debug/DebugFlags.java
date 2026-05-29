@@ -14,7 +14,7 @@ public final class DebugFlags {
      * Master switch — set to {@code false} before every release build.
      * When {@code false}, every flag below evaluates to {@code false} regardless of its own value.
      */
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     // Individual flags — only effective when DEBUG == true.
     public static final boolean ENABLE_DEBUG_OVERLAY = DEBUG && true;
@@ -26,4 +26,3 @@ public final class DebugFlags {
 
     private DebugFlags() {}
 }
-

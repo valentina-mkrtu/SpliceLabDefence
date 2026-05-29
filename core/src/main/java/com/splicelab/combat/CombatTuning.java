@@ -30,6 +30,9 @@ public final class CombatTuning {
     public static final float BOSS_BASE_HP_MULT = 2.50f;
     public static final float BOSS_BASE_ATK_MULT = 2.00f;
 
+    // Global enemy damage multiplier (vs tube and deployed fusions).
+    public static final float ENEMY_DAMAGE_MULT = 1.30f;
+
     public static final float CONVEYOR_LOOP_SECONDS = 6.72f;
     public static final float CONVEYOR_STEP_INTERVAL_SECONDS = CONVEYOR_LOOP_SECONDS / 12f;
     public static final float CONVEYOR_MOVE_DURATION_SECONDS = 0.18f;

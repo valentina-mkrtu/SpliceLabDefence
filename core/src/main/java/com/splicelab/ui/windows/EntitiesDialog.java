@@ -7,12 +7,20 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.splicelab.app.GameContext;
+import com.splicelab.model.EntityType;
+import com.splicelab.model.ItemType;
+import com.splicelab.model.ingredient.EntityDefinition;
+import com.splicelab.model.ingredient.ItemDefinition;
+import com.splicelab.ui.IngredientArt;
 import com.splicelab.ui.Scene2dPlaceholders;
 import com.splicelab.ui.UiFactory;
 
 public final class EntitiesDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/menuwindowbg.png";
+
+    private final GameContext context;
 
     private com.badlogic.gdx.graphics.Texture bgTex;
     private com.badlogic.gdx.scenes.scene2d.ui.Image bgImage;
@@ -20,6 +28,7 @@ public final class EntitiesDialog extends Dialog {
 
     public EntitiesDialog(Skin skin, GameContext context) {
         super("Entities", skin);
+        this.context = context;
 
         // Nuke any skin-provided window/content/button backgrounds (can tint whole dialog).
         setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
@@ -54,17 +63,21 @@ public final class EntitiesDialog extends Dialog {
         // Force a fixed card width (prevents full-bleed rows).
         list.defaults().width(330f);
 
-        list.add(makeCard(skin, ui, "Slime", 20, 4, "Splits on hit")).row();
-        list.add(makeCard(skin, ui, "Mech", 35, 6, "Armor: reduces damage")).row();
-        list.add(makeCard(skin, ui, "Fungi", 22, 3, "Spore: poison over time")).row();
-        list.add(makeCard(skin, ui, "Plasma", 18, 8, "Chain lightning")).row();
-        list.add(makeCard(skin, ui, "Alien", 26, 5, "Mind shock: stun chance")).row();
-        list.add(makeCard(skin, ui, "Egg", 12, 2, "Hatches after turns")).row();
+        list.add(sectionHeader(ui, "Entities")).left().row();
+        for (EntityType type : EntityType.values()) {
+            EntityDefinition def = context.definitions.getEntity(type).orElse(null);
+            if (def == null) continue;
+            boolean unlocked = context.unlocks.isEntityUnlocked(type);
+            list.add(makeEntityCard(skin, ui, type, def, unlocked)).row();
+        }
 
-        list.add(makeCard(skin, ui, "Battery", 0, 0, "+Energy on merge")).row();
-        list.add(makeCard(skin, ui, "Toxic Waste", 0, 0, "Adds poison stacks")).row();
-        list.add(makeCard(skin, ui, "Water Bottle", 0, 0, "Heals tube")).row();
-        list.add(makeCard(skin, ui, "Lamp", 0, 0, "Reveals hidden bonus")).row();
+        list.add(sectionHeader(ui, "Items")).left().padTop(12).row();
+        for (ItemType type : ItemType.values()) {
+            ItemDefinition def = context.definitions.getItem(type).orElse(null);
+            if (def == null) continue;
+            boolean unlocked = context.unlocks.isItemUnlocked(type);
+            list.add(makeItemCard(skin, ui, type, def, unlocked)).row();
+        }
 
         ScrollPane scroll = new ScrollPane(list, skin);
         scroll.setFadeScrollBars(false);
@@ -108,12 +121,13 @@ public final class EntitiesDialog extends Dialog {
     public void syncBackground() {
         if (bgImage == null) return;
         bgImage.setSize(getWidth(), getHeight());
-        bgImage.setPosition(20f, 200f);
+        // Follow the dialog position (MainLobbyScreen centers dialogs).
+        bgImage.setPosition(getX(), getY());
     }
 
     public void showBackground(com.badlogic.gdx.scenes.scene2d.Stage stage) {
         if (stage == null) return;
-        createBackgroundIfNeeded(context);
+        createBackgroundIfNeeded(this.context);
         if (bgImage == null) return;
         if (bgImage.getStage() != stage) stage.addActor(bgImage);
         bgImage.setZIndex(Math.max(0, getZIndex() - 1));
@@ -164,29 +178,73 @@ public final class EntitiesDialog extends Dialog {
         closeButton = null;
     }
 
-    private Table makeCard(Skin skin, UiFactory ui, String name, int hp, int atk, String ability) {
-        Table card = new Table();
-        card.setBackground(skin.newDrawable("white", new Color(0.14f, 0.15f, 0.2f, 1f)));
-        card.defaults().pad(6);
+    private Table sectionHeader(UiFactory ui, String title) {
+        var l = ui.label(title == null ? "" : title);
+        l.setColor(new Color(0.8f, 0.9f, 1f, 1f));
+        l.setFontScale(1.2f);
+        Table t = new Table();
+        t.add(l).left();
+        return t;
+    }
 
-        card.setClip(true);
+    private Table makeEntityCard(Skin skin, UiFactory ui, EntityType type, EntityDefinition def, boolean unlocked) {
+        Table card = makeBaseCard(skin);
 
-        // Avoid scaling: it breaks layout sizing in ScrollPane,
-        // causing the whole list to collapse into a single block.
-        card.setTransform(false);
+        Drawable d = context.assets.getDrawable(IngredientArt.entityIconPath(type));
+        Image icon = d != null ? new Image(d) : Scene2dPlaceholders.coloredSquare(skin, new Color(0.3f, 0.45f, 0.7f, 1f));
+        if (!unlocked) icon.setColor(0.55f, 0.55f, 0.55f, 1f);
 
-        Image icon = Scene2dPlaceholders.coloredSquare(skin, new Color(0.3f, 0.45f, 0.7f, 1f));
         Table left = new Table();
         left.add(icon).size(56);
 
+        String name = def.displayName;
+        if (name == null || name.isBlank()) name = type.name();
+
         Table right = new Table();
         right.defaults().left();
-        right.add(ui.label(name)).row();
-        right.add(ui.label("HP: " + hp + "   ATK: " + atk)).row();
-        right.add(ui.label(ability));
+        right.add(ui.label(name + (unlocked ? "" : " (Locked)"))).row();
+        right.add(ui.smallLabel("HP: " + def.baseStats.maxHp() + "   ATK: " + def.baseStats.atk())).row();
+        if (def.description != null && !def.description.isBlank()) right.add(ui.smallLabel(def.description)).row();
 
         card.add(left).padRight(8);
         card.add(right).expandX().fillX();
+        return card;
+    }
+
+    private Table makeItemCard(Skin skin, UiFactory ui, ItemType type, ItemDefinition def, boolean unlocked) {
+        Table card = makeBaseCard(skin);
+
+        Drawable d = context.assets.getDrawable(IngredientArt.itemIconPath(type));
+        Image icon = d != null ? new Image(d) : Scene2dPlaceholders.coloredSquare(skin, new Color(0.3f, 0.45f, 0.7f, 1f));
+        if (!unlocked) icon.setColor(0.55f, 0.55f, 0.55f, 1f);
+
+        Table left = new Table();
+        left.add(icon).size(56);
+
+        String name = def.displayName;
+        if (name == null || name.isBlank()) name = type.name();
+
+        Table right = new Table();
+        right.defaults().left();
+        right.add(ui.label(name + (unlocked ? "" : " (Locked)"))).row();
+
+        String effect = def.description;
+        if (effect == null || effect.isBlank()) {
+            effect = "HP +" + def.statModifiers.hp() + ", ATK +" + def.statModifiers.atk();
+        }
+        right.add(ui.smallLabel(effect)).row();
+
+        card.add(left).padRight(8);
+        card.add(right).expandX().fillX();
+        return card;
+    }
+
+    private static Table makeBaseCard(Skin skin) {
+        Table card = new Table();
+        card.setBackground(skin.newDrawable("white", new Color(0.14f, 0.15f, 0.2f, 1f)));
+        card.defaults().pad(6);
+        card.setClip(true);
+        card.setTransform(false);
         return card;
     }
 }

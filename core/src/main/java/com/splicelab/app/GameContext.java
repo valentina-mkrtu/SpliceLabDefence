@@ -7,6 +7,7 @@ import com.splicelab.data.DefinitionRepository;
 import com.splicelab.data.LevelRepository;
 import com.splicelab.data.SaveRepository;
 import com.splicelab.services.AdRewardService;
+import com.splicelab.services.BoostInventoryService;
 import com.splicelab.services.EconomyService;
 import com.splicelab.services.FusionService;
 import com.splicelab.services.FusionUnlockService;
@@ -29,6 +30,7 @@ public final class GameContext {
     public final LevelRepository levels;
     public final SaveRepository saves;
     public final EconomyService economy;
+    public final BoostInventoryService boosts;
     public final UnlockService unlocks;
     public final RewardService rewards;
     public final FusionService fusionService;
@@ -48,6 +50,7 @@ public final class GameContext {
             LevelRepository levels,
             SaveRepository saves,
             EconomyService economy,
+            BoostInventoryService boosts,
             UnlockService unlocks,
             RewardService rewards,
             FusionService fusionService,
@@ -66,6 +69,7 @@ public final class GameContext {
         this.levels = levels;
         this.saves = saves;
         this.economy = economy;
+        this.boosts = boosts;
         this.unlocks = unlocks;
         this.rewards = rewards;
         this.fusionService = fusionService;

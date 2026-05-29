@@ -22,7 +22,7 @@ public final class LevelMapDialog extends Dialog {
         void onSelectLevel(int levelNumber);
     }
 
-    private static final boolean ENABLE_LEVEL_LOCK = false;
+    private static final boolean ENABLE_LEVEL_LOCK = true;
 
     private static final String LEVEL_BG_TEXTURE_PATH = "art/backgrounds/levels.png";
     private static final String WINDOW_BG_TEXTURE_PATH = "art/backgrounds/levelsbg.png";
@@ -96,8 +96,10 @@ public final class LevelMapDialog extends Dialog {
                 unlocked = cleared || context.saves.get().completedLevels.contains(level - 1) || level == 1;
             }
 
+            final boolean unlockedFinal = unlocked;
+
             TextButton btn = ui.textButton("");
-            btn.setDisabled(!unlocked);
+            btn.setDisabled(!unlockedFinal);
 
             Label label = new Label("Level " + level, levelLabelStyle);
             label.setAlignment(Align.center);
@@ -110,14 +112,14 @@ public final class LevelMapDialog extends Dialog {
                 btn.getStyle().disabled = levelBgDrawable;
             } else {
                 Color baseColor;
-                if (!unlocked) baseColor = new Color(0.18f, 0.18f, 0.18f, 1f);
+                if (!unlockedFinal) baseColor = new Color(0.18f, 0.18f, 0.18f, 1f);
                 else if (cleared) baseColor = new Color(0.25f, 0.65f, 0.35f, 1f);
                 else baseColor = new Color(0.3f, 0.3f, 0.3f, 1f);
 
                 btn.getStyle().up = skin.newDrawable("white", baseColor);
                 btn.getStyle().down = skin.newDrawable(
                         "white",
-                        !unlocked ? new Color(0.14f, 0.14f, 0.14f, 1f)
+                        !unlockedFinal ? new Color(0.14f, 0.14f, 0.14f, 1f)
                                 : (cleared ? new Color(0.2f, 0.55f, 0.3f, 1f) : new Color(0.25f, 0.25f, 0.25f, 1f))
                 );
             }
@@ -126,7 +128,7 @@ public final class LevelMapDialog extends Dialog {
             btn.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
                 @Override
                 public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
-                    if (!unlocked) return;
+                    if (!unlockedFinal) return;
                     if (listener != null) listener.onSelectLevel(selected);
                     hide();
                 }

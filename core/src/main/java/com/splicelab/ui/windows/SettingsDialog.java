@@ -21,6 +21,8 @@ import com.splicelab.ui.UiFactory;
 
 public final class SettingsDialog extends Dialog {
     private static final String BG_PATH = "art/backgrounds/settingsbg.png";
+    // Back-compat: some builds may ship the singular filename.
+    private static final String BG_PATH_ALT = "art/backgrounds/settingbg.png";
     private static final String SOUND_ICON_PATH = "art/icons/sound.png";
 
     private Texture bgTex;
@@ -36,7 +38,8 @@ public final class SettingsDialog extends Dialog {
     private void createBackgroundIfNeeded(GameContext context) {
         if (bgTex != null) return;
 
-        var bgFile = Gdx.files.internal(BG_PATH);
+        String bgPath = Gdx.files.internal(BG_PATH).exists() ? BG_PATH : BG_PATH_ALT;
+        var bgFile = Gdx.files.internal(bgPath);
         if (!bgFile.exists()) {
             Gdx.app.log("SpliceLab", "Missing dialog background: " + bgFile.path());
             return;
@@ -44,7 +47,7 @@ public final class SettingsDialog extends Dialog {
 
         Texture texture = null;
         if (context != null && context.assets != null) {
-            texture = context.assets.getTexture(BG_PATH);
+            texture = context.assets.getTexture(bgPath);
         }
         if (texture == null) {
             // Avoid blocking disk IO during interaction. If not preloaded, keep

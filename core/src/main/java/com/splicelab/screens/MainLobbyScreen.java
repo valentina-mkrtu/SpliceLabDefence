@@ -11,6 +11,8 @@ import com.splicelab.ui.windows.EntitiesDialog;
 import com.splicelab.ui.windows.LevelMapDialog;
 import com.splicelab.ui.windows.SettingsDialog;
 import com.splicelab.ui.windows.ShopDialog;
+import com.splicelab.ui.windows.DevPanelDialog;
+import com.splicelab.debug.DebugFlags;
 
 public final class MainLobbyScreen extends BaseScreen {
     private MainLobbyView view;
@@ -46,7 +48,7 @@ public final class MainLobbyScreen extends BaseScreen {
     @Override
     protected void buildUi() {
         view = new MainLobbyView(context);
-        view.setLabListener(() -> game.setScreen(new LabGameScreen(game, context, 1)));
+        view.setLabListener(() -> game.setScreen(new LabGameScreen(game, context, context.saves.get().currentLevel)));
         view.setMapListener(() -> showSingletonDialog(
                 new LevelMapDialog(view.getSkin(), context, lvl -> game.setScreen(new LabGameScreen(game, context, lvl))),
                 DialogType.MAP
@@ -133,6 +135,7 @@ public final class MainLobbyScreen extends BaseScreen {
 
     private void showShop() {
         if (shopDialog == null) shopDialog = new ShopDialog(view.getSkin(), context, this::onShopPurchase);
+        if (shopDialog instanceof ShopDialog d) d.refresh(context);
         showSingletonDialog(shopDialog, DialogType.SHOP);
     }
 
@@ -151,14 +154,27 @@ public final class MainLobbyScreen extends BaseScreen {
     }
 
     private void onShopPurchase(ShopDialog.PurchaseType type, int dnaCost) {
-        if (dnaCost <= 0) return;
+        if (type == null || dnaCost <= 0) return;
         if (context.economy.spend(CurrencyType.DNA, dnaCost)) {
-            if (type != null) {
-                context.saves.get().ownedShopPurchases.add(type.name());
-                context.saves.save();
-            }
+            context.boosts.grant(type.name(), 1);
             view.refresh(context);
+            if (shopDialog instanceof ShopDialog d) d.refresh(context);
         }
+    }
+
+    @Override
+    protected void openDevPanel() {
+        if (!DebugFlags.DEBUG) return;
+        new DevPanelDialog(
+                view.getSkin(),
+                context,
+                () -> {
+                    if (view != null) view.refresh(context);
+                    if (shopDialog instanceof ShopDialog d) d.refresh(context);
+                },
+                null,
+                null
+        ).show(stage);
     }
 
     @Override

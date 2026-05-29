@@ -1,6 +1,8 @@
 package com.splicelab.data;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public final class SaveData {
@@ -10,9 +12,8 @@ public final class SaveData {
     public int playerLevel = 1;
     public int xp = 0;
     public int currentLevel = 1;
-    public int coins = 0;
-    public int dna = 0;
-    public int crystals = 0;
+    public int dna = 0;   // was: coins  (primary currency, earned + spent in shop)
+    public int cry = 0;   // was: dna    (secondary currency)
 
     public int dayStreak = 0;
     public int totalFusionsUnlocked = 0;
@@ -21,8 +22,8 @@ public final class SaveData {
 
     public final Set<String> unlockedEntities = new HashSet<>();
     public final Set<String> unlockedItems = new HashSet<>();
-    // Shop purchases / owned boosts (e.g. TIME_FREEZE).
-    public final Set<String> ownedShopPurchases = new HashSet<>();
+    // key = ShopDialog.PurchaseType.name(), value = count owned
+    public final Map<String, Integer> boostInventory = new HashMap<>();
     public int unlockedConveyorSlotsLeft = 1;
     public int unlockedConveyorSlotsRight = 1;
 
@@ -34,4 +35,19 @@ public final class SaveData {
 
     // Endless mode: best survival time (seconds).
     public float endlessBestSurvivalSeconds = 0f;
+
+    public int getBoostCount(String typeName) {
+        return boostInventory.getOrDefault(typeName, 0);
+    }
+
+    public void addBoost(String typeName, int delta) {
+        boostInventory.put(typeName, Math.max(0, getBoostCount(typeName) + delta));
+    }
+
+    public boolean consumeBoost(String typeName) {
+        int c = getBoostCount(typeName);
+        if (c <= 0) return false;
+        boostInventory.put(typeName, c - 1);
+        return true;
+    }
 }

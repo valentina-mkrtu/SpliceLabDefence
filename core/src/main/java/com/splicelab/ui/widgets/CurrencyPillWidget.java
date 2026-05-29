@@ -14,12 +14,17 @@ import com.splicelab.ui.UiFactory;
 public final class CurrencyPillWidget extends Table {
     private final Label amountLabel;
 
-    public CurrencyPillWidget(Skin skin, UiFactory ui, Drawable background, Drawable icon, int amount) {
+    public CurrencyPillWidget(Skin skin, UiFactory ui, Drawable background, Drawable icon, String label, int amount) {
         setTouchable(Touchable.disabled);
         if (background != null) setBackground(background);
         defaults().pad(4);
 
         if (icon != null) add(new Image(icon)).size(20).padRight(6);
+        if (label != null && !label.isBlank()) {
+            var labelActor = ui.smallLabel(label);
+            labelActor.setFontScale(1.05f);
+            add(labelActor).padRight(6);
+        }
         amountLabel = ui.label(String.valueOf(amount));
         amountLabel.setFontScale(1.2f);
         add(amountLabel);

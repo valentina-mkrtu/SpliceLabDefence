@@ -31,8 +31,8 @@ public final class SaveValidator {
         data.playerLevel = clamp(data.playerLevel, 1, GameConfig.MAX_PLAYER_LEVEL);
         data.xp = clamp(data.xp, 0, GameConfig.MAX_XP);
         data.currentLevel = clamp(data.currentLevel, 1, GameConfig.MAX_CURRENT_LEVEL);
-        data.coins = clamp(data.coins, 0, GameConfig.MAX_COINS);
-        data.dna = clamp(data.dna, 0, GameConfig.MAX_DNA);
+        data.dna = clamp(data.dna, 0, 9_999_999);
+        data.cry = clamp(data.cry, 0, 9_999_999);
         data.endlessBestSurvivalSeconds = Math.max(0f, data.endlessBestSurvivalSeconds);
 
         data.unlockedConveyorSlotsLeft = clamp(data.unlockedConveyorSlotsLeft, 0, config.maxConveyorSlotsPerSide);
@@ -40,7 +40,9 @@ public final class SaveValidator {
 
         removeInvalidEnumNames(data.unlockedEntities, EntityType.class);
         removeInvalidEnumNames(data.unlockedItems, ItemType.class);
-        sanitizeStringSet(data.ownedShopPurchases);
+        if (data.boostInventory != null) {
+            data.boostInventory.entrySet().removeIf(e -> e.getValue() == null || e.getValue() < 0);
+        }
 
         ensureStarterUnlocks(data);
         ensureIdentity(data);
@@ -52,8 +54,8 @@ public final class SaveValidator {
         data.schemaVersion = config.saveSchemaVersion;
         data.playerLevel = 1;
         data.currentLevel = 1;
-        data.coins = 0;
         data.dna = 0;
+        data.cry = 0;
         data.unlockedConveyorSlotsLeft = 1;
         data.unlockedConveyorSlotsRight = 1;
         ensureStarterUnlocks(data);
@@ -113,14 +115,4 @@ public final class SaveValidator {
         }
     }
 
-    private static void sanitizeStringSet(Iterable<String> set) {
-        if (!(set instanceof java.util.Set<?> s)) return;
-        Iterator<?> it = s.iterator();
-        while (it.hasNext()) {
-            Object v = it.next();
-            if (!(v instanceof String str) || str.isBlank()) {
-                it.remove();
-            }
-        }
-    }
 }

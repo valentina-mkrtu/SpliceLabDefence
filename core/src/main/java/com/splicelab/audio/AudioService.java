@@ -153,6 +153,11 @@ public final class AudioService {
         drop.play(sfxMuted ? 0f : clamp01(sfxVolume * 0.72f));
     }
 
+    public void playError() {
+        // Reuse the button click as a lightweight error cue.
+        playButtonClick();
+    }
+
     public void playEnemyThrow() {
         if (enemyThrow == null) {
             if (!Gdx.files.internal(SFX_ENEMY_THROW_PATH).exists()) return;

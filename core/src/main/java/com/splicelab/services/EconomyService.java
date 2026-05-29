@@ -24,21 +24,17 @@ public final class EconomyService {
     public void add(CurrencyType currency, int amount) {
         if (currency == null || amount == 0) return;
         switch (currency) {
-            case COINS -> saves.get().coins = Math.max(0, saves.get().coins + amount);
             case DNA -> saves.get().dna = Math.max(0, saves.get().dna + amount);
-            case CRYSTALS -> saves.get().crystals = Math.max(0, saves.get().crystals + amount);
+            case CRY -> saves.get().cry = Math.max(0, saves.get().cry + amount);
         }
-        // T-2.5: mark dirty instead of flushing synchronously on every mutation.
-        // Call saves.flushIfDirty() at natural checkpoints (level complete, lobby, app pause).
-        saves.markDirty();
+        saves.save();
     }
 
     public int getBalance(CurrencyType currency) {
         if (currency == null) return 0;
         return switch (currency) {
-            case COINS -> saves.get().coins;
             case DNA -> saves.get().dna;
-            case CRYSTALS -> saves.get().crystals;
+            case CRY -> saves.get().cry;
         };
     }
 }

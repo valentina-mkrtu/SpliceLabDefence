@@ -4,11 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.splicelab.assets.PlaceholderSkinFactory;
 import com.splicelab.app.AppConstants;
 import com.splicelab.app.GameContext;
 import com.splicelab.app.SpliceLabGame;
+import com.splicelab.debug.DebugFlags;
 
 public abstract class BaseScreen implements Screen {
     protected final SpliceLabGame game;
@@ -17,6 +20,8 @@ public abstract class BaseScreen implements Screen {
     protected final Stage stage;
 
     private boolean built;
+
+    private float threeFingerHeld;
 
     protected BaseScreen(SpliceLabGame game, GameContext context) {
         this.game = game;
@@ -53,6 +58,8 @@ public abstract class BaseScreen implements Screen {
     @Override
     public final void render(float delta) {
         delta = Math.min(delta, 1f / 20f);
+
+        detectDevGesture(delta);
         update(delta);
 
         Gdx.gl.glClearColor(0.06f, 0.06f, 0.08f, 1f);
@@ -60,6 +67,27 @@ public abstract class BaseScreen implements Screen {
 
         stage.act(delta);
         stage.draw();
+    }
+
+    private void detectDevGesture(float delta) {
+        if (!DebugFlags.DEBUG) return;
+        boolean three = Gdx.input.isTouched(0)
+                && Gdx.input.isTouched(1)
+                && Gdx.input.isTouched(2);
+        threeFingerHeld = three ? threeFingerHeld + delta : 0f;
+        if (threeFingerHeld > 0.4f) {
+            threeFingerHeld = -2f;
+            openDevPanel();
+        }
+    }
+
+    protected void openDevPanel() {
+        new com.splicelab.ui.windows.DevPanelDialog(devSkin(), context).show(stage);
+    }
+
+    protected Skin devSkin() {
+        if (context != null && context.skin != null) return context.skin;
+        return PlaceholderSkinFactory.create();
     }
 
     @Override
